@@ -38,6 +38,71 @@
   --layout-inner-width: 1181px;
   --layout-header-height: 80px;
   --layout-page-padding: 48px;
+
+  /*
+   * Landing page tokens (Figma node 92:1831)
+   *
+   * Reuse existing report/dark tokens where values match:
+   *   #040404 card base          → --base-black
+   *   #10B981 accent             → --brand-emerald / --status-success
+   *   rgba(255,255,255,0.08)     → --surface-default (pricing cards, secondary buttons)
+   *   rgba(255,255,255,0.12)     → --border-default / --surface-elevated
+   *   rgba(255,255,255,0.48)     → --text-muted (form labels, plan descriptions)
+   *   rgba(255,255,255,0.56)     → --text-body (section subtitles)
+   *   rgba(255,255,255,0.96)     → --text-heading (evaluation card titles)
+   *   rgba(16,185,129,0.08/0.12) → --brand-emerald-bg / --brand-emerald-border (featured pricing)
+   *   #FFFFFF buttons/icons      → white utility / --text-heading at full opacity
+   *
+   * Landing-only aliases (values differ from report workflow or have no existing token):
+   */
+  --landing-background: #0a0a0a;
+  --landing-surface-card: rgba(255, 255, 255, 0.04);
+  --landing-surface-input: #181818;
+  --landing-surface-panel: #111518;
+  --landing-text-heading: #e9e9e9;
+  --landing-text-subtle: rgba(255, 255, 255, 0.72);
+  --landing-emerald-gradient: linear-gradient(
+    to left,
+    rgba(1, 176, 89, 0.72),
+    var(--brand-emerald)
+  );
+  --landing-emerald-glow: 0 0 62px rgba(16, 185, 129, 0.56);
+
+  /* Landing layout — section max-widths and spacing from Figma 1920 canvas */
+  --layout-landing-section-width: 1560px;
+  --layout-landing-grid-width: 1472px;
+  --layout-landing-pricing-width: 1442px;
+  --layout-landing-header-height: 96px;
+  --layout-landing-hero-form-width: 480px;
+  --layout-landing-cta-panel-width: 960px;
+  --layout-landing-section-padding-x: clamp(24px, 6vw, 180px);
+  --layout-landing-section-padding-y: clamp(64px, 8vw, 105px);
+
+  /* Landing typography — fixed sizes for controls; clamp() for display/section headings */
+  --text-landing-hero: clamp(40px, 5vw, 72px);
+  --leading-landing-hero: clamp(48px, 5.5vw, 80px);
+  --text-landing-section: clamp(32px, 4vw, 56px);
+  --leading-landing-section: clamp(40px, 5vw, 72px);
+  --text-landing-cta: 32px;
+  --leading-landing-cta: 46px;
+  --text-landing-body-lg: 24px;
+  --leading-landing-body-lg: 36px;
+  --text-landing-body: 18px;
+  --leading-landing-body: 32px;
+  --text-landing-price: 42px;
+  --text-landing-price-suffix: 20px;
+
+  /*
+   * Deferred to existing tokens at implementation (no new alias):
+   *   #111111 footer           → --base-black (#040404) or bg-[#111111] if exact match required
+   *   #686868 placeholder      → text-[#686868] or extend --text-input styling
+   *   rgba(255,255,255,0.10)   → border-white/10 (between --border-subtle and --border-default)
+   *   rgba(255,255,255,0.20)   → border-white/20 (evaluation CTA panel border)
+   *   rgba(255,255,255,0.32)   → text-white/32 (nav/social icons)
+   *   rgba(16,185,129,0.42)    → price suffix; secondary glow uses 0.42 opacity variant
+   *   #0065F8 blue accent      → not used on visible landing nodes; skip
+   *   Font: Inter (--font-inter) for landing; Helvetica Neue approximated via system stack
+   */
 }
 
 @theme inline {
@@ -104,11 +169,13 @@
   --spacing-12: 48px;
   --spacing-14: 56px;
 
-  /* Border radius */
+  /* Border radius — Figma 10.5px field/button radius rounded to 10px */
   --radius-step-badge: 4px;
   --radius-card: 8px;
   --radius-toggle-track: 9px;
+  --radius-field: 10px;
   --radius-button: 12px;
+  --radius-panel: 28px;
   --radius-radio: 16px;
   --radius-page: 36px;
   --radius-toggle-knob: 6px;
@@ -118,6 +185,38 @@
   --width-layout-inner: var(--layout-inner-width);
   --height-header: var(--layout-header-height);
   --spacing-page-x: var(--layout-page-padding);
+  --width-landing-section: var(--layout-landing-section-width);
+  --width-landing-grid: var(--layout-landing-grid-width);
+  --width-landing-pricing: var(--layout-landing-pricing-width);
+  --width-landing-hero-form: var(--layout-landing-hero-form-width);
+  --width-landing-cta-panel: var(--layout-landing-cta-panel-width);
+  --height-landing-header: var(--layout-landing-header-height);
+  --spacing-landing-section-x: var(--layout-landing-section-padding-x);
+  --spacing-landing-section-y: var(--layout-landing-section-padding-y);
+
+  /* Landing colors & effects */
+  --color-landing-background: var(--landing-background);
+  --color-landing-surface-card: var(--landing-surface-card);
+  --color-landing-surface-input: var(--landing-surface-input);
+  --color-landing-surface-panel: var(--landing-surface-panel);
+  --color-landing-text-heading: var(--landing-text-heading);
+  --color-landing-text-subtle: var(--landing-text-subtle);
+  --background-image-landing-emerald-gradient: var(--landing-emerald-gradient);
+  --shadow-landing-emerald-glow: var(--landing-emerald-glow);
+
+  /* Landing typography scale */
+  --text-landing-hero-size: var(--text-landing-hero);
+  --text-landing-hero-line: var(--leading-landing-hero);
+  --text-landing-section-size: var(--text-landing-section);
+  --text-landing-section-line: var(--leading-landing-section);
+  --text-landing-cta-size: var(--text-landing-cta);
+  --text-landing-cta-line: var(--leading-landing-cta);
+  --text-landing-body-lg-size: var(--text-landing-body-lg);
+  --text-landing-body-lg-line: var(--leading-landing-body-lg);
+  --text-landing-body-size: var(--text-landing-body);
+  --text-landing-body-line: var(--leading-landing-body);
+  --text-landing-price-size: var(--text-landing-price);
+  --text-landing-price-suffix-size: var(--text-landing-price-suffix);
 }
 
 @media (prefers-color-scheme: dark) {
