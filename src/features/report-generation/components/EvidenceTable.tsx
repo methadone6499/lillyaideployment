@@ -30,31 +30,24 @@ export function EvidenceTable({
   const allSelected =
     items.length > 0 && items.every((item) => selectedIds.includes(item.id));
 
+  const evidenceGridClass = "grid grid-cols-[40px_minmax(0,1fr)_96px_112px_112px_32px] items-center gap-5"
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex h-14 items-center rounded-card bg-surface-subtle px-[84px]">
-        <span className="flex-1 text-body-lg font-medium text-text-muted">
-          Title
-        </span>
-        <span className="w-24 text-body-lg font-medium text-text-muted">
-          Year
-        </span>
-        <span className="w-28 text-body-lg font-medium text-text-muted">
-          PMC
-        </span>
-        <span className="w-28 text-body-lg font-medium text-text-muted">
-          DOI
-        </span>
+      <div className={cn(evidenceGridClass, "h-14 rounded-card bg-surface-subtle px-7")}>
         <Checkbox
           checked={allSelected}
           onChange={() =>
-            onSelectAll(
-              allSelected ? [] : items.map((item) => item.id),
-            )
+            onSelectAll(allSelected ? [] : items.map((item) => item.id))
           }
           aria-label="Select all evidence"
-          className="ml-6"
         />
+
+        <span className="text-body-lg font-medium text-text-muted">Title</span>
+        <span className="text-body-lg font-medium text-text-muted">Year</span>
+        <span className="text-body-lg font-medium text-text-muted">PMC</span>
+        <span className="text-body-lg font-medium text-text-muted">DOI</span>
+        <span />
       </div>
 
       <div className="flex flex-col gap-6">
@@ -72,75 +65,44 @@ export function EvidenceTable({
                   : "border-border-default bg-surface-default",
               )}
             >
-              <div className="flex items-center gap-5 px-7 py-8">
+              <div className={cn(evidenceGridClass, "px-7 py-8")}>
                 <RadioCircle
                   selected={selected}
                   onClick={() => onToggle(item.id)}
                   aria-label={`Select ${item.title}`}
                 />
-                <span className="min-w-0 flex-1 text-card-title font-medium text-white">
+
+                <span className="min-w-0 text-card-title font-medium text-white">
                   {item.title}
                 </span>
-                <span className="w-24 text-body-lg text-text-primary">
-                  {item.year}
-                </span>
-                <a
-                  href={item.pmcUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-28 text-body-lg font-medium text-brand underline"
-                >
-                  Link
-                </a>
-                <a
-                  href={item.doiUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-28 text-body-lg font-medium text-brand underline"
-                >
-                  Link
-                </a>
+
+                <span className="text-body-lg text-text-primary">{item.year}</span>
+
+                <a className="text-body-lg font-medium text-brand underline">Link</a>
+
+                <a className="text-body-lg font-medium text-brand underline">Link</a>
+
                 <button
                   type="button"
-                  onClick={() =>
-                    setExpandedId(expanded ? null : item.id)
-                  }
-                  className="ml-2 text-white"
+                  onClick={() => setExpandedId(expanded ? null : item.id)}
+                  className="text-white"
                   aria-label={expanded ? "Collapse" : "Expand"}
                 >
-                  {expanded ? (
-                    <ChevronUpIcon />
-                  ) : (
-                    <ChevronDownIcon className="size-6" />
-                  )}
+                  {expanded ? <ChevronUpIcon /> : <ChevronDownIcon className="size-6" />}
                 </button>
               </div>
 
               {expanded && (
                 <div className="border-t border-border-default px-[83px] pb-8 pt-6">
-                  <div className="flex flex-col gap-5 text-body-lg">
-                    <div className="flex gap-6">
-                      <span className="font-medium text-text-heading">
-                        Study Design
-                      </span>
-                      <span className="text-text-muted">
-                        {item.studyDesign}
-                      </span>
-                    </div>
-                    <div className="flex gap-[75px]">
-                      <span className="font-medium text-text-heading">
-                        Journal
-                      </span>
-                      <span className="text-text-muted">{item.journal}</span>
-                    </div>
-                    <div className="flex gap-6">
-                      <span className="shrink-0 font-medium text-text-heading">
-                        Abstract
-                      </span>
-                      <p className="leading-report-lg text-text-muted">
-                        {item.abstract}
-                      </p>
-                    </div>
+                  <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-x-6 gap-y-5 text-body-lg">
+                    <span className="font-medium text-text-heading">Study Design</span>
+                    <span className="text-text-muted">{item.studyDesign}</span>
+
+                    <span className="font-medium text-text-heading">Journal</span>
+                    <span className="text-text-muted">{item.journal}</span>
+
+                    <span className="font-medium text-text-heading">Abstract</span>
+                    <p className="leading-report-lg text-text-muted">{item.abstract}</p>
                   </div>
                 </div>
               )}
