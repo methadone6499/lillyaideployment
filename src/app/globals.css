@@ -3,13 +3,121 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Report / dark design tokens */
+  --base-black: #040404;
+  --brand-emerald: #10b981;
+  --brand-emerald-bg: rgba(16, 185, 129, 0.08);
+  --brand-emerald-border: rgba(16, 185, 129, 0.12);
+  --brand-emerald-badge: rgba(16, 185, 129, 0.16);
+  --brand-emerald-chip-border: rgba(16, 185, 129, 0.48);
+  --brand-emerald-highlight: rgba(16, 185, 129, 0.32);
+
+  --surface-subtle: rgba(255, 255, 255, 0.06);
+  --surface-default: rgba(255, 255, 255, 0.08);
+  --surface-elevated: rgba(255, 255, 255, 0.12);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.12);
+
+  --input-fill: #292929;
+
+  --text-heading: rgba(255, 255, 255, 0.96);
+  --text-primary: rgba(255, 255, 255, 0.8);
+  --text-body: rgba(255, 255, 255, 0.56);
+  --text-muted: rgba(255, 255, 255, 0.48);
+  --text-step: rgba(255, 255, 255, 0.42);
+
+  --status-success: #10b981;
+  --status-running: #ffc85c;
+  --status-in-queue: #ffffff;
+
+  --shadow-toggle-knob: 0 0 4.571px rgba(0, 0, 0, 0.16);
+
+  --layout-max-width: 1920px;
+  --layout-inner-width: 1181px;
+  --layout-header-height: 80px;
+  --layout-page-padding: 48px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Report / dark palette */
+  --color-base-black: var(--base-black);
+  --color-brand: var(--brand-emerald);
+  --color-brand-bg: var(--brand-emerald-bg);
+  --color-brand-border: var(--brand-emerald-border);
+  --color-brand-badge: var(--brand-emerald-badge);
+  --color-brand-chip-border: var(--brand-emerald-chip-border);
+  --color-brand-highlight: var(--brand-emerald-highlight);
+
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-default: var(--surface-default);
+  --color-surface-elevated: var(--surface-elevated);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+
+  --color-input-fill: var(--input-fill);
+
+  --color-text-heading: var(--text-heading);
+  --color-text-primary: var(--text-primary);
+  --color-text-body: var(--text-body);
+  --color-text-muted: var(--text-muted);
+  --color-text-step: var(--text-step);
+
+  --color-status-success: var(--status-success);
+  --color-status-running: var(--status-running);
+  --color-status-in-queue: var(--status-in-queue);
+
+  --shadow-toggle-knob: var(--shadow-toggle-knob);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-inter: var(--font-inter);
+
+  /* Typography scale (px) */
+  --text-page-title: 40px;
+  --text-section-heading: 24px;
+  --text-card-title: 20px;
+  --text-body-lg: 18px;
+  --text-label: 16px;
+  --text-input: 14px;
+  --text-helper: 12px;
+
+  --leading-report: 26px;
+  --leading-report-lg: 28px;
+
+  /* Spacing scale (px) */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-2\.5: 10px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-4\.5: 18px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-7: 28px;
+  --spacing-9: 36px;
+  --spacing-12: 48px;
+  --spacing-14: 56px;
+
+  /* Border radius */
+  --radius-step-badge: 4px;
+  --radius-card: 8px;
+  --radius-toggle-track: 9px;
+  --radius-button: 12px;
+  --radius-radio: 16px;
+  --radius-page: 36px;
+  --radius-toggle-knob: 6px;
+
+  /* Layout */
+  --width-layout-max: var(--layout-max-width);
+  --width-layout-inner: var(--layout-inner-width);
+  --height-header: var(--layout-header-height);
+  --spacing-page-x: var(--layout-page-padding);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +130,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
