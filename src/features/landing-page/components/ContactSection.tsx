@@ -60,7 +60,7 @@ export function ContactSection() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-9 rounded-button border border-border-default bg-surface-default px-6 pb-7 pt-8">
+        <div className="flex flex-col items-center gap-9 rounded-button border border-border-default bg-surface-default px-6 pb-7 pt-2">
           <div className="flex w-full max-w-[667px] flex-col gap-5">
             <h3 className="text-[28px] leading-[72px] text-landing-text-heading">
               Premium Add-on Services

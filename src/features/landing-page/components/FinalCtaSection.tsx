@@ -18,7 +18,7 @@ export function FinalCtaSection() {
         <div className="absolute inset-0 bg-black/56" aria-hidden />
 
         <div className="relative flex min-h-[420px] flex-col items-center justify-center gap-16 px-6 py-24 text-center sm:min-h-[560px]">
-          <div className="flex max-w-[883px] flex-col items-center gap-12">
+          <div className="flex w-full flex-col items-center gap-12">
             <div className="flex flex-col items-center gap-8">
               <div className="flex flex-wrap items-center justify-center gap-5 text-landing-hero-size leading-landing-hero-line text-landing-text-heading">
                 <span>Ready to</span>

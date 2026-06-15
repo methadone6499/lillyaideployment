@@ -45,23 +45,17 @@ export function CheckIcon({ className }: IconProps) {
 export function BellIcon({ className }: IconProps) {
   return (
     <svg
-      className={cn("size-6 text-white", className)}
+      className={cn("size-6 text-white/80", className)}
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden
     >
       <path
-        d="M12 6.5V5.25C12 3.45507 13.4551 2 15.25 2C17.0449 2 18.5 3.45507 18.5 5.25V6.5M6.75 9.75C6.75 6.29822 9.54822 3.5 13 3.5C16.4518 3.5 19.25 6.29822 19.25 9.75V14.25L20.75 17.75H5.25L6.75 14.25V9.75Z"
+        d="M14 21H10M18 8C18 6.4087 17.3679 4.8826 16.2426 3.7574C15.1174 2.6321 13.5913 2 12 2C10.4087 2 8.8826 2.6321 7.7574 3.7574C6.6321 4.8826 6 6.4087 6 8C6 11.0902 5.2205 13.206 4.3497 14.6054C3.6151 15.7859 3.2479 16.3761 3.2613 16.5408C3.2762 16.7231 3.3149 16.7926 3.4618 16.9016C3.5945 17 4.1926 17 5.3889 17H18.6111C19.8074 17 20.4055 17 20.5382 16.9016C20.6851 16.7926 20.7238 16.7231 20.7387 16.5408C20.7521 16.3761 20.3849 15.7859 19.6503 14.6054C18.7795 13.206 18 11.0902 18 8Z"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-      <path
-        d="M10 20.25C10.4142 21.2165 11.1716 21.75 13 21.75C14.8284 21.75 15.5858 21.2165 16 20.25"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
       />
     </svg>
   );
