@@ -2,25 +2,70 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  fetchReportJobStatus,
+  fetchReportSection,
+  fetchReportStatus,
   generateReport,
+  updateReportSelections,
 } from "../api/reportApi";
+import { ReportApiError } from "../api/reportFetch";
+import { reportQueryKeys } from "../api/reportQueryKeys";
+import type { GenerateReportInput, UpdateReportSelectionsInput } from "../types";
 
-export function useGenerateReportMutation() {
+const STATUS_POLL_INTERVAL_MS = 60_000;
+
+export function useUpdateReportSelectionsMutation() {
   return useMutation({
-    mutationFn: generateReport,
+    mutationFn: ({
+      reportId,
+      input,
+    }: {
+      reportId: string;
+      input: UpdateReportSelectionsInput;
+    }) => updateReportSelections(reportId, input),
   });
 }
 
-export function useReportJobStatus(jobId: string | null) {
+export function useGenerateReportMutation() {
+  return useMutation({
+    mutationFn: ({
+      reportId,
+      input,
+    }: {
+      reportId: string;
+      input: GenerateReportInput;
+    }) => generateReport(reportId, input),
+  });
+}
+
+export function useReportStatus(reportId: string | null) {
   return useQuery({
-    queryKey: ["report-job", jobId],
-    queryFn: () => fetchReportJobStatus(jobId!),
-    enabled: Boolean(jobId),
+    queryKey: reportQueryKeys.status(reportId ?? ""),
+    queryFn: () => fetchReportStatus(reportId!),
+    enabled: Boolean(reportId),
     refetchInterval: (query) => {
-      const sections = query.state.data?.sections ?? [];
-      const allComplete = sections.every((s) => s.status === "complete");
-      return allComplete ? false : 2000;
+      const reportStatus = query.state.data?.report_status;
+      if (reportStatus === "completed" || reportStatus === "failed") {
+        return false;
+      }
+      return STATUS_POLL_INTERVAL_MS;
+    },
+  });
+}
+
+export function useReportSection(
+  reportId: string | null,
+  sectionId: string | undefined,
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: reportQueryKeys.section(reportId ?? "", sectionId ?? ""),
+    queryFn: () => fetchReportSection(reportId!, sectionId!),
+    enabled: Boolean(reportId && sectionId && enabled),
+    retry: (failureCount, error) => {
+      if (error instanceof ReportApiError && error.status === 409) {
+        return false;
+      }
+      return failureCount < 2;
     },
   });
 }

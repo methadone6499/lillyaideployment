@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Button,
-  Card,
-  PlusIcon,
-  Switch,
-  TextLink,
-} from "@/components/ui";
-import { useQuery } from "@tanstack/react-query";
-import { fetchReportSections } from "../../api/reportApi";
+import { Card, Switch, TextLink } from "@/components/ui";
+import { REPORT_SECTION_DEFINITIONS } from "../../constants/reportSections";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 
 export function Step5Sections() {
@@ -21,18 +14,7 @@ export function Step5Sections() {
     (s) => s.deselectAllSections,
   );
 
-  const { data: sections = [], isLoading } = useQuery({
-    queryKey: ["report-sections"],
-    queryFn: fetchReportSections,
-  });
-
-  if (isLoading) {
-    return (
-      <p className="text-body-lg text-text-muted">Loading sections…</p>
-    );
-  }
-
-  const allSectionIds = sections.map((s) => s.id);
+  const allSectionIds = REPORT_SECTION_DEFINITIONS.map((section) => section.id);
 
   return (
     <div className="flex flex-col gap-9">
@@ -56,7 +38,7 @@ export function Step5Sections() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {sections.map((section) => {
+        {REPORT_SECTION_DEFINITIONS.map((section) => {
           const selected = selectedSectionIds.includes(section.id);
           return (
             <Card
@@ -80,25 +62,6 @@ export function Step5Sections() {
             </Card>
           );
         })}
-
-        <Card variant="subtle" className="flex flex-col gap-6 p-9 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-4">
-            <h3 className="text-card-title font-medium text-white">
-              Add new section
-            </h3>
-            <p className="text-helper text-text-muted">
-              Enter prompt to explain your custom section
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Button variant="secondary" leadingIcon={<PlusIcon />}>
-              Generate via AI
-            </Button>
-            <Button variant="secondary" leadingIcon={<PlusIcon />}>
-              Upload Document Template
-            </Button>
-          </div>
-        </Card>
       </div>
     </div>
   );

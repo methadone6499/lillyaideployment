@@ -3,7 +3,7 @@
 import { Tabs } from "@/components/ui";
 import { useState } from "react";
 import { EvidenceTable } from "../EvidenceTable";
-import { useEvidence } from "../../hooks/useEvidence";
+import { useEvidenceDiscovery } from "../../hooks/useEvidenceDiscovery";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 import type { EvidenceType } from "../../types";
 
@@ -14,16 +14,49 @@ const EVIDENCE_TABS = [
 
 export function Step3Evidence() {
   const [activeTab, setActiveTab] = useState<EvidenceType>("clinical");
-  const filters = useReportWizardStore((s) => s.filters);
-  const selectedEvidenceIds = useReportWizardStore(
-    (s) => s.selectedEvidenceIds,
+  const reportId = useReportWizardStore((s) => s.reportId);
+  const selectedClinicalPmcids = useReportWizardStore(
+    (s) => s.selectedClinicalPmcids,
   );
-  const toggleEvidenceId = useReportWizardStore((s) => s.toggleEvidenceId);
-  const setSelectedEvidenceIds = useReportWizardStore(
-    (s) => s.setSelectedEvidenceIds,
+  const selectedEconomicPmcids = useReportWizardStore(
+    (s) => s.selectedEconomicPmcids,
+  );
+  const toggleClinicalPmcid = useReportWizardStore(
+    (s) => s.toggleClinicalPmcid,
+  );
+  const toggleEconomicPmcid = useReportWizardStore(
+    (s) => s.toggleEconomicPmcid,
+  );
+  const setSelectedClinicalPmcids = useReportWizardStore(
+    (s) => s.setSelectedClinicalPmcids,
+  );
+  const setSelectedEconomicPmcids = useReportWizardStore(
+    (s) => s.setSelectedEconomicPmcids,
   );
 
-  const { data: items = [], isLoading } = useEvidence(activeTab, filters);
+  const isClinical = activeTab === "clinical";
+  const selectedPmcids = isClinical
+    ? selectedClinicalPmcids
+    : selectedEconomicPmcids;
+  const togglePmcid = isClinical ? toggleClinicalPmcid : toggleEconomicPmcid;
+  const setSelectedPmcids = isClinical
+    ? setSelectedClinicalPmcids
+    : setSelectedEconomicPmcids;
+
+  const {
+    data: items = [],
+    isLoading,
+    isError,
+    error,
+  } = useEvidenceDiscovery(reportId, activeTab);
+
+  if (!reportId) {
+    return (
+      <p className="text-body-lg text-red-400" role="alert">
+        Report is not configured. Go back to Filters and continue again.
+      </p>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -38,12 +71,27 @@ export function Step3Evidence() {
         activeTab={activeTab}
         onChange={setActiveTab}
       />
-      <EvidenceTable
-        items={items}
-        selectedIds={selectedEvidenceIds}
-        onToggle={toggleEvidenceId}
-        onSelectAll={setSelectedEvidenceIds}
-      />
+      {isError && (
+        <p className="text-body-lg text-amber-300" role="status">
+          {error instanceof Error
+            ? error.message
+            : "Failed to load evidence. You can continue with manual selections later."}
+        </p>
+      )}
+      {items.length === 0 && !isError && (
+        <p className="text-body-lg text-text-muted">
+          No articles were discovered for this tab. You can continue without
+          selecting evidence.
+        </p>
+      )}
+      {items.length > 0 && (
+        <EvidenceTable
+          items={items}
+          selectedPmcids={selectedPmcids}
+          onToggle={togglePmcid}
+          onSelectAll={setSelectedPmcids}
+        />
+      )}
     </div>
   );
 }

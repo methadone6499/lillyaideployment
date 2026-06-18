@@ -1,19 +1,32 @@
 "use client";
 
+import {
+  AuthApiError,
+  useSigninMutation,
+  useSignupMutation,
+} from "@/features/auth";
+import {
+  beginReportWizardSession,
+  clearAllReportQueries,
+} from "@/features/report-generation";
 import { cn } from "@/lib/cn";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState, type ComponentProps, type FormEvent } from "react";
 import { GradientText } from "./GradientText";
 import { LandingCtaButton } from "./LandingCtaButton";
 import { LandingSection } from "./LandingSection";
 
-type SignupFormState = {
+type AuthMode = "signup" | "signin";
+
+type AuthFormState = {
   name: string;
   institution: string;
   email: string;
   password: string;
 };
 
-function SignupField({
+function AuthField({
   label,
   required,
   className,
@@ -37,49 +50,119 @@ function SignupField({
   );
 }
 
-function SignupForm() {
-  const [form, setForm] = useState<SignupFormState>({
+function splitName(name: string): { first_name: string; last_name: string } {
+  const trimmed = name.trim();
+  const spaceIndex = trimmed.indexOf(" ");
+
+  if (spaceIndex === -1) {
+    return { first_name: trimmed, last_name: "" };
+  }
+
+  return {
+    first_name: trimmed.slice(0, spaceIndex),
+    last_name: trimmed.slice(spaceIndex + 1).trim(),
+  };
+}
+
+function AuthForm() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [mode, setMode] = useState<AuthMode>("signup");
+  const [form, setForm] = useState<AuthFormState>({
     name: "",
     institution: "",
     email: "",
     password: "",
   });
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const updateField = (field: keyof SignupFormState, value: string) => {
+  const signupMutation = useSignupMutation();
+  const signinMutation = useSigninMutation();
+  const isSubmitting = signupMutation.isPending || signinMutation.isPending;
+
+  const updateField = (field: keyof AuthFormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const switchToSignIn = () => {
+    setMode("signin");
+    setSuccessMessage(null);
+    setErrorMessage(null);
+  };
+
+  const switchToSignUp = () => {
+    setMode("signup");
+    setSuccessMessage(null);
+    setErrorMessage(null);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSuccessMessage(null);
+    setErrorMessage(null);
+
+    try {
+      if (mode === "signup") {
+        const { first_name, last_name } = splitName(form.name);
+        await signupMutation.mutateAsync({
+          email: form.email.trim(),
+          password: form.password,
+          first_name,
+          last_name,
+          institution: form.institution.trim(),
+        });
+        setSuccessMessage("Account created. Sign in to continue.");
+        setForm((current) => ({ ...current, password: "" }));
+        setMode("signin");
+        return;
+      }
+
+      const signinResponse = await signinMutation.mutateAsync({
+        email: form.email.trim(),
+        password: form.password,
+      });
+      clearAllReportQueries(queryClient);
+      beginReportWizardSession(signinResponse.user_id);
+      router.push("/reports/new");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof AuthApiError
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    }
   };
 
   return (
     <div className="w-full max-w-landing-hero-form shrink-0">
       <form onSubmit={handleSubmit} className="flex flex-col gap-[42px]">
         <h2 className="text-[32px] text-landing-text-heading">
-          Join Our Platform
+          {mode === "signup" ? "Join Our Platform" : "Sign In"}
         </h2>
 
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <SignupField
-                label="Name"
-                required
-                placeholder="John Doe"
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-              />
-              <SignupField
-                label="Institution Name"
-                placeholder="ATR"
-                value={form.institution}
-                onChange={(event) =>
-                  updateField("institution", event.target.value)
-                }
-              />
-            </div>
-            <SignupField
+            {mode === "signup" && (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <AuthField
+                  label="Name"
+                  required
+                  placeholder="John Doe"
+                  value={form.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                />
+                <AuthField
+                  label="Institution Name"
+                  placeholder="ATR"
+                  value={form.institution}
+                  onChange={(event) =>
+                    updateField("institution", event.target.value)
+                  }
+                />
+              </div>
+            )}
+            <AuthField
               label="Email Address"
               required
               type="email"
@@ -87,28 +170,63 @@ function SignupForm() {
               value={form.email}
               onChange={(event) => updateField("email", event.target.value)}
             />
-            <SignupField
+            <AuthField
               label="Password"
+              required
               type="password"
-              placeholder="Create your secure password"
+              placeholder={
+                mode === "signup"
+                  ? "Create your secure password"
+                  : "Enter your password"
+              }
               value={form.password}
               onChange={(event) => updateField("password", event.target.value)}
             />
           </div>
 
-          <LandingCtaButton type="submit" fullWidth>
-            Create Account
+          {successMessage && (
+            <p className="text-center text-label text-brand">{successMessage}</p>
+          )}
+
+          {errorMessage && (
+            <p className="text-center text-label text-red-400">{errorMessage}</p>
+          )}
+
+          <LandingCtaButton type="submit" fullWidth showArrow={!isSubmitting}>
+            {isSubmitting
+              ? mode === "signup"
+                ? "Creating Account..."
+                : "Signing In..."
+              : mode === "signup"
+                ? "Create Account"
+                : "Sign In"}
           </LandingCtaButton>
         </div>
 
         <p className="text-center text-label font-medium text-landing-text-heading">
-          Already have an account?{" "}
-          <button
-            type="button"
-            className="font-medium underline decoration-brand underline-offset-2"
-          >
-            <GradientText as="span">Sign In</GradientText>
-          </button>
+          {mode === "signup" ? (
+            <>
+              Already have an account?{" "}
+              <button
+                type="button"
+                onClick={switchToSignIn}
+                className="font-medium underline decoration-brand underline-offset-2"
+              >
+                <GradientText as="span">Sign In</GradientText>
+              </button>
+            </>
+          ) : (
+            <>
+              Don&apos;t have an account?{" "}
+              <button
+                type="button"
+                onClick={switchToSignUp}
+                className="font-medium underline decoration-brand underline-offset-2"
+              >
+                <GradientText as="span">Create Account</GradientText>
+              </button>
+            </>
+          )}
         </p>
       </form>
     </div>
@@ -134,7 +252,7 @@ export function HeroSection() {
             evaluations.
           </p>
         </div>
-        <SignupForm />
+        <AuthForm />
       </div>
     </LandingSection>
   );

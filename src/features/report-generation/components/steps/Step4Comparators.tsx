@@ -2,54 +2,52 @@
 
 import { Button, Card, PlusIcon, RadioCircle, TextField } from "@/components/ui";
 import { useState } from "react";
-import { validateComparatorName } from "../../api/reportApi";
-import { useComparators } from "../../hooks/useComparators";
+import { useComparatorDiscovery } from "../../hooks/useComparatorDiscovery";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 
 export function Step4Comparators() {
-  const drugName = useReportWizardStore((s) => s.drugName);
-  const indications = useReportWizardStore((s) => s.indications);
-  const selectedComparatorIds = useReportWizardStore(
-    (s) => s.selectedComparatorIds,
+  const reportId = useReportWizardStore((s) => s.reportId);
+  const selectedComparators = useReportWizardStore(
+    (s) => s.selectedComparators,
   );
   const customComparators = useReportWizardStore((s) => s.customComparators);
-  const toggleComparatorId = useReportWizardStore(
-    (s) => s.toggleComparatorId,
-  );
+  const toggleComparator = useReportWizardStore((s) => s.toggleComparator);
   const addCustomComparator = useReportWizardStore(
     (s) => s.addCustomComparator,
   );
 
   const [draftName, setDraftName] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
 
-  const { data: comparators = [], isLoading } = useComparators(
-    drugName,
-    indications,
+  const {
+    data: suggestions = [],
+    isLoading,
+    isError,
+    error,
+  } = useComparatorDiscovery(reportId);
+
+  const customOnly = customComparators.filter(
+    (name) => !suggestions.includes(name),
   );
 
   const allComparators = [
-    ...comparators,
-    ...customComparators.map((name) => ({
-      id: `custom-${name}`,
-      name,
-      isCustom: true as const,
-    })),
+    ...suggestions.map((name) => ({ name, isCustom: false as const })),
+    ...customOnly.map((name) => ({ name, isCustom: true as const })),
   ];
 
-  const handleAdd = async () => {
-    if (!draftName.trim()) return;
-    setIsAdding(true);
-    try {
-      const validated = await validateComparatorName(draftName);
-      if (validated) {
-        addCustomComparator(validated.name);
-        setDraftName("");
-      }
-    } finally {
-      setIsAdding(false);
-    }
+  const handleAdd = () => {
+    const name = draftName.trim();
+    if (!name) return;
+    addCustomComparator(name);
+    setDraftName("");
   };
+
+  if (!reportId) {
+    return (
+      <p className="text-body-lg text-red-400" role="alert">
+        Report is not configured. Go back to Filters and continue again.
+      </p>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -66,18 +64,33 @@ export function Step4Comparators() {
         </p>
       </div>
 
+      {isError && (
+        <p className="text-body-lg text-amber-300" role="status">
+          {error instanceof Error
+            ? error.message
+            : "Failed to load comparator suggestions. You can add comparators manually."}
+        </p>
+      )}
+
+      {allComparators.length === 0 && (
+        <p className="text-body-lg text-text-muted">
+          No comparator suggestions were returned. Add comparators manually
+          below.
+        </p>
+      )}
+
       <div className="flex flex-col gap-6">
         {allComparators.map((comparator) => {
-          const selected = selectedComparatorIds.includes(comparator.id);
+          const selected = selectedComparators.includes(comparator.name);
           return (
             <Card
-              key={comparator.id}
+              key={comparator.name}
               variant={selected ? "accent" : "default"}
               className="flex h-[88px] items-center gap-5 px-7"
             >
               <RadioCircle
                 selected={selected}
-                onClick={() => toggleComparatorId(comparator.id)}
+                onClick={() => toggleComparator(comparator.name)}
                 aria-label={`Select ${comparator.name}`}
               />
               <span className="text-card-title font-medium text-white">
@@ -93,7 +106,7 @@ export function Step4Comparators() {
               Add custom comparator
             </h3>
             <p className="text-helper text-text-muted">
-              Spell-checked against drug database
+              Enter a comparator name to include it in the report.
             </p>
           </div>
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -102,11 +115,17 @@ export function Step4Comparators() {
               onChange={(e) => setDraftName(e.target.value)}
               placeholder="e.g. Rybelsus (semaglutide oral)"
               containerClassName="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAdd();
+                }
+              }}
             />
             <Button
               variant="secondary"
               onClick={handleAdd}
-              disabled={isAdding || !draftName.trim()}
+              disabled={!draftName.trim()}
               leadingIcon={<PlusIcon />}
               className="shrink-0"
             >

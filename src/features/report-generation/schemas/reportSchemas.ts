@@ -1,83 +1,205 @@
 import { z } from "zod";
 
-export const drugSuggestionSchema = z.object({
-  original: z.string(),
-  suggestion: z.string().nullable(),
-});
+export const reportStatusSchema = z.enum([
+  "draft",
+  "ready",
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+]);
 
-export const evidenceItemSchema = z.object({
-  id: z.string(),
+export const jobStatusSchema = z.enum([
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+]);
+
+export const sectionStatusSchema = z.enum([
+  "pending",
+  "queued",
+  "processing",
+  "completed",
+  "failed",
+  "blocked",
+]);
+
+export const sectionTypeSchema = z.enum([
+  "disease",
+  "clinical",
+  "economic",
+  "drug",
+  "hta",
+  "comparator",
+  "appraisal",
+  "discussion",
+  "compliance",
+  "executive",
+]);
+
+export const articleCandidateSchema = z.object({
+  pmid: z.string(),
+  pmcid: z.string().optional(),
   title: z.string(),
-  year: z.number(),
-  pmcUrl: z.string().url(),
-  doiUrl: z.string().url(),
-  studyDesign: z.string(),
+  authors: z.array(z.string()),
   journal: z.string(),
+  year: z.union([z.string(), z.number()]),
+  doi: z.string().optional(),
   abstract: z.string(),
-  type: z.enum(["clinical", "economic"]),
 });
 
-export const evidenceListSchema = z.array(evidenceItemSchema);
-
-export const comparatorItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  isCustom: z.boolean().optional(),
+export const articleDiscoveryResponseSchema = z.object({
+  report_id: z.string(),
+  total: z.number(),
+  candidates: z.array(articleCandidateSchema),
 });
 
-export const comparatorListSchema = z.array(comparatorItemSchema);
-
-export const reportSectionDefinitionSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string(),
-  isCustom: z.boolean().optional(),
+export const comparatorDiscoveryResponseSchema = z.object({
+  report_id: z.string(),
+  suggestions: z.array(z.string()),
 });
 
-export const reportSectionDefinitionsSchema = z.array(
-  reportSectionDefinitionSchema,
-);
-
-export const reportSectionContentSchema = z.object({
-  diseaseCode: z.string().optional(),
-  diseaseDefinition: z.string().optional(),
-  epidemiology: z
-    .object({
-      prevalence: z.string().optional(),
-      incidence: z.string().optional(),
-    })
-    .optional(),
-  clinicalFeatures: z.string().optional(),
-  paragraphs: z
-    .array(
-      z.object({
-        heading: z.string().optional(),
-        body: z.string(),
-      }),
-    )
-    .optional(),
+export const advancedFiltersSchema = z.object({
+  time_range: z.string().optional(),
+  species_filter: z.string().optional(),
+  clinical_types: z.array(z.string()).optional(),
+  economic_types: z.array(z.string()).optional(),
+  population: z.string().optional(),
+  geography: z.string().optional(),
 });
 
-export const generatedReportSectionSchema = z.object({
-  id: z.string(),
-  order: z.number(),
-  title: z.string(),
-  description: z.string(),
-  status: z.enum(["complete", "running", "in_queue"]),
-  content: reportSectionContentSchema.optional(),
+export const reportInputsSchema = z.object({
+  pubmed_top_k_clinical: z.number().optional(),
+  pubmed_top_k_economic: z.number().optional(),
+  advanced_filters: advancedFiltersSchema.optional(),
+});
+
+export const createReportInputSchema = z.object({
+  drug: z.string(),
+  disease: z.string(),
+  inputs: reportInputsSchema,
+});
+
+export const reportSelectionsSchema = z.object({
+  comparators: z.array(z.string()),
+  clinical_pmcids: z.array(z.string()),
+  economic_pmcids: z.array(z.string()),
+  section_types: z.array(sectionTypeSchema),
+});
+
+export const reportDiscoveryStateSchema = z.object({
+  comparator_recommendations: z.array(z.string()).optional(),
+  clinical_candidates: z.array(articleCandidateSchema).optional(),
+  economic_candidates: z.array(articleCandidateSchema).optional(),
+});
+
+export const createReportResponseSchema = z.object({
+  report_id: z.string(),
+  drug: z.string(),
+  disease: z.string(),
+  status: reportStatusSchema,
+  inputs: reportInputsSchema,
+  discovery: reportDiscoveryStateSchema.optional(),
+  selections: reportSelectionsSchema.optional(),
+  storage_root: z.string().optional(),
+});
+
+export const updateReportSelectionsInputSchema = z.object({
+  comparators: z.array(z.string()),
+  custom_comparators: z.array(z.string()),
+  clinical_pmcids: z.array(z.string()),
+  economic_pmcids: z.array(z.string()),
+  section_types: z.array(sectionTypeSchema),
+});
+
+export const updateReportSelectionsResponseSchema = z.object({
+  report_id: z.string(),
+  status: reportStatusSchema,
+  selections: updateReportSelectionsInputSchema,
+  warnings: z.array(z.string()),
+});
+
+export const generateReportInputSchema = z.object({
+  force_regenerate: z.boolean(),
+  idempotency_key: z.string(),
+});
+
+export const generateReportSectionSchema = z.object({
+  section_id: z.string(),
+  section_type: sectionTypeSchema,
+  display_name: z.string(),
+  status: sectionStatusSchema,
+  depends_on: z.array(z.string()).optional(),
+  error: z.string().nullable().optional(),
 });
 
 export const generateReportResponseSchema = z.object({
-  jobId: z.string(),
-  reportTitle: z.string(),
-  generatedAt: z.string(),
+  job_id: z.string(),
+  report_id: z.string(),
+  job_status: jobStatusSchema,
+  report_status: reportStatusSchema,
+  sections: z.array(generateReportSectionSchema),
+  poll_urls: z
+    .object({
+      status: z.string(),
+    })
+    .optional(),
 });
 
-export const reportJobStatusSchema = z.object({
-  jobId: z.string(),
-  reportTitle: z.string(),
-  generatedAt: z.string(),
-  sections: z.array(generatedReportSectionSchema),
+export const reportProgressSchema = z.object({
+  total_sections: z.number(),
+  completed_sections: z.number(),
+  failed_sections: z.number(),
+  current_section_type: sectionTypeSchema.nullable().optional(),
+});
+
+export const reportStatusSectionSchema = z.object({
+  section_type: sectionTypeSchema,
+  status: sectionStatusSchema,
+  section_id: z.string().optional(),
+  display_name: z.string().optional(),
+  error: z.string().nullable().optional(),
+});
+
+export const reportArtifactsSchema = z.object({
+  master_state_path: z.string().nullable().optional(),
+  markdown_path: z.string().nullable().optional(),
+  pdf_path: z.string().nullable().optional(),
+});
+
+export const reportStatusResponseSchema = z.object({
+  report_status: reportStatusSchema,
+  job_status: jobStatusSchema.optional(),
+  status_reason: z.string().nullable().optional(),
+  phase: z.string().optional(),
+  progress: reportProgressSchema.optional(),
+  sections: z.array(reportStatusSectionSchema).optional(),
+  artifacts: reportArtifactsSchema.optional(),
+  active_job_id: z.string().optional(),
+});
+
+export const reportSectionContentSchema = z.unknown();
+
+export const reportSectionResponseSchema = z.object({
+  section_id: z.string(),
+  section_type: sectionTypeSchema,
+  display_name: z.string(),
+  status: sectionStatusSchema,
+  content: reportSectionContentSchema.optional(),
+});
+
+export const pdfExportResponseSchema = z.object({
+  report_id: z.string(),
+  status: z
+    .enum(["queued", "processing", "completed", "failed"])
+    .optional(),
+  message: z.string().optional(),
+});
+
+export const drugSuggestionSchema = z.object({
+  original: z.string(),
+  suggestion: z.string().nullable(),
 });
 
 export const filterStateSchema = z.object({

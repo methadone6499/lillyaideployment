@@ -8,7 +8,7 @@ const TIME_RANGE_OPTIONS = [
   { value: "last-1-year", label: "Last 1 Year" },
   { value: "last-2-years", label: "Last 2 Years" },
   { value: "last-5-years", label: "Last 5 Years" },
-  { value: "all-time", label: "All Time" },
+  { value: "last-10-years", label: "Last 10 Years" },
 ];
 
 const CLINICAL_STUDY_TYPES = [
@@ -37,6 +37,89 @@ const ECONOMIC_STUDY_TYPES = [
   { id: "resource-utilization", label: "Resource Utilization" },
   { id: "cost-burden-analysis", label: "Cost-Burden Analysis" },
   { id: "reimbursement-evidence", label: "Reimbursement Evidence" },
+];
+
+const EVIDENCE_SYNTHESIS_OPTIONS = [
+  { value: "meta-analyses", label: "Meta-Analyses" },
+  { value: "network-meta-analyses", label: "Network Meta-Analyses" },
+  { value: "systematic-reviews", label: "Systematic Reviews" },
+];
+
+const SPECIALIZED_TRIAL_STRUCTURES_OPTIONS = [
+  { value: "basket-trials", label: "Basket Trials" },
+  { value: "umbrella-trials", label: "Umbrella Trials" },
+  { value: "extension-trials", label: "Extension Trials" },
+  { value: "long-term-extension-trials", label: "Long-Term Extension Trials" },
+];
+
+const POPULATION_TYPE_OPTIONS = [
+  { value: "adult", label: "Adult" },
+  { value: "pediatric", label: "Pediatric" },
+  { value: "elderly", label: "Elderly" },
+  { value: "pregnant-population", label: "Pregnant Population" },
+  { value: "high-risk-population", label: "High-Risk Population" },
+  { value: "renal-impairment", label: "Renal Impairment" },
+  { value: "hepatic-impairment", label: "Hepatic Impairment" },
+  { value: "biomarker-positive-population", label: "Biomarker-Positive Population" },
+  { value: "oncology-line-of-therapy", label: "Oncology Line of Therapy" },
+  { value: "general-population", label: "General Population" },
+];
+
+const STUDY_DURATION_OPTIONS = [
+  { value: "short-term", label: "Short-Term (<6 months)" },
+  { value: "mid-term", label: "Mid-Term (6–12 months)" },
+  { value: "long-term", label: "Long-Term (1+ years)" },
+  { value: "very-long-term", label: "Very Long-Term (5+ years)" },
+];
+
+const COST_POPULATION_TYPE_OPTIONS = [
+  { value: "adult", label: "Adult" },
+  { value: "pediatric", label: "Pediatric" },
+  { value: "elderly", label: "Elderly" },
+  { value: "high-risk-population", label: "High-Risk Population" },
+  { value: "renal-impairment", label: "Renal Impairment" },
+  { value: "hepatic-impairment", label: "Hepatic Impairment" },
+  { value: "general-population", label: "General Population" },
+];
+
+const PATIENT_RANGE_OPTIONS = [
+  { value: "single-patient", label: "Single Patient" },
+  { value: "about-50-patients", label: "~50 Patients" },
+  { value: "about-100-patients", label: "~100 Patients" },
+];
+
+const OUTCOME_EVIDENCE_FOCUS_OPTIONS = [
+  { value: "efficacy", label: "Efficacy" },
+  { value: "safety", label: "Safety" },
+  { value: "survival-outcomes", label: "Survival Outcomes" },
+  { value: "quality-of-life", label: "Quality of Life" },
+  { value: "economic-outcomes", label: "Economic Outcomes" },
+  { value: "adherence-outcomes", label: "Adherence Outcomes" },
+  { value: "hospitalization-impact", label: "Hospitalization Impact" },
+];
+
+const GEOGRAPHY_REGULATORY_REGION_OPTIONS = [
+  { value: "global", label: "Global" },
+  {
+    value: "gcc-middle-east",
+    label: "GCC / Middle East (By Default)",
+  },
+];
+
+const EVIDENCE_QUALITY_OPTIONS = [
+  { value: "peer-reviewed-only", label: "Peer Reviewed Only" },
+  { value: "most-cited-studies", label: "Most Cited Studies" },
+  { value: "recent-evidence-only", label: "Recent Evidence Only" },
+];
+
+const COMPARATOR_TYPE_OPTIONS = [
+  { value: "placebo", label: "Placebo" },
+  { value: "standard-of-care", label: "Standard of Care" },
+  { value: "active-comparator", label: "Active Comparator" },
+  { value: "competitor-drug", label: "Competitor Drug" },
+  { value: "combination-therapy", label: "Combination Therapy" },
+  { value: "historical-control", label: "Historical Control" },
+  { value: "no-comparator", label: "No Comparator" },
 ];
 
 const SELECT_OPTIONS = [
@@ -88,7 +171,7 @@ export function Step2Filters() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Select
             label="Evidence Synthesis"
-            options={SELECT_OPTIONS}
+            options={EVIDENCE_SYNTHESIS_OPTIONS}
             value={filters.evidenceSynthesis}
             onChange={(e) =>
               setFilters({ evidenceSynthesis: e.target.value })
@@ -96,7 +179,7 @@ export function Step2Filters() {
           />
           <Select
             label="Specialized Trial Structures"
-            options={SELECT_OPTIONS}
+            options={SPECIALIZED_TRIAL_STRUCTURES_OPTIONS}
             value={filters.specializedTrialStructures}
             onChange={(e) =>
               setFilters({ specializedTrialStructures: e.target.value })
@@ -104,7 +187,7 @@ export function Step2Filters() {
           />
           <Select
             label="Population Type"
-            options={SELECT_OPTIONS}
+            options={POPULATION_TYPE_OPTIONS}
             value={filters.populationType}
             onChange={(e) =>
               setFilters({ populationType: e.target.value })
@@ -112,7 +195,7 @@ export function Step2Filters() {
           />
           <Select
             label="Study Duration"
-            options={SELECT_OPTIONS}
+            options={STUDY_DURATION_OPTIONS}
             value={filters.studyDuration}
             onChange={(e) =>
               setFilters({ studyDuration: e.target.value })
@@ -145,7 +228,7 @@ export function Step2Filters() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Select
             label="Population Type"
-            options={SELECT_OPTIONS}
+            options={COST_POPULATION_TYPE_OPTIONS}
             value={filters.costPopulationType}
             onChange={(e) =>
               setFilters({ costPopulationType: e.target.value })
@@ -153,21 +236,13 @@ export function Step2Filters() {
           />
           <Select
             label="Patient Range / Volume"
-            options={SELECT_OPTIONS}
+            options={PATIENT_RANGE_OPTIONS}
             value={filters.patientRange}
             onChange={(e) => setFilters({ patientRange: e.target.value })}
           />
           <Select
-            label="Population Type"
-            options={SELECT_OPTIONS}
-            value={filters.costPopulationTypeSecondary}
-            onChange={(e) =>
-              setFilters({ costPopulationTypeSecondary: e.target.value })
-            }
-          />
-          <Select
             label="Study Duration"
-            options={SELECT_OPTIONS}
+            options={STUDY_DURATION_OPTIONS}
             value={filters.costStudyDuration}
             onChange={(e) =>
               setFilters({ costStudyDuration: e.target.value })
@@ -226,7 +301,7 @@ export function Step2Filters() {
           <div className="w-full md:w-80">
             <Select
               label="Outcome / Evidence Focus"
-              options={SELECT_OPTIONS}
+              options={OUTCOME_EVIDENCE_FOCUS_OPTIONS}
               value={filters.outcomeEvidenceFocus}
               onChange={(e) =>
                 setFilters({ outcomeEvidenceFocus: e.target.value })
@@ -237,7 +312,7 @@ export function Step2Filters() {
           <div className="w-full md:w-80">
             <Select
               label="Geography / Regulatory Region"
-              options={SELECT_OPTIONS}
+              options={GEOGRAPHY_REGULATORY_REGION_OPTIONS}
               value={filters.geographyRegulatoryRegion}
               onChange={(e) =>
                 setFilters({ geographyRegulatoryRegion: e.target.value })
@@ -251,7 +326,7 @@ export function Step2Filters() {
           <div className="w-full md:w-80">
             <Select
               label="Evidence Quality"
-              options={SELECT_OPTIONS}
+              options={EVIDENCE_QUALITY_OPTIONS}
               value={filters.evidenceQuality}
               onChange={(e) =>
                 setFilters({ evidenceQuality: e.target.value })
@@ -265,7 +340,7 @@ export function Step2Filters() {
           <div className="w-full md:w-80">
             <Select
               label="Comparator Type"
-              options={SELECT_OPTIONS}
+              options={COMPARATOR_TYPE_OPTIONS}
               value={filters.comparatorType}
               onChange={(e) =>
                 setFilters({ comparatorType: e.target.value })

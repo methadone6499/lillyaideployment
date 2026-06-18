@@ -1,91 +1,78 @@
+import type { z } from "zod";
+import type {
+  advancedFiltersSchema,
+  articleCandidateSchema,
+  articleDiscoveryResponseSchema,
+  comparatorDiscoveryResponseSchema,
+  createReportInputSchema,
+  createReportResponseSchema,
+  drugSuggestionSchema,
+  filterStateSchema,
+  generateReportInputSchema,
+  generateReportResponseSchema,
+  generateReportSectionSchema,
+  jobStatusSchema,
+  pdfExportResponseSchema,
+  reportArtifactsSchema,
+  reportDiscoveryStateSchema,
+  reportInputsSchema,
+  reportProgressSchema,
+  reportSectionContentSchema,
+  reportSectionResponseSchema,
+  reportSelectionsSchema,
+  reportStatusResponseSchema,
+  reportStatusSchema,
+  reportStatusSectionSchema,
+  sectionStatusSchema,
+  sectionTypeSchema,
+  updateReportSelectionsInputSchema,
+  updateReportSelectionsResponseSchema,
+} from "../schemas/reportSchemas";
+
 export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type EvidenceType = "clinical" | "economic";
 
-export type ReportSectionStatus = "complete" | "running" | "in_queue";
+export type ReportStatus = z.infer<typeof reportStatusSchema>;
+export type JobStatus = z.infer<typeof jobStatusSchema>;
+export type SectionStatus = z.infer<typeof sectionStatusSchema>;
+export type SectionType = z.infer<typeof sectionTypeSchema>;
 
-export type FilterState = {
-  timeRange: string;
-  clinicalStudyTypes: string[];
-  evidenceSynthesis: string;
-  specializedTrialStructures: string;
-  populationType: string;
-  studyDuration: string;
-  economicStudyTypes: string[];
-  costPopulationType: string;
-  patientRange: string;
-  costPopulationTypeSecondary: string;
-  costStudyDuration: string;
-  averageWeight: string;
-  genderDistribution: string;
-  treatmentDuration: string;
-  dosageFrequency: string;
-  regionPricingMarket: string;
-  outcomeEvidenceFocus: string;
-  geographyRegulatoryRegion: string;
-  evidenceQuality: string;
-  comparatorType: string;
-};
+export type ArticleCandidate = z.infer<typeof articleCandidateSchema>;
+export type ArticleDiscoveryResponse = z.infer<
+  typeof articleDiscoveryResponseSchema
+>;
+export type ComparatorDiscoveryResponse = z.infer<
+  typeof comparatorDiscoveryResponseSchema
+>;
 
-export type EvidenceItem = {
-  id: string;
-  title: string;
-  year: number;
-  pmcUrl: string;
-  doiUrl: string;
-  studyDesign: string;
-  journal: string;
-  abstract: string;
-  type: EvidenceType;
-};
+export type AdvancedFilters = z.infer<typeof advancedFiltersSchema>;
+export type ReportInputs = z.infer<typeof reportInputsSchema>;
+export type CreateReportInput = z.infer<typeof createReportInputSchema>;
+export type CreateReportResponse = z.infer<typeof createReportResponseSchema>;
+export type ReportDiscoveryState = z.infer<typeof reportDiscoveryStateSchema>;
+export type ReportSelections = z.infer<typeof reportSelectionsSchema>;
 
-export type ComparatorItem = {
-  id: string;
-  name: string;
-  isCustom?: boolean;
-};
+export type UpdateReportSelectionsInput = z.infer<
+  typeof updateReportSelectionsInputSchema
+>;
+export type UpdateReportSelectionsResponse = z.infer<
+  typeof updateReportSelectionsResponseSchema
+>;
 
-export type ReportSectionDefinition = {
-  id: string;
-  title: string;
-  description: string;
-  isCustom?: boolean;
-};
+export type GenerateReportInput = z.infer<typeof generateReportInputSchema>;
+export type GenerateReportResponse = z.infer<typeof generateReportResponseSchema>;
+export type GenerateReportSection = z.infer<typeof generateReportSectionSchema>;
 
-export type GeneratedReportSection = {
-  id: string;
-  order: number;
-  title: string;
-  description: string;
-  status: ReportSectionStatus;
-  content?: ReportSectionContent;
-};
+export type ReportProgress = z.infer<typeof reportProgressSchema>;
+export type ReportStatusSection = z.infer<typeof reportStatusSectionSchema>;
+export type ReportArtifacts = z.infer<typeof reportArtifactsSchema>;
+export type ReportStatusResponse = z.infer<typeof reportStatusResponseSchema>;
 
-export type ReportSectionContent = {
-  diseaseCode?: string;
-  diseaseDefinition?: string;
-  epidemiology?: {
-    prevalence?: string;
-    incidence?: string;
-  };
-  clinicalFeatures?: string;
-  paragraphs?: Array<{ heading?: string; body: string }>;
-};
+export type ReportSectionContent = z.infer<typeof reportSectionContentSchema>;
+export type ReportSectionResponse = z.infer<typeof reportSectionResponseSchema>;
 
-export type DrugSuggestion = {
-  original: string;
-  suggestion: string | null;
-};
+export type PdfExportResponse = z.infer<typeof pdfExportResponseSchema>;
 
-export type GenerateReportResponse = {
-  jobId: string;
-  reportTitle: string;
-  generatedAt: string;
-};
-
-export type ReportJobStatus = {
-  jobId: string;
-  reportTitle: string;
-  generatedAt: string;
-  sections: GeneratedReportSection[];
-};
+export type DrugSuggestion = z.infer<typeof drugSuggestionSchema>;
+export type FilterState = z.infer<typeof filterStateSchema>;

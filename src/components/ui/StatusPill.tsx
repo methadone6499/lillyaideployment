@@ -1,6 +1,10 @@
 import { cn } from "@/lib/cn";
 
-export type ReportSectionStatus = "complete" | "running" | "in_queue";
+export type ReportSectionStatus =
+  | "complete"
+  | "running"
+  | "in_queue"
+  | "failed";
 
 type StatusPillProps = {
   status: ReportSectionStatus;
@@ -14,6 +18,7 @@ const statusConfig: Record<
   complete: { label: "Complete", className: "text-status-success" },
   running: { label: "Running", className: "text-status-running" },
   in_queue: { label: "In Queue", className: "text-status-in-queue" },
+  failed: { label: "Failed", className: "text-red-400" },
 };
 
 export function StatusPill({ status, className }: StatusPillProps) {
