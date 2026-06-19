@@ -32,7 +32,7 @@ export const sectionTypeSchema = z.enum([
   "drug",
   "hta",
   "comparator",
-  "appraisal",
+  "environmental",
   "discussion",
   "compliance",
   "executive",

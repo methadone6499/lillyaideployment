@@ -15,19 +15,13 @@ import {
 } from "../../api/reportApi";
 import { reportQueryKeys } from "../../api/reportQueryKeys";
 import {
-  ENVIRONMENTAL_SECTION_STUB_MARKDOWN,
-} from "../../constants/reportSections";
-import {
   useGenerateReportMutation,
   useReportStatus,
 } from "../../hooks/useGenerateReport";
 import { clearAllReportQueries } from "../../store/reportWizardSession";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 import type { ReportStatusSection, WizardSectionId } from "../../types";
-import {
-  getReportSectionDefinition,
-  isApiSectionType,
-} from "../../utils/sectionOrdering";
+import { getReportSectionDefinition } from "../../utils/sectionOrdering";
 import {
   getSectionAccordionKey,
   ReportSectionAccordion,
@@ -66,32 +60,6 @@ function buildSectionItems(
   const items: ReportSectionAccordionItem[] = [];
 
   selectedSectionIds.forEach((sectionId, index) => {
-    if (sectionId === "environmental") {
-      const definition = getReportSectionDefinition("environmental");
-
-      items.push({
-        section: {
-          section_type: "disease",
-          status: "completed",
-          display_name: definition?.title,
-        },
-        order: index + 1,
-        title: definition?.title ?? "Environmental Analysis",
-        description: definition?.description ?? "",
-        accordionKey: "environmental",
-        localContent: {
-          blocks: [
-            { type: "markdown", text: ENVIRONMENTAL_SECTION_STUB_MARKDOWN },
-          ],
-        },
-      });
-      return;
-    }
-
-    if (!isApiSectionType(sectionId)) {
-      return;
-    }
-
     const section = sectionsByType.get(sectionId);
     if (!section) {
       return;

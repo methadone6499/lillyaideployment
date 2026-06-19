@@ -4,17 +4,13 @@ import {
 } from "../constants/reportSections";
 import type { SectionType, WizardSectionId } from "../types";
 
-export const FRONTEND_ONLY_WIZARD_SECTION_IDS = ["environmental"] as const;
-
-export type FrontendOnlyWizardSectionId =
-  (typeof FRONTEND_ONLY_WIZARD_SECTION_IDS)[number];
-
 const LEGACY_WIZARD_SECTION_ID_MAP: Record<string, WizardSectionId> = {
   "disease-overview": "disease",
   "drug-overview": "drug",
   "clinical-evidence": "clinical",
   "economic-evidence": "economic",
   "competitor-analysis": "comparator",
+  "environmental-analysis": "environmental",
   "hta-summary": "hta",
   "executive-summary": "executive",
 };
@@ -32,16 +28,6 @@ export function getReportSectionDefinition(sectionId: WizardSectionId) {
 
 export function isWizardSectionId(id: string): id is WizardSectionId {
   return wizardSectionIdSet.has(id);
-}
-
-export function isFrontendOnlyWizardSectionId(
-  id: WizardSectionId,
-): id is FrontendOnlyWizardSectionId {
-  return (FRONTEND_ONLY_WIZARD_SECTION_IDS as readonly string[]).includes(id);
-}
-
-export function isApiSectionType(id: WizardSectionId): id is SectionType {
-  return !isFrontendOnlyWizardSectionId(id);
 }
 
 /** Reorder selected IDs to match Step 5 definition order. */
@@ -63,11 +49,11 @@ export function normalizeWizardSectionIds(
   return orderWizardSectionIds([...new Set(mapped)]);
 }
 
-/** Keep only backend API section types, preserving Step 5 definition order. */
+/** Backend section types to send, preserving Step 5 definition order. */
 export function filterApiSectionIds(
   ids: readonly WizardSectionId[],
 ): SectionType[] {
-  return orderWizardSectionIds(ids).filter(isApiSectionType);
+  return orderWizardSectionIds(ids);
 }
 
 export type SectionSelectionInputs = {

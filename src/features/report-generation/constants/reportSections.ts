@@ -33,7 +33,7 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
   },
   {
     id: "comparator",
-    title: "Comparator Analysis",
+    title: "Competitor Analysis",
     description:
       "Head-to-head and indirect comparisons against selected standard-of-care agents.",
   },
@@ -48,12 +48,6 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
     title: "HTA Summary",
     description:
       "Health technology assessment findings and reimbursement considerations.",
-  },
-  {
-    id: "appraisal",
-    title: "Critical Appraisal",
-    description:
-      "Evidence quality scoring using GRADE, CASP, and Drummond frameworks.",
   },
   {
     id: "discussion",
@@ -75,14 +69,11 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
   },
 ];
 
-export const ENVIRONMENTAL_SECTION_STUB_MARKDOWN =
-  "Nothing was found for this section.";
-
-/** All Step 5 section IDs in display order, including frontend-only sections. */
+/** All Step 5 section IDs in display order. */
 export const ALL_WIZARD_SECTION_IDS: WizardSectionId[] =
   REPORT_SECTION_DEFINITIONS.map((section) => section.id);
 
-/** Default API-backed section IDs (excludes frontend-only sections). */
+/** Default section IDs — all sections except environmental (opt-in on Step 5). */
 export const DEFAULT_SECTION_IDS: SectionType[] = ALL_WIZARD_SECTION_IDS.filter(
-  (id): id is SectionType => id !== "environmental",
+  (id) => id !== "environmental",
 );

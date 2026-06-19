@@ -37,8 +37,7 @@ export function ReportSectionAccordion({
   expanded,
   onToggle,
 }: ReportSectionAccordionProps) {
-  const { section, order, title, description, pendingContext, localContent } =
-    item;
+  const { section, order, title, description, localContent } = item;
   const isLocalSection = localContent !== undefined;
   const isComplete = section.status === "completed";
   const isPartiallyComplete = section.status === "partially_completed";
@@ -109,11 +108,6 @@ export function ReportSectionAccordion({
 
       {expanded && canExpand && (
         <div className="border-t border-border-default px-8 pb-10 pt-8">
-          {pendingContext && pendingContext.length > 0 && (
-            <div className="mb-6 rounded-card border border-amber-400/30 bg-amber-400/10 px-6 py-4 text-body-lg text-amber-300">
-              Evidence appraisal will be added when the report completes.
-            </div>
-          )}
           {isContentLoading && (
             <p className="text-body-lg text-text-muted">Loading section…</p>
           )}

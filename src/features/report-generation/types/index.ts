@@ -47,8 +47,8 @@ export type JobStatus = z.infer<typeof jobStatusSchema>;
 export type SectionStatus = z.infer<typeof sectionStatusSchema>;
 export type SectionType = z.infer<typeof sectionTypeSchema>;
 
-/** Step 5 / wizard section IDs, including frontend-only sections not sent to the API. */
-export type WizardSectionId = SectionType | "environmental";
+/** Step 5 / wizard section IDs — aligned with backend section types. */
+export type WizardSectionId = SectionType;
 
 export type ArticleCandidate = z.infer<typeof articleCandidateSchema>;
 export type ArticleDiscoveryResponse = z.infer<
