@@ -122,10 +122,51 @@ const COMPARATOR_TYPE_OPTIONS = [
   { value: "no-comparator", label: "No Comparator" },
 ];
 
-const SELECT_OPTIONS = [
-  { value: "Meta-Analysis", label: "Meta-Analysis" },
-  { value: "option-2", label: "Option 2" },
-  { value: "option-3", label: "Option 3" },
+const AVERAGE_WEIGHT_OPTIONS = [
+  { value: "under-50kg", label: "< 50 kg" },
+  { value: "50-70kg", label: "50–70 kg" },
+  { value: "70-90kg", label: "70–90 kg" },
+  { value: "90-110kg", label: "90–110 kg" },
+  { value: "over-110kg", label: "> 110 kg" },
+];
+
+const GENDER_DISTRIBUTION_OPTIONS = [
+  { value: "mostly-male", label: "Mostly Male (>70%)" },
+  { value: "male-majority", label: "Male Majority (50–70%)" },
+  { value: "balanced", label: "Balanced Distribution" },
+  { value: "female-majority", label: "Female Majority (50–70%)" },
+  { value: "mostly-female", label: "Mostly Female (>70%)" },
+];
+
+const TREATMENT_DURATION_OPTIONS = [
+  { value: "acute", label: "Acute (<30 days)" },
+  { value: "short-term", label: "Short-Term (1–6 months)" },
+  { value: "medium-term", label: "Medium-Term (6–12 months)" },
+  { value: "long-term", label: "Long-Term (1–3 years)" },
+  { value: "chronic", label: "Chronic (>3 years)" },
+];
+
+const DOSAGE_FREQUENCY_OPTIONS = [
+  { value: "once-daily", label: "Once Daily" },
+  { value: "twice-daily", label: "Twice Daily" },
+  { value: "three-times-daily", label: "Three Times Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "as-needed", label: "As Needed (PRN)" },
+];
+
+const REGION_PRICING_MARKET_OPTIONS = [
+  { value: "gcc", label: "GCC" },
+  { value: "saudi-arabia", label: "Saudi Arabia" },
+  { value: "uae", label: "United Arab Emirates" },
+  { value: "qatar", label: "Qatar" },
+  { value: "kuwait", label: "Kuwait" },
+  { value: "oman", label: "Oman" },
+  { value: "bahrain", label: "Bahrain" },
+  { value: "middle-east", label: "Middle East" },
+  { value: "europe", label: "Europe" },
+  { value: "north-america", label: "North America" },
+  { value: "global", label: "Global" },
 ];
 
 export function Step2Filters() {
@@ -258,13 +299,13 @@ export function Step2Filters() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
           <Select
             label="Average Weight"
-            options={SELECT_OPTIONS}
+            options={AVERAGE_WEIGHT_OPTIONS}
             value={filters.averageWeight}
             onChange={(e) => setFilters({ averageWeight: e.target.value })}
           />
           <Select
             label="Gender Distribution"
-            options={SELECT_OPTIONS}
+            options={GENDER_DISTRIBUTION_OPTIONS}
             value={filters.genderDistribution}
             onChange={(e) =>
               setFilters({ genderDistribution: e.target.value })
@@ -272,7 +313,7 @@ export function Step2Filters() {
           />
           <Select
             label="Treatment Duration"
-            options={SELECT_OPTIONS}
+            options={TREATMENT_DURATION_OPTIONS}
             value={filters.treatmentDuration}
             onChange={(e) =>
               setFilters({ treatmentDuration: e.target.value })
@@ -280,7 +321,7 @@ export function Step2Filters() {
           />
           <Select
             label="Dosage Frequency"
-            options={SELECT_OPTIONS}
+            options={DOSAGE_FREQUENCY_OPTIONS}
             value={filters.dosageFrequency}
             onChange={(e) =>
               setFilters({ dosageFrequency: e.target.value })
@@ -288,7 +329,7 @@ export function Step2Filters() {
           />
           <Select
             label="Region / Pricing Market"
-            options={SELECT_OPTIONS}
+            options={REGION_PRICING_MARKET_OPTIONS}
             value={filters.regionPricingMarket}
             onChange={(e) =>
               setFilters({ regionPricingMarket: e.target.value })
@@ -342,6 +383,7 @@ export function Step2Filters() {
               label="Comparator Type"
               options={COMPARATOR_TYPE_OPTIONS}
               value={filters.comparatorType}
+              menuPlacement="top"
               onChange={(e) =>
                 setFilters({ comparatorType: e.target.value })
               }

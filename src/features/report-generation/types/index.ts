@@ -3,15 +3,22 @@ import type {
   advancedFiltersSchema,
   articleCandidateSchema,
   articleDiscoveryResponseSchema,
+  blockSchema,
+  calloutBlockSchema,
   comparatorDiscoveryResponseSchema,
   createReportInputSchema,
   createReportResponseSchema,
-  drugSuggestionSchema,
+  definitionBlockSchema,
+  drugValidationResponseSchema,
   filterStateSchema,
   generateReportInputSchema,
   generateReportResponseSchema,
   generateReportSectionSchema,
+  headingBlockSchema,
   jobStatusSchema,
+  listBlockSchema,
+  markdownBlockSchema,
+  paragraphBlockSchema,
   pdfExportResponseSchema,
   reportArtifactsSchema,
   reportDiscoveryStateSchema,
@@ -23,8 +30,10 @@ import type {
   reportStatusResponseSchema,
   reportStatusSchema,
   reportStatusSectionSchema,
+  sectionBlockSchema,
   sectionStatusSchema,
   sectionTypeSchema,
+  tableBlockSchema,
   updateReportSelectionsInputSchema,
   updateReportSelectionsResponseSchema,
 } from "../schemas/reportSchemas";
@@ -37,6 +46,9 @@ export type ReportStatus = z.infer<typeof reportStatusSchema>;
 export type JobStatus = z.infer<typeof jobStatusSchema>;
 export type SectionStatus = z.infer<typeof sectionStatusSchema>;
 export type SectionType = z.infer<typeof sectionTypeSchema>;
+
+/** Step 5 / wizard section IDs, including frontend-only sections not sent to the API. */
+export type WizardSectionId = SectionType | "environmental";
 
 export type ArticleCandidate = z.infer<typeof articleCandidateSchema>;
 export type ArticleDiscoveryResponse = z.infer<
@@ -69,10 +81,19 @@ export type ReportStatusSection = z.infer<typeof reportStatusSectionSchema>;
 export type ReportArtifacts = z.infer<typeof reportArtifactsSchema>;
 export type ReportStatusResponse = z.infer<typeof reportStatusResponseSchema>;
 
+export type Block = z.infer<typeof blockSchema>;
+export type HeadingBlock = z.infer<typeof headingBlockSchema>;
+export type ParagraphBlock = z.infer<typeof paragraphBlockSchema>;
+export type TableBlock = z.infer<typeof tableBlockSchema>;
+export type DefinitionBlock = z.infer<typeof definitionBlockSchema>;
+export type ListBlock = z.infer<typeof listBlockSchema>;
+export type SectionBlock = z.infer<typeof sectionBlockSchema>;
+export type CalloutBlock = z.infer<typeof calloutBlockSchema>;
+export type MarkdownBlock = z.infer<typeof markdownBlockSchema>;
 export type ReportSectionContent = z.infer<typeof reportSectionContentSchema>;
 export type ReportSectionResponse = z.infer<typeof reportSectionResponseSchema>;
 
 export type PdfExportResponse = z.infer<typeof pdfExportResponseSchema>;
 
-export type DrugSuggestion = z.infer<typeof drugSuggestionSchema>;
+export type DrugValidationResponse = z.infer<typeof drugValidationResponseSchema>;
 export type FilterState = z.infer<typeof filterStateSchema>;

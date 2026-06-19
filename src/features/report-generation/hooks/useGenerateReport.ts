@@ -61,6 +61,7 @@ export function useReportSection(
     queryKey: reportQueryKeys.section(reportId ?? "", sectionId ?? ""),
     queryFn: () => fetchReportSection(reportId!, sectionId!),
     enabled: Boolean(reportId && sectionId && enabled),
+    staleTime: 0,
     retry: (failureCount, error) => {
       if (error instanceof ReportApiError && error.status === 409) {
         return false;

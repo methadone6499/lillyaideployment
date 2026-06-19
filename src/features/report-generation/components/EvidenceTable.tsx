@@ -27,9 +27,7 @@ export function EvidenceTable({
   onToggle,
   onSelectAll,
 }: EvidenceTableProps) {
-  const [expandedKey, setExpandedKey] = useState<string | null>(
-    items[0] ? getRowKey(items[0]) : null,
-  );
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const selectableItems = items.filter(
     (item): item is ArticleCandidate & { pmcid: string } =>

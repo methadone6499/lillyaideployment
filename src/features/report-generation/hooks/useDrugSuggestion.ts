@@ -1,13 +1,23 @@
 "use client";
 
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDrugSuggestion } from "../api/reportApi";
+import { validateDrug } from "../api/reportApi";
+import { reportQueryKeys } from "../api/reportQueryKeys";
 
-export function useDrugSuggestion(drugName: string) {
+export function useDrugSuggestion(drugName: string, disease = "") {
+  const debouncedDrug = useDebouncedValue(drugName.trim(), 400);
+  const debouncedDisease = useDebouncedValue(disease.trim(), 400);
+
   return useQuery({
-    queryKey: ["drug-suggestion", drugName],
-    queryFn: () => fetchDrugSuggestion(drugName),
-    enabled: drugName.trim().length >= 3,
+    queryKey: reportQueryKeys.drugValidation(debouncedDrug, debouncedDisease),
+    queryFn: () =>
+      validateDrug({
+        drug: debouncedDrug,
+        ...(debouncedDisease ? { disease: debouncedDisease } : {}),
+      }),
+    enabled: debouncedDrug.length >= 3,
     staleTime: 30_000,
+    placeholderData: (previousData) => previousData,
   });
 }

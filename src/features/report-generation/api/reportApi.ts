@@ -2,7 +2,7 @@ import {
   articleDiscoveryResponseSchema,
   comparatorDiscoveryResponseSchema,
   createReportResponseSchema,
-  drugSuggestionSchema,
+  drugValidationResponseSchema,
   generateReportResponseSchema,
   pdfExportResponseSchema,
   reportSectionResponseSchema,
@@ -16,22 +16,25 @@ import type {
   UpdateReportSelectionsInput,
   UpdateReportSelectionsResponse,
 } from "../types";
-import { reportFetch } from "./reportFetch";
+import { ReportApiError, reportFetch } from "./reportFetch";
+
+const PDF_POLL_INTERVAL_MS = 2_000;
+const PDF_MAX_ATTEMPTS = 30;
 
 export { ReportApiError } from "./reportFetch";
 export { clearAuthToken, getAuthToken, setAuthToken } from "./reportAuth";
 
-const DRUG_SUGGESTIONS: Record<string, string> = {
-  panedol: "Panadol",
-  panadol: "Panadol",
-};
+export async function validateDrug(input: { drug: string; disease?: string }) {
+  const body: { drug: string; disease?: string } = { drug: input.drug };
+  if (input.disease) {
+    body.disease = input.disease;
+  }
 
-export async function fetchDrugSuggestion(
-  drugName: string,
-): Promise<{ original: string; suggestion: string | null }> {
-  const normalized = drugName.trim().toLowerCase();
-  const suggestion = DRUG_SUGGESTIONS[normalized] ?? null;
-  return drugSuggestionSchema.parse({ original: drugName, suggestion });
+  return reportFetch("/drugs/validate", {
+    method: "POST",
+    body,
+    schema: drugValidationResponseSchema,
+  });
 }
 
 export async function createReport(input: CreateReportInput) {
@@ -108,4 +111,27 @@ export async function downloadPdf(reportId: string): Promise<Blob> {
   return reportFetch(`/reports/${reportId}/export/pdf`, {
     responseType: "blob",
   });
+}
+
+export async function downloadPdfWhenReady(reportId: string): Promise<Blob> {
+  for (let attempt = 0; attempt < PDF_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await downloadPdf(reportId);
+    } catch (error) {
+      if (
+        error instanceof ReportApiError &&
+        error.status === 404 &&
+        attempt < PDF_MAX_ATTEMPTS - 1
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, PDF_POLL_INTERVAL_MS));
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw new ReportApiError(
+    408,
+    "PDF is still being prepared. Please try again.",
+  );
 }

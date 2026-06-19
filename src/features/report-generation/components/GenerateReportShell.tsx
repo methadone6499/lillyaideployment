@@ -21,6 +21,7 @@ import {
 } from "../store/reportWizardSession";
 import { useReportWizardStore } from "../store/useReportWizardStore";
 import { mapFiltersToBackend } from "../utils/mapFiltersToBackend";
+import { filterApiSectionIds } from "../utils/sectionOrdering";
 import { ReportResults } from "./results/ReportResults";
 import { Stepper } from "./Stepper";
 import { Step1DrugIntake } from "./steps/Step1DrugIntake";
@@ -106,6 +107,10 @@ export function GenerateReportShell() {
     syncWizardWithAuthSession(queryClient);
   }, [queryClient]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [currentStep]);
+
   const handleBack = () => {
     const nextStepNumber = currentStep - 1;
 
@@ -189,7 +194,7 @@ export function GenerateReportShell() {
             custom_comparators: customComparators,
             clinical_pmcids: selectedClinicalPmcids,
             economic_pmcids: selectedEconomicPmcids,
-            section_types: selectedSectionIds,
+            section_types: filterApiSectionIds(selectedSectionIds),
           },
         });
       } catch (error) {

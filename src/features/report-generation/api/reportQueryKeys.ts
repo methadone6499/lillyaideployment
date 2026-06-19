@@ -1,5 +1,7 @@
 export const reportQueryKeys = {
   root: ["report"] as const,
+  drugValidation: (drug: string, disease: string) =>
+    ["drug-validation", drug, disease] as const,
   byReport: (reportId: string) => ["report", reportId] as const,
   clinicalArticles: (reportId: string) =>
     ["report", reportId, "clinical-articles"] as const,

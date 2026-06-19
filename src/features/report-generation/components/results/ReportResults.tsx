@@ -7,17 +7,27 @@ import {
   PlusIcon,
 } from "@/components/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { downloadPdf, queuePdfExport, ReportApiError } from "../../api/reportApi";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  downloadPdfWhenReady,
+  queuePdfExport,
+  ReportApiError,
+} from "../../api/reportApi";
 import { reportQueryKeys } from "../../api/reportQueryKeys";
-import { REPORT_SECTION_DEFINITIONS } from "../../constants/reportSections";
+import {
+  ENVIRONMENTAL_SECTION_STUB_MARKDOWN,
+} from "../../constants/reportSections";
 import {
   useGenerateReportMutation,
   useReportStatus,
 } from "../../hooks/useGenerateReport";
 import { clearAllReportQueries } from "../../store/reportWizardSession";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
-import type { ReportStatusSection, SectionType } from "../../types";
+import type { ReportStatusSection, WizardSectionId } from "../../types";
+import {
+  getReportSectionDefinition,
+  isApiSectionType,
+} from "../../utils/sectionOrdering";
 import {
   getSectionAccordionKey,
   ReportSectionAccordion,
@@ -47,32 +57,59 @@ function buildReportTitle(drugName: string, indications: string): string {
 
 function buildSectionItems(
   statusSections: ReportStatusSection[],
-  selectedSectionIds: SectionType[],
+  selectedSectionIds: WizardSectionId[],
 ): ReportSectionAccordionItem[] {
   const sectionsByType = new Map(
     statusSections.map((section) => [section.section_type, section]),
   );
 
-  return selectedSectionIds.flatMap((sectionType, index) => {
-    const section = sectionsByType.get(sectionType);
-    if (!section) {
-      return [];
+  const items: ReportSectionAccordionItem[] = [];
+
+  selectedSectionIds.forEach((sectionId, index) => {
+    if (sectionId === "environmental") {
+      const definition = getReportSectionDefinition("environmental");
+
+      items.push({
+        section: {
+          section_type: "disease",
+          status: "completed",
+          display_name: definition?.title,
+        },
+        order: index + 1,
+        title: definition?.title ?? "Environmental Analysis",
+        description: definition?.description ?? "",
+        accordionKey: "environmental",
+        localContent: {
+          blocks: [
+            { type: "markdown", text: ENVIRONMENTAL_SECTION_STUB_MARKDOWN },
+          ],
+        },
+      });
+      return;
     }
 
-    const definition = REPORT_SECTION_DEFINITIONS.find(
-      (item) => item.id === sectionType,
-    );
+    if (!isApiSectionType(sectionId)) {
+      return;
+    }
 
-    return [
-      {
-        section,
-        order: index + 1,
-        title: section.display_name ?? definition?.title ?? sectionType,
-        description: definition?.description ?? "",
-        accordionKey: getSectionAccordionKey(section, sectionType),
-      },
-    ];
+    const section = sectionsByType.get(sectionId);
+    if (!section) {
+      return;
+    }
+
+    const definition = getReportSectionDefinition(sectionId);
+
+    items.push({
+      section,
+      order: index + 1,
+      title: section.display_name ?? definition?.title ?? sectionId,
+      description: definition?.description ?? "",
+      accordionKey: getSectionAccordionKey(section, sectionId),
+      pendingContext: section.pending_context,
+    });
   });
+
+  return items;
 }
 
 export function ReportResults() {
@@ -90,19 +127,21 @@ export function ReportResults() {
   const retryMutation = useGenerateReportMutation();
 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const scrollCompensationRef = useRef<{
+    element: HTMLDivElement;
+    topBefore: number;
+  } | null>(null);
   const [retryError, setRetryError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const pdfQueuedRef = useRef<string | null>(null);
 
   const sections = reportStatus?.sections;
 
-  const sectionItems = useMemo(() => {
-    if (!sections) {
-      return [];
-    }
-
-    return buildSectionItems(sections, selectedSectionIds);
-  }, [sections, selectedSectionIds]);
+  const sectionItems = useMemo(
+    () => buildSectionItems(sections ?? [], selectedSectionIds),
+    [sections, selectedSectionIds],
+  );
 
   const reportTitle = buildReportTitle(drugName, indications);
   const isCompleted = reportStatus?.report_status === "completed";
@@ -111,6 +150,65 @@ export function ReportResults() {
     Boolean(reportStatus) &&
     !isCompleted &&
     !isFailed;
+
+  useLayoutEffect(() => {
+    const pending = scrollCompensationRef.current;
+    if (!pending) {
+      return;
+    }
+
+    const { element, topBefore } = pending;
+    const topAfter = element.getBoundingClientRect().top;
+    const delta = topAfter - topBefore;
+
+    if (Math.abs(delta) > 0.5) {
+      window.scrollBy({ top: delta, behavior: "instant" });
+    }
+
+    scrollCompensationRef.current = null;
+  }, [expandedKey]);
+
+  const handleSectionToggle = (
+    accordionKey: string,
+    element: HTMLDivElement,
+  ) => {
+    const isSwitching =
+      expandedKey !== null && expandedKey !== accordionKey;
+
+    if (isSwitching) {
+      scrollCompensationRef.current = {
+        element,
+        topBefore: element.getBoundingClientRect().top,
+      };
+    }
+
+    setExpandedKey(expandedKey === accordionKey ? null : accordionKey);
+  };
+
+  useEffect(() => {
+    if (!isCompleted || !reportId || !sections) return;
+    sections
+      .filter((s) => s.status === "partially_completed" && s.section_id)
+      .forEach((s) =>
+        queryClient.invalidateQueries({
+          queryKey: reportQueryKeys.section(reportId, s.section_id!),
+        }),
+      );
+    // Intentionally keyed on completion transition only — sections at that moment
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [isCompleted]);
+
+  useEffect(() => {
+    if (!isCompleted || !reportId) return;
+    if (pdfQueuedRef.current === reportId) return;
+
+    pdfQueuedRef.current = reportId;
+
+    queuePdfExport(reportId).catch((queueFailure) => {
+      pdfQueuedRef.current = null;
+      setExportError(getErrorMessage(queueFailure));
+    });
+  }, [isCompleted, reportId]);
 
   const subtitle = isCompleted
     ? `Evidence Report - Generated on ${new Date().toLocaleDateString()}`
@@ -124,6 +222,7 @@ export function ReportResults() {
     }
 
     setRetryError(null);
+    pdfQueuedRef.current = null;
 
     try {
       const result = await retryMutation.mutateAsync({
@@ -151,8 +250,7 @@ export function ReportResults() {
     setIsExporting(true);
 
     try {
-      await queuePdfExport(reportId);
-      const blob = await downloadPdf(reportId);
+      const blob = await downloadPdfWhenReady(reportId);
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       const safeDrugName = drugName.trim().replace(/\s+/g, "_") || "report";
@@ -254,10 +352,8 @@ export function ReportResults() {
               reportId={reportId}
               item={item}
               expanded={expandedKey === item.accordionKey}
-              onToggle={() =>
-                setExpandedKey(
-                  expandedKey === item.accordionKey ? null : item.accordionKey,
-                )
+              onToggle={(element) =>
+                handleSectionToggle(item.accordionKey, element)
               }
             />
           ))

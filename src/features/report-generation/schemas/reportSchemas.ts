@@ -5,6 +5,7 @@ export const reportStatusSchema = z.enum([
   "ready",
   "queued",
   "processing",
+  "generating",
   "completed",
   "failed",
 ]);
@@ -18,11 +19,10 @@ export const jobStatusSchema = z.enum([
 
 export const sectionStatusSchema = z.enum([
   "pending",
-  "queued",
-  "processing",
+  "running",
+  "partially_completed",
   "completed",
   "failed",
-  "blocked",
 ]);
 
 export const sectionTypeSchema = z.enum([
@@ -160,6 +160,7 @@ export const reportStatusSectionSchema = z.object({
   section_id: z.string().optional(),
   display_name: z.string().optional(),
   error: z.string().nullable().optional(),
+  pending_context: z.array(z.string()).optional(),
 });
 
 export const reportArtifactsSchema = z.object({
@@ -179,7 +180,92 @@ export const reportStatusResponseSchema = z.object({
   active_job_id: z.string().optional(),
 });
 
-export const reportSectionContentSchema = z.unknown();
+export const headingBlockSchema = z.object({
+  type: z.literal("heading"),
+  level: z.number(),
+  text: z.string(),
+});
+
+export const paragraphBlockSchema = z.object({
+  type: z.literal("paragraph"),
+  label: z.string().optional(),
+  label_bold: z.boolean().optional(),
+  text: z.string(),
+});
+
+export const tableBlockSchema = z.object({
+  type: z.literal("table"),
+  columns: z.array(z.string()),
+  rows: z.array(z.array(z.string())),
+});
+
+export const definitionBlockSchema = z.object({
+  type: z.literal("definition"),
+  label: z.string(),
+  value: z.string(),
+});
+
+export const listBlockSchema = z.object({
+  type: z.literal("list"),
+  label: z.string().optional(),
+  items: z.array(z.string()),
+});
+
+export const calloutBlockSchema = z.object({
+  type: z.literal("callout"),
+  level: z.enum(["info", "warning"]),
+  text: z.string(),
+});
+
+export const markdownBlockSchema = z.object({
+  type: z.literal("markdown"),
+  text: z.string(),
+});
+
+export type Block =
+  | z.infer<typeof headingBlockSchema>
+  | z.infer<typeof paragraphBlockSchema>
+  | z.infer<typeof tableBlockSchema>
+  | z.infer<typeof definitionBlockSchema>
+  | z.infer<typeof listBlockSchema>
+  | z.infer<typeof calloutBlockSchema>
+  | z.infer<typeof markdownBlockSchema>
+  | {
+      type: "section";
+      heading: string;
+      level: number;
+      blocks: Block[];
+    };
+
+export const blockSchema: z.ZodType<Block> = z.lazy(() =>
+  z.discriminatedUnion("type", [
+    headingBlockSchema,
+    paragraphBlockSchema,
+    tableBlockSchema,
+    definitionBlockSchema,
+    listBlockSchema,
+    calloutBlockSchema,
+    markdownBlockSchema,
+    z.object({
+      type: z.literal("section"),
+      heading: z.string(),
+      level: z.number(),
+      blocks: z.array(blockSchema),
+    }),
+  ]),
+);
+
+export const sectionBlockSchema = z.object({
+  type: z.literal("section"),
+  heading: z.string(),
+  level: z.number(),
+  blocks: z.array(blockSchema),
+});
+
+export const reportSectionContentSchema = z.object({
+  raw: z.unknown().optional(),
+  blocks: z.array(blockSchema),
+});
 
 export const reportSectionResponseSchema = z.object({
   section_id: z.string(),
@@ -192,13 +278,16 @@ export const reportSectionResponseSchema = z.object({
 export const pdfExportResponseSchema = z.object({
   report_id: z.string(),
   status: z
-    .enum(["queued", "processing", "completed", "failed"])
+    .enum(["queued", "processing", "completed", "failed", "ready"])
     .optional(),
+  pdf_path: z.string().nullable().optional(),
+  celery_task_id: z.string().nullable().optional(),
   message: z.string().optional(),
 });
 
-export const drugSuggestionSchema = z.object({
-  original: z.string(),
+export const drugValidationResponseSchema = z.object({
+  input: z.string(),
+  accepted: z.boolean(),
   suggestion: z.string().nullable(),
 });
 

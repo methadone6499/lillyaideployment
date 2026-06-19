@@ -6,12 +6,11 @@ export function mapSectionStatusToPill(
 ): ReportSectionStatus {
   switch (status) {
     case "completed":
+    case "partially_completed":
       return "complete";
-    case "processing":
+    case "running":
       return "running";
-    case "queued":
     case "pending":
-    case "blocked":
       return "in_queue";
     case "failed":
       return "failed";

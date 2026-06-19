@@ -19,6 +19,7 @@ type SelectProps = Omit<
   options: SelectOption[];
   placeholder?: string;
   containerClassName?: string;
+  menuPlacement?: "top" | "bottom";
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
 };
 
@@ -29,6 +30,7 @@ export function Select({
   placeholder = "Select an Option",
   className,
   containerClassName,
+  menuPlacement = "bottom",
   value = "",
   onChange,
   disabled,
@@ -123,7 +125,12 @@ export function Select({
             id={listboxId}
             role="listbox"
             aria-labelledby={label ? `${id}-label` : id}
-            className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-card border border-border-default bg-input-fill"
+            className={cn(
+              "absolute left-0 right-0 z-50 overflow-hidden rounded-card border border-border-default bg-input-fill",
+              menuPlacement === "top"
+                ? "bottom-full mb-1"
+                : "top-full mt-1",
+            )}
           >
             {options.map((option, index) => (
               <li

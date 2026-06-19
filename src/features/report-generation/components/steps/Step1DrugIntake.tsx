@@ -10,11 +10,12 @@ export function Step1DrugIntake() {
   const setDrugName = useReportWizardStore((s) => s.setDrugName);
   const setIndications = useReportWizardStore((s) => s.setIndications);
 
-  const { data: suggestion } = useDrugSuggestion(drugName);
+  const { data: validation } = useDrugSuggestion(drugName, indications);
 
   const showSuggestion =
-    suggestion?.suggestion &&
-    suggestion.suggestion.toLowerCase() !== drugName.trim().toLowerCase();
+    validation &&
+    !validation.accepted &&
+    validation.suggestion !== null;
 
   return (
     <Card variant="default" className="w-full max-w-[744px] p-6">
@@ -31,9 +32,9 @@ export function Step1DrugIntake() {
             Do you mean{" "}
             <TextLink
               className="text-input"
-              onClick={() => setDrugName(suggestion.suggestion!)}
+              onClick={() => setDrugName(validation.suggestion!)}
             >
-              {suggestion.suggestion}
+              {validation.suggestion}
             </TextLink>
             ?
           </p>

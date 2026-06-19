@@ -3,7 +3,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DEFAULT_SECTION_IDS } from "../constants/reportSections";
-import type { FilterState, SectionType, WizardStep } from "../types";
+import type { FilterState, WizardSectionId, WizardStep } from "../types";
+import {
+  getDefaultSelectedSectionIds,
+  isSectionAvailable,
+  normalizeWizardSectionIds,
+  orderWizardSectionIds,
+  reconcileSelectedSectionIdsWithInputs,
+  syncSelectedSectionIdsOnInputChange,
+  type SectionSelectionInputs,
+} from "../utils/sectionOrdering";
 
 export { DEFAULT_SECTION_IDS };
 
@@ -35,16 +44,6 @@ export const DEFAULT_FILTERS: FilterState = {
   comparatorType: "",
 };
 
-const LEGACY_SECTION_ID_MAP: Record<string, SectionType> = {
-  "disease-overview": "disease",
-  "drug-overview": "drug",
-  "clinical-evidence": "clinical",
-  "economic-evidence": "economic",
-  "competitor-analysis": "comparator",
-  "hta-summary": "hta",
-  "executive-summary": "executive",
-};
-
 type PersistedWizardState = {
   currentStep?: WizardStep;
   drugName?: string;
@@ -73,7 +72,7 @@ type ReportWizardState = {
   selectedEconomicPmcids: string[];
   selectedComparators: string[];
   customComparators: string[];
-  selectedSectionIds: SectionType[];
+  selectedSectionIds: WizardSectionId[];
   customSections: string[];
   generationJobId: string | null;
   userId: string | null;
@@ -92,13 +91,20 @@ type ReportWizardState = {
   toggleEconomicPmcid: (pmcid: string) => void;
   toggleComparator: (name: string) => void;
   addCustomComparator: (name: string) => void;
-  toggleSectionId: (id: SectionType) => void;
-  selectAllSections: (ids: SectionType[]) => void;
+  toggleSectionId: (id: WizardSectionId) => void;
+  selectAllSections: (ids: WizardSectionId[]) => void;
   deselectAllSections: () => void;
+  reconcileSectionsAtStep5: () => void;
   setGenerationJobId: (jobId: string | null) => void;
   setUserId: (userId: string | null) => void;
   resetReportPipeline: () => void;
   resetWizard: () => void;
+};
+
+const emptySectionInputs: SectionSelectionInputs = {
+  selectedClinicalPmcids: [],
+  selectedEconomicPmcids: [],
+  selectedComparators: [],
 };
 
 const initialState = {
@@ -111,7 +117,7 @@ const initialState = {
   selectedEconomicPmcids: [] as string[],
   selectedComparators: [] as string[],
   customComparators: [] as string[],
-  selectedSectionIds: [...DEFAULT_SECTION_IDS],
+  selectedSectionIds: getDefaultSelectedSectionIds(emptySectionInputs),
   customSections: [] as string[],
   generationJobId: null as string | null,
   userId: null as string | null,
@@ -126,16 +132,55 @@ const reportPipelineState = {
   customComparators: [] as string[],
 };
 
-function isSectionType(id: string): id is SectionType {
-  return DEFAULT_SECTION_IDS.includes(id as SectionType);
+function getSectionSelectionInputs(
+  state: Pick<
+    ReportWizardState,
+    | "selectedClinicalPmcids"
+    | "selectedEconomicPmcids"
+    | "selectedComparators"
+  >,
+): SectionSelectionInputs {
+  return {
+    selectedClinicalPmcids: state.selectedClinicalPmcids,
+    selectedEconomicPmcids: state.selectedEconomicPmcids,
+    selectedComparators: state.selectedComparators,
+  };
 }
 
-function migrateLegacySectionIds(sectionIds: string[]): SectionType[] {
-  const mapped = sectionIds
-    .map((id) => LEGACY_SECTION_ID_MAP[id] ?? (isSectionType(id) ? id : null))
-    .filter((id): id is SectionType => id !== null);
+function withSyncedSectionIdsOnInputChange<
+  T extends Pick<
+    ReportWizardState,
+    | "selectedSectionIds"
+    | "selectedClinicalPmcids"
+    | "selectedEconomicPmcids"
+    | "selectedComparators"
+  >,
+>(state: T, changes: Partial<T>): Partial<T> {
+  const nextState = { ...state, ...changes };
+  return {
+    ...changes,
+    selectedSectionIds: syncSelectedSectionIdsOnInputChange(
+      nextState.selectedSectionIds,
+      getSectionSelectionInputs(nextState),
+    ),
+  };
+}
 
-  return mapped.length > 0 ? [...new Set(mapped)] : [...DEFAULT_SECTION_IDS];
+function withReconciledSectionIdsAtStep5<
+  T extends Pick<
+    ReportWizardState,
+    | "selectedSectionIds"
+    | "selectedClinicalPmcids"
+    | "selectedEconomicPmcids"
+    | "selectedComparators"
+  >,
+>(state: T): Pick<T, "selectedSectionIds"> {
+  return {
+    selectedSectionIds: reconcileSelectedSectionIdsWithInputs(
+      state.selectedSectionIds,
+      getSectionSelectionInputs(state),
+    ),
+  };
 }
 
 function migrateSelectedComparators(
@@ -174,16 +219,6 @@ function migratePersistedState(
       );
     }
 
-    if (state.selectedSectionIds) {
-      const hasLegacySectionIds = state.selectedSectionIds.some(
-        (id) => id in LEGACY_SECTION_ID_MAP || !isSectionType(id),
-      );
-
-      migrated.selectedSectionIds = hasLegacySectionIds
-        ? migrateLegacySectionIds(state.selectedSectionIds)
-        : state.selectedSectionIds;
-    }
-
     delete migrated.selectedEvidenceIds;
     delete migrated.selectedComparatorIds;
 
@@ -197,6 +232,26 @@ function migratePersistedState(
     };
   }
 
+  if (version < 3) {
+    const sectionInputs: SectionSelectionInputs = {
+      selectedClinicalPmcids: state.selectedClinicalPmcids ?? [],
+      selectedEconomicPmcids: state.selectedEconomicPmcids ?? [],
+      selectedComparators: state.selectedComparators ?? [],
+    };
+
+    const normalized = state.selectedSectionIds
+      ? normalizeWizardSectionIds(state.selectedSectionIds)
+      : getDefaultSelectedSectionIds(sectionInputs);
+
+    state = {
+      ...state,
+      selectedSectionIds: reconcileSelectedSectionIdsWithInputs(
+        normalized,
+        sectionInputs,
+      ),
+    };
+  }
+
   return state;
 }
 
@@ -204,15 +259,31 @@ export const useReportWizardStore = create<ReportWizardState>()(
   persist(
     (set) => ({
       ...initialState,
-      setStep: (step) => set({ currentStep: step }),
+      setStep: (step) =>
+        set((state) => ({
+          currentStep: step,
+          ...(step === 5 ? withReconciledSectionIdsAtStep5(state) : {}),
+        })),
       nextStep: () =>
-        set((state) => ({
-          currentStep: Math.min(6, state.currentStep + 1) as WizardStep,
-        })),
+        set((state) => {
+          const currentStep = Math.min(6, state.currentStep + 1) as WizardStep;
+          return {
+            currentStep,
+            ...(currentStep === 5
+              ? withReconciledSectionIdsAtStep5(state)
+              : {}),
+          };
+        }),
       prevStep: () =>
-        set((state) => ({
-          currentStep: Math.max(1, state.currentStep - 1) as WizardStep,
-        })),
+        set((state) => {
+          const currentStep = Math.max(1, state.currentStep - 1) as WizardStep;
+          return {
+            currentStep,
+            ...(currentStep === 5
+              ? withReconciledSectionIdsAtStep5(state)
+              : {}),
+          };
+        }),
       setDrugName: (drugName) => set({ drugName }),
       setIndications: (indications) => set({ indications }),
       setFilters: (filters) =>
@@ -239,55 +310,77 @@ export const useReportWizardStore = create<ReportWizardState>()(
         }),
       setReportId: (reportId) => set({ reportId }),
       setSelectedClinicalPmcids: (selectedClinicalPmcids) =>
-        set({ selectedClinicalPmcids }),
+        set((state) =>
+          withSyncedSectionIdsOnInputChange(state, { selectedClinicalPmcids }),
+        ),
       setSelectedEconomicPmcids: (selectedEconomicPmcids) =>
-        set({ selectedEconomicPmcids }),
+        set((state) =>
+          withSyncedSectionIdsOnInputChange(state, { selectedEconomicPmcids }),
+        ),
       toggleClinicalPmcid: (pmcid) =>
         set((state) => {
           const selected = state.selectedClinicalPmcids;
-          const next = selected.includes(pmcid)
+          const selectedClinicalPmcids = selected.includes(pmcid)
             ? selected.filter((item) => item !== pmcid)
             : [...selected, pmcid];
-          return { selectedClinicalPmcids: next };
+          return withSyncedSectionIdsOnInputChange(state, {
+            selectedClinicalPmcids,
+          });
         }),
       toggleEconomicPmcid: (pmcid) =>
         set((state) => {
           const selected = state.selectedEconomicPmcids;
-          const next = selected.includes(pmcid)
+          const selectedEconomicPmcids = selected.includes(pmcid)
             ? selected.filter((item) => item !== pmcid)
             : [...selected, pmcid];
-          return { selectedEconomicPmcids: next };
+          return withSyncedSectionIdsOnInputChange(state, {
+            selectedEconomicPmcids,
+          });
         }),
       toggleComparator: (name) =>
         set((state) => {
           const selected = state.selectedComparators;
-          const next = selected.includes(name)
+          const selectedComparators = selected.includes(name)
             ? selected.filter((item) => item !== name)
             : [...selected, name];
-          return { selectedComparators: next };
+          return withSyncedSectionIdsOnInputChange(state, { selectedComparators });
         }),
       addCustomComparator: (name) =>
-        set((state) => ({
-          customComparators: state.customComparators.includes(name)
+        set((state) => {
+          const customComparators = state.customComparators.includes(name)
             ? state.customComparators
-            : [...state.customComparators, name],
-          selectedComparators: state.selectedComparators.includes(name)
+            : [...state.customComparators, name];
+          const selectedComparators = state.selectedComparators.includes(name)
             ? state.selectedComparators
-            : [...state.selectedComparators, name],
-        })),
+            : [...state.selectedComparators, name];
+          return withSyncedSectionIdsOnInputChange(state, {
+            customComparators,
+            selectedComparators,
+          });
+        }),
       toggleSectionId: (id) =>
         set((state) => {
+          const inputs = getSectionSelectionInputs(state);
+          if (!isSectionAvailable(id, inputs)) {
+            return {};
+          }
           const selected = state.selectedSectionIds;
           const next = selected.includes(id)
             ? selected.filter((item) => item !== id)
             : [...selected, id];
-          return { selectedSectionIds: next };
+          return { selectedSectionIds: orderWizardSectionIds(next) };
         }),
-      selectAllSections: (ids) => set({ selectedSectionIds: ids }),
+      selectAllSections: (ids) =>
+        set({ selectedSectionIds: orderWizardSectionIds(ids) }),
       deselectAllSections: () => set({ selectedSectionIds: [] }),
+      reconcileSectionsAtStep5: () =>
+        set((state) => withReconciledSectionIdsAtStep5(state)),
       setGenerationJobId: (generationJobId) => set({ generationJobId }),
       setUserId: (userId) => set({ userId }),
-      resetReportPipeline: () => set(reportPipelineState),
+      resetReportPipeline: () =>
+        set((state) =>
+          withSyncedSectionIdsOnInputChange(state, reportPipelineState),
+        ),
       resetWizard: () =>
         set((state) => ({
           ...initialState,
@@ -296,7 +389,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 2,
+      version: 3,
       migrate: migratePersistedState,
       partialize: (state) => ({
         currentStep: state.currentStep,

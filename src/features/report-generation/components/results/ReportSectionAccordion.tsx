@@ -1,10 +1,15 @@
 "use client";
 
+import { useRef } from "react";
 import { Badge, StatusPill } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { ChevronDownIcon, ChevronUpIcon } from "@/components/ui";
 import { useReportSection } from "../../hooks/useGenerateReport";
-import type { ReportStatusSection, SectionType } from "../../types";
+import type {
+  ReportSectionContent,
+  ReportStatusSection,
+  SectionType,
+} from "../../types";
 import { mapSectionStatusToPill } from "../../utils/mapSectionStatusToPill";
 import { SectionContentRenderer } from "./SectionContentRenderer";
 
@@ -14,13 +19,16 @@ export type ReportSectionAccordionItem = {
   title: string;
   description: string;
   accordionKey: string;
+  pendingContext?: string[];
+  /** Frontend-only sections render this content locally without an API fetch. */
+  localContent?: ReportSectionContent;
 };
 
 type ReportSectionAccordionProps = {
   reportId: string;
   item: ReportSectionAccordionItem;
   expanded: boolean;
-  onToggle: () => void;
+  onToggle: (element: HTMLDivElement) => void;
 };
 
 export function ReportSectionAccordion({
@@ -29,9 +37,14 @@ export function ReportSectionAccordion({
   expanded,
   onToggle,
 }: ReportSectionAccordionProps) {
-  const { section, order, title, description } = item;
+  const { section, order, title, description, pendingContext, localContent } =
+    item;
+  const isLocalSection = localContent !== undefined;
   const isComplete = section.status === "completed";
-  const canExpand = isComplete && Boolean(section.section_id);
+  const isPartiallyComplete = section.status === "partially_completed";
+  const canExpand =
+    (isComplete || isPartiallyComplete) &&
+    (isLocalSection || Boolean(section.section_id));
 
   const {
     data: sectionContent,
@@ -41,11 +54,13 @@ export function ReportSectionAccordion({
   } = useReportSection(
     reportId,
     section.section_id,
-    canExpand && expanded,
+    !isLocalSection && canExpand && expanded,
   );
+  const rootRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
+      ref={rootRef}
       className={cn(
         "rounded-card border",
         expanded
@@ -55,7 +70,15 @@ export function ReportSectionAccordion({
     >
       <button
         type="button"
-        onClick={canExpand ? onToggle : undefined}
+        onClick={
+          canExpand
+            ? () => {
+                if (rootRef.current) {
+                  onToggle(rootRef.current);
+                }
+              }
+            : undefined
+        }
         className={cn(
           "flex w-full items-center gap-5 px-8 py-6 text-left",
           !canExpand && "cursor-default",
@@ -86,6 +109,11 @@ export function ReportSectionAccordion({
 
       {expanded && canExpand && (
         <div className="border-t border-border-default px-8 pb-10 pt-8">
+          {pendingContext && pendingContext.length > 0 && (
+            <div className="mb-6 rounded-card border border-amber-400/30 bg-amber-400/10 px-6 py-4 text-body-lg text-amber-300">
+              Evidence appraisal will be added when the report completes.
+            </div>
+          )}
           {isContentLoading && (
             <p className="text-body-lg text-text-muted">Loading section…</p>
           )}
@@ -96,9 +124,17 @@ export function ReportSectionAccordion({
                 : "Unable to load section content."}
             </p>
           )}
-          {sectionContent?.content !== undefined && (
+          {isLocalSection && (
             <div className="text-body-lg">
-              <SectionContentRenderer content={sectionContent.content} />
+              <SectionContentRenderer content={localContent} />
+            </div>
+          )}
+          {!isLocalSection && sectionContent?.content !== undefined && (
+            <div className="text-body-lg">
+              <SectionContentRenderer
+                content={sectionContent.content}
+                skipFirstHeading
+              />
             </div>
           )}
         </div>
