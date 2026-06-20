@@ -11,6 +11,7 @@ export function mapSectionStatusToPill(
     case "running":
       return "running";
     case "pending":
+    case "blocked":
       return "in_queue";
     case "failed":
       return "failed";

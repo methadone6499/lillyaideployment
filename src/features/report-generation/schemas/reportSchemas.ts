@@ -19,6 +19,7 @@ export const jobStatusSchema = z.enum([
 
 export const sectionStatusSchema = z.enum([
   "pending",
+  "blocked",
   "running",
   "partially_completed",
   "completed",
