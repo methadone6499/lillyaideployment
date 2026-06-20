@@ -1,3 +1,5 @@
+import { renderInlineMarkdown } from "../../utils/renderInlineMarkdown";
+
 type MarkdownBlock =
   | { type: "heading"; level: number; text: string }
   | { type: "paragraph"; text: string }
@@ -154,7 +156,7 @@ export function MarkdownRenderer({ markdown, nested = false }: MarkdownRendererP
                 key={blockIndex}
                 className={headingClassName(block.level)}
               >
-                {block.text}
+                {renderInlineMarkdown(block.text)}
               </h4>
             );
           case "paragraph":
@@ -163,7 +165,7 @@ export function MarkdownRenderer({ markdown, nested = false }: MarkdownRendererP
                 key={blockIndex}
                 className="leading-report whitespace-pre-wrap text-text-body"
               >
-                {block.text}
+                {renderInlineMarkdown(block.text)}
               </p>
             );
           case "ul":
