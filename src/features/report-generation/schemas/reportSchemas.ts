@@ -34,6 +34,7 @@ export const sectionTypeSchema = z.enum([
   "hta",
   "comparator",
   "environmental",
+  "compliance",
   "executive",
 ]);
 
