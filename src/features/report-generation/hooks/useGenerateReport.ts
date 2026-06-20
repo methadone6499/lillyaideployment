@@ -11,7 +11,7 @@ import { ReportApiError } from "../api/reportFetch";
 import { reportQueryKeys } from "../api/reportQueryKeys";
 import type { GenerateReportInput, UpdateReportSelectionsInput } from "../types";
 
-const STATUS_POLL_INTERVAL_MS = 60_000;
+const STATUS_POLL_INTERVAL_MS = 5_000;
 
 export function useUpdateReportSelectionsMutation() {
   return useMutation({
