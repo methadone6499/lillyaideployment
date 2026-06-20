@@ -80,6 +80,9 @@ function buildSectionItems(
   return items;
 }
 
+/** Filters shortcut not wired up yet — re-enable when implemented. */
+const FILTERS_BUTTON_ENABLED = false;
+
 export function ReportResults() {
   const queryClient = useQueryClient();
   const reportId = useReportWizardStore((s) => s.reportId);
@@ -276,13 +279,15 @@ export function ReportResults() {
             </p>
           )}
         </div>
-        <Button
-          variant="secondary"
-          leadingIcon={<PlusIcon />}
-          onClick={() => setStep(2)}
-        >
-          Filters
-        </Button>
+        {FILTERS_BUTTON_ENABLED && (
+          <Button
+            variant="secondary"
+            leadingIcon={<PlusIcon />}
+            onClick={() => setStep(2)}
+          >
+            Filters
+          </Button>
+        )}
       </div>
 
       {isFailed && reportStatus.status_reason && (
