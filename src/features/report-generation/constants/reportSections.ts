@@ -50,18 +50,6 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
       "Health technology assessment findings and reimbursement considerations.",
   },
   {
-    id: "discussion",
-    title: "Discussion",
-    description:
-      "Synthesis of clinical, economic, and HTA evidence with key implications.",
-  },
-  {
-    id: "compliance",
-    title: "Evidence Scope & Compliance",
-    description:
-      "Scope of included evidence and alignment with HTA submission requirements.",
-  },
-  {
     id: "executive",
     title: "Executive Summary",
     description:

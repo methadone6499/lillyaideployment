@@ -252,6 +252,13 @@ function migratePersistedState(
     };
   }
 
+  if (version < 4 && state.selectedSectionIds) {
+    state = {
+      ...state,
+      selectedSectionIds: normalizeWizardSectionIds(state.selectedSectionIds),
+    };
+  }
+
   return state;
 }
 
@@ -389,7 +396,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 3,
+      version: 4,
       migrate: migratePersistedState,
       partialize: (state) => ({
         currentStep: state.currentStep,
