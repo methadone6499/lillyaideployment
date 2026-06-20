@@ -214,6 +214,7 @@ export function Step2Filters() {
             label="Evidence Synthesis"
             options={EVIDENCE_SYNTHESIS_OPTIONS}
             value={filters.evidenceSynthesis}
+            clearable
             onChange={(e) =>
               setFilters({ evidenceSynthesis: e.target.value })
             }
@@ -222,6 +223,7 @@ export function Step2Filters() {
             label="Specialized Trial Structures"
             options={SPECIALIZED_TRIAL_STRUCTURES_OPTIONS}
             value={filters.specializedTrialStructures}
+            clearable
             onChange={(e) =>
               setFilters({ specializedTrialStructures: e.target.value })
             }
@@ -230,6 +232,7 @@ export function Step2Filters() {
             label="Population Type"
             options={POPULATION_TYPE_OPTIONS}
             value={filters.populationType}
+            clearable
             onChange={(e) =>
               setFilters({ populationType: e.target.value })
             }
@@ -238,6 +241,7 @@ export function Step2Filters() {
             label="Study Duration"
             options={STUDY_DURATION_OPTIONS}
             value={filters.studyDuration}
+            clearable
             onChange={(e) =>
               setFilters({ studyDuration: e.target.value })
             }
@@ -271,6 +275,7 @@ export function Step2Filters() {
             label="Population Type"
             options={COST_POPULATION_TYPE_OPTIONS}
             value={filters.costPopulationType}
+            clearable
             onChange={(e) =>
               setFilters({ costPopulationType: e.target.value })
             }
@@ -279,12 +284,14 @@ export function Step2Filters() {
             label="Patient Range / Volume"
             options={PATIENT_RANGE_OPTIONS}
             value={filters.patientRange}
+            clearable
             onChange={(e) => setFilters({ patientRange: e.target.value })}
           />
           <Select
             label="Study Duration"
             options={STUDY_DURATION_OPTIONS}
             value={filters.costStudyDuration}
+            clearable
             onChange={(e) =>
               setFilters({ costStudyDuration: e.target.value })
             }
@@ -301,12 +308,14 @@ export function Step2Filters() {
             label="Average Weight"
             options={AVERAGE_WEIGHT_OPTIONS}
             value={filters.averageWeight}
+            clearable
             onChange={(e) => setFilters({ averageWeight: e.target.value })}
           />
           <Select
             label="Gender Distribution"
             options={GENDER_DISTRIBUTION_OPTIONS}
             value={filters.genderDistribution}
+            clearable
             onChange={(e) =>
               setFilters({ genderDistribution: e.target.value })
             }
@@ -315,6 +324,7 @@ export function Step2Filters() {
             label="Treatment Duration"
             options={TREATMENT_DURATION_OPTIONS}
             value={filters.treatmentDuration}
+            clearable
             onChange={(e) =>
               setFilters({ treatmentDuration: e.target.value })
             }
@@ -323,6 +333,7 @@ export function Step2Filters() {
             label="Dosage Frequency"
             options={DOSAGE_FREQUENCY_OPTIONS}
             value={filters.dosageFrequency}
+            clearable
             onChange={(e) =>
               setFilters({ dosageFrequency: e.target.value })
             }
@@ -331,6 +342,7 @@ export function Step2Filters() {
             label="Region / Pricing Market"
             options={REGION_PRICING_MARKET_OPTIONS}
             value={filters.regionPricingMarket}
+            clearable
             onChange={(e) =>
               setFilters({ regionPricingMarket: e.target.value })
             }
@@ -344,6 +356,7 @@ export function Step2Filters() {
               label="Outcome / Evidence Focus"
               options={OUTCOME_EVIDENCE_FOCUS_OPTIONS}
               value={filters.outcomeEvidenceFocus}
+              clearable
               onChange={(e) =>
                 setFilters({ outcomeEvidenceFocus: e.target.value })
               }
@@ -369,6 +382,7 @@ export function Step2Filters() {
               label="Evidence Quality"
               options={EVIDENCE_QUALITY_OPTIONS}
               value={filters.evidenceQuality}
+              clearable
               onChange={(e) =>
                 setFilters({ evidenceQuality: e.target.value })
               }
@@ -383,6 +397,7 @@ export function Step2Filters() {
               label="Comparator Type"
               options={COMPARATOR_TYPE_OPTIONS}
               value={filters.comparatorType}
+              clearable
               menuPlacement="top"
               onChange={(e) =>
                 setFilters({ comparatorType: e.target.value })

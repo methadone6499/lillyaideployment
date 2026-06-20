@@ -18,6 +18,8 @@ type SelectProps = Omit<
   helper?: string;
   options: SelectOption[];
   placeholder?: string;
+  clearable?: boolean;
+  clearLabel?: string;
   containerClassName?: string;
   menuPlacement?: "top" | "bottom";
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
@@ -28,6 +30,8 @@ export function Select({
   helper,
   options,
   placeholder = "Select an Option",
+  clearable = false,
+  clearLabel = "Nothing",
   className,
   containerClassName,
   menuPlacement = "bottom",
@@ -42,6 +46,10 @@ export function Select({
   const generatedId = useId();
   const id = idProp ?? generatedId;
   const listboxId = `${id}-listbox`;
+
+  const menuOptions = clearable
+    ? [{ value: "", label: clearLabel }, ...options]
+    : options;
 
   const selectedOption = options.find((option) => option.value === value);
   const displayLabel = selectedOption?.label ?? placeholder;
@@ -132,14 +140,15 @@ export function Select({
                 : "top-full mt-1",
             )}
           >
-            {options.map((option, index) => (
+            {menuOptions.map((option, index) => (
               <li
-                key={option.value}
+                key={option.value || "__clear__"}
                 role="option"
                 aria-selected={value === option.value}
                 className={cn(
-                  "cursor-pointer px-[17px] py-3 text-input font-medium text-white hover:bg-surface-elevated",
-                  index < options.length - 1 && "border-b border-white",
+                  "cursor-pointer px-[17px] py-3 text-input font-medium hover:bg-surface-elevated",
+                  option.value === "" ? "text-text-muted" : "text-white",
+                  index < menuOptions.length - 1 && "border-b border-white",
                   value === option.value && "bg-surface-elevated",
                 )}
                 onClick={() => handleSelect(option.value)}

@@ -86,6 +86,7 @@ export function GenerateReportShell() {
   const nextStep = useReportWizardStore((s) => s.nextStep);
   const prevStep = useReportWizardStore((s) => s.prevStep);
   const resetReportPipeline = useReportWizardStore((s) => s.resetReportPipeline);
+  const resetFilters = useReportWizardStore((s) => s.resetFilters);
   const setStep = useReportWizardStore((s) => s.setStep);
   const setReportId = useReportWizardStore((s) => s.setReportId);
   const setGenerationJobId = useReportWizardStore(
@@ -218,6 +219,14 @@ export function GenerateReportShell() {
 
       return;
     }
+
+    if (currentStep === 1) {
+      resetFilters();
+      setStep2Error(null);
+      nextStep();
+      return;
+    }
+
     nextStep();
   };
 

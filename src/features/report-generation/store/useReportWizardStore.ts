@@ -44,6 +44,14 @@ export const DEFAULT_FILTERS: FilterState = {
   comparatorType: "",
 };
 
+function createDefaultFilters(): FilterState {
+  return {
+    ...DEFAULT_FILTERS,
+    clinicalStudyTypes: [...DEFAULT_FILTERS.clinicalStudyTypes],
+    economicStudyTypes: [...DEFAULT_FILTERS.economicStudyTypes],
+  };
+}
+
 type PersistedWizardState = {
   currentStep?: WizardStep;
   drugName?: string;
@@ -98,6 +106,7 @@ type ReportWizardState = {
   setGenerationJobId: (jobId: string | null) => void;
   setUserId: (userId: string | null) => void;
   resetReportPipeline: () => void;
+  resetFilters: () => void;
   resetWizard: () => void;
 };
 
@@ -111,7 +120,7 @@ const initialState = {
   currentStep: 1 as WizardStep,
   drugName: "",
   indications: "",
-  filters: DEFAULT_FILTERS,
+  filters: createDefaultFilters(),
   reportId: null as string | null,
   selectedClinicalPmcids: [] as string[],
   selectedEconomicPmcids: [] as string[],
@@ -388,6 +397,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
         set((state) =>
           withSyncedSectionIdsOnInputChange(state, reportPipelineState),
         ),
+      resetFilters: () => set({ filters: createDefaultFilters() }),
       resetWizard: () =>
         set((state) => ({
           ...initialState,
