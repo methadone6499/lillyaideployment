@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
+import { getAuthToken } from "@/lib/authToken";
 
 export class AuthApiError extends Error {
   constructor(
@@ -60,7 +61,12 @@ export async function authFetch<TSchema extends z.ZodType>(
   path: string,
   options: AuthFetchOptions<TSchema>,
 ): Promise<z.infer<TSchema>> {
+  const token = getAuthToken();
   const headers = new Headers();
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
 
   let body: BodyInit | undefined;
   if (options.body !== undefined) {

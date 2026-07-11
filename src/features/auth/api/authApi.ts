@@ -1,8 +1,10 @@
 import {
+  meResponseSchema,
   signinRequestSchema,
   signinResponseSchema,
   signupRequestSchema,
   signupResponseSchema,
+  type MeResponse,
   type SigninRequest,
   type SigninResponse,
   type SignupRequest,
@@ -26,4 +28,8 @@ export function signin(input: SigninRequest): Promise<SigninResponse> {
     body: signinRequestSchema.parse(input),
     schema: signinResponseSchema,
   });
+}
+
+export function getMe(): Promise<MeResponse> {
+  return authFetch("/auth/me", { schema: meResponseSchema });
 }

@@ -1,9 +1,12 @@
 import { cn } from "@/lib/cn";
 
 export type ReportSectionStatus =
-  | "complete"
+  | "pending"
+  | "blocked"
   | "running"
-  | "in_queue"
+  | "processing"
+  | "partially_completed"
+  | "completed"
   | "failed";
 
 type StatusPillProps = {
@@ -15,9 +18,15 @@ const statusConfig: Record<
   ReportSectionStatus,
   { label: string; className: string }
 > = {
-  complete: { label: "Complete", className: "text-status-success" },
+  pending: { label: "Pending", className: "text-status-in-queue" },
+  blocked: { label: "Blocked", className: "text-status-blocked" },
   running: { label: "Running", className: "text-status-running" },
-  in_queue: { label: "In Queue", className: "text-status-in-queue" },
+  processing: { label: "Processing", className: "text-status-running" },
+  partially_completed: {
+    label: "Partially completed",
+    className: "text-status-partial",
+  },
+  completed: { label: "Completed", className: "text-status-success" },
   failed: { label: "Failed", className: "text-red-400" },
 };
 

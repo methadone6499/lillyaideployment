@@ -10,7 +10,6 @@ import type {
   ReportStatusSection,
   SectionType,
 } from "../../types";
-import { mapSectionStatusToPill } from "../../utils/mapSectionStatusToPill";
 import { SectionContentRenderer } from "./SectionContentRenderer";
 
 export type ReportSectionAccordionItem = {
@@ -96,7 +95,7 @@ export function ReportSectionAccordion({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-7">
-          <StatusPill status={mapSectionStatusToPill(section.status)} />
+          <StatusPill status={section.status} />
           {canExpand &&
             (expanded ? (
               <ChevronUpIcon />

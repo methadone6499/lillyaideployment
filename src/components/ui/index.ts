@@ -16,7 +16,10 @@ export { TextLink } from "./TextLink";
 export {
   ArrowNarrowLeftIcon,
   ArrowNarrowRightIcon,
+  BellIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  CloseIcon,
+  FilterLinesIcon,
   PlusIcon,
 } from "./icons";

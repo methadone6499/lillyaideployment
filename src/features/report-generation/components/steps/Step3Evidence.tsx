@@ -1,11 +1,13 @@
 "use client";
 
 import { Tabs } from "@/components/ui";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { EvidenceTable } from "../EvidenceTable";
+import { EvidenceTextFilter } from "../EvidenceTextFilter";
 import { useEvidenceDiscovery } from "../../hooks/useEvidenceDiscovery";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
-import type { EvidenceType } from "../../types";
+import type { EvidenceType, TextAvailabilityFilter } from "../../types";
+import { matchesTextAvailabilityFilter } from "../../utils/getTextAvailability";
 
 const EVIDENCE_TABS = [
   { id: "clinical" as const, label: "Clinical Evidence" },
@@ -14,6 +16,8 @@ const EVIDENCE_TABS = [
 
 export function Step3Evidence() {
   const [activeTab, setActiveTab] = useState<EvidenceType>("clinical");
+  const [textAvailabilityFilter, setTextAvailabilityFilter] =
+    useState<TextAvailabilityFilter>("full_text");
   const reportId = useReportWizardStore((s) => s.reportId);
   const selectedClinicalPmcids = useReportWizardStore(
     (s) => s.selectedClinicalPmcids,
@@ -50,6 +54,31 @@ export function Step3Evidence() {
     error,
   } = useEvidenceDiscovery(reportId, activeTab);
 
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) =>
+        matchesTextAvailabilityFilter(item, textAvailabilityFilter),
+      ),
+    [items, textAvailabilityFilter],
+  );
+
+  const handleSelectAll = useCallback(
+    (visiblePmcids: string[]) => {
+      if (visiblePmcids.length === 0) {
+        const visibleSelectable = new Set(
+          filteredItems.flatMap((item) => (item.pmcid ? [item.pmcid] : [])),
+        );
+        setSelectedPmcids(
+          selectedPmcids.filter((pmcid) => !visibleSelectable.has(pmcid)),
+        );
+        return;
+      }
+
+      setSelectedPmcids([...new Set([...selectedPmcids, ...visiblePmcids])]);
+    },
+    [filteredItems, selectedPmcids, setSelectedPmcids],
+  );
+
   if (!reportId) {
     return (
       <p className="text-body-lg text-red-400" role="alert">
@@ -66,11 +95,17 @@ export function Step3Evidence() {
 
   return (
     <div className="flex flex-col gap-7">
-      <Tabs
-        tabs={EVIDENCE_TABS}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-      />
+      <div className="flex items-center justify-between">
+        <Tabs
+          tabs={EVIDENCE_TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
+        <EvidenceTextFilter
+          value={textAvailabilityFilter}
+          onChange={setTextAvailabilityFilter}
+        />
+      </div>
       {isError && (
         <p className="text-body-lg text-amber-300" role="status">
           {error instanceof Error
@@ -84,12 +119,17 @@ export function Step3Evidence() {
           selecting evidence.
         </p>
       )}
-      {items.length > 0 && (
+      {items.length > 0 && filteredItems.length === 0 && !isError && (
+        <p className="text-body-lg text-text-muted">
+          No articles match the selected text availability filter.
+        </p>
+      )}
+      {filteredItems.length > 0 && (
         <EvidenceTable
-          items={items}
+          items={filteredItems}
           selectedPmcids={selectedPmcids}
           onToggle={togglePmcid}
-          onSelectAll={setSelectedPmcids}
+          onSelectAll={handleSelectAll}
         />
       )}
     </div>

@@ -30,6 +30,9 @@ export const signinResponseSchema = z.object({
   user_id: z.string(),
 });
 
+export const meResponseSchema = signupResponseSchema;
+export type MeResponse = z.infer<typeof meResponseSchema>;
+
 export type SignupRequest = z.infer<typeof signupRequestSchema>;
 export type SignupResponse = z.infer<typeof signupResponseSchema>;
 export type SigninRequest = z.infer<typeof signinRequestSchema>;

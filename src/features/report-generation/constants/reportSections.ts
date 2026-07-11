@@ -50,6 +50,12 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
       "Health technology assessment findings and reimbursement considerations.",
   },
   {
+    id: "compliance",
+    title: "Evidence Scope & Compliance",
+    description:
+      "Evidence search methodology, inclusion criteria, and HTA compliance documentation.",
+  },
+  {
     id: "executive",
     title: "Executive Summary",
     description:

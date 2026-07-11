@@ -31,6 +31,8 @@
   --status-success: #10b981;
   --status-running: #ffc85c;
   --status-in-queue: #ffffff;
+  --status-blocked: #d4a574;
+  --status-partial: #6ee7b7;
 
   --shadow-toggle-knob: 0 0 4.571px rgba(0, 0, 0, 0.16);
 
@@ -136,6 +138,8 @@
   --color-status-success: var(--status-success);
   --color-status-running: var(--status-running);
   --color-status-in-queue: var(--status-in-queue);
+  --color-status-blocked: var(--status-blocked);
+  --color-status-partial: var(--status-partial);
 
   --shadow-toggle-knob: var(--shadow-toggle-knob);
 

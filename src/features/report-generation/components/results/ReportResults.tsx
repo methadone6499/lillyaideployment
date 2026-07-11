@@ -27,6 +27,7 @@ import {
   ReportSectionAccordion,
   type ReportSectionAccordionItem,
 } from "./ReportSectionAccordion";
+import { SearchFiltersModal } from "./SearchFiltersModal";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof ReportApiError) {
@@ -80,14 +81,12 @@ function buildSectionItems(
   return items;
 }
 
-/** Filters shortcut not wired up yet — re-enable when implemented. */
-const FILTERS_BUTTON_ENABLED = false;
-
 export function ReportResults() {
   const queryClient = useQueryClient();
   const reportId = useReportWizardStore((s) => s.reportId);
   const drugName = useReportWizardStore((s) => s.drugName);
   const indications = useReportWizardStore((s) => s.indications);
+  const filters = useReportWizardStore((s) => s.filters);
   const selectedSectionIds = useReportWizardStore((s) => s.selectedSectionIds);
   const setStep = useReportWizardStore((s) => s.setStep);
   const resetWizard = useReportWizardStore((s) => s.resetWizard);
@@ -105,6 +104,7 @@ export function ReportResults() {
   const [retryError, setRetryError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const pdfQueuedRef = useRef<string | null>(null);
 
   const sections = reportStatus?.sections;
@@ -279,16 +279,20 @@ export function ReportResults() {
             </p>
           )}
         </div>
-        {FILTERS_BUTTON_ENABLED && (
-          <Button
-            variant="secondary"
-            leadingIcon={<PlusIcon />}
-            onClick={() => setStep(2)}
-          >
-            Filters
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          leadingIcon={<PlusIcon />}
+          onClick={() => setIsFiltersOpen(true)}
+        >
+          Filters
+        </Button>
       </div>
+
+      <SearchFiltersModal
+        open={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        filters={filters}
+      />
 
       {isFailed && reportStatus.status_reason && (
         <div

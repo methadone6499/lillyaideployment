@@ -21,6 +21,7 @@ export const sectionStatusSchema = z.enum([
   "pending",
   "blocked",
   "running",
+  "processing",
   "partially_completed",
   "completed",
   "failed",
@@ -38,6 +39,8 @@ export const sectionTypeSchema = z.enum([
   "executive",
 ]);
 
+export const textAvailabilitySchema = z.enum(["full_text", "abstract_only"]);
+
 export const articleCandidateSchema = z.object({
   pmid: z.string(),
   pmcid: z.string().optional(),
@@ -47,6 +50,9 @@ export const articleCandidateSchema = z.object({
   year: z.union([z.string(), z.number()]),
   doi: z.string().optional(),
   abstract: z.string(),
+  text_availability: textAvailabilitySchema.optional(),
+  pubmed_url: z.string().optional(),
+  pmc_url: z.string().optional(),
 });
 
 export const articleDiscoveryResponseSchema = z.object({
@@ -60,13 +66,34 @@ export const comparatorDiscoveryResponseSchema = z.object({
   suggestions: z.array(z.string()),
 });
 
+export const customDateRangeSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+});
+
+export const costAnalysisSchema = z
+  .object({
+    patient_volume: z.number(),
+    treatment_duration_days: z.number(),
+    unit_price: z.number(),
+    dosage_frequency: z.string(),
+    region: z.string(),
+  })
+  .partial();
+
 export const advancedFiltersSchema = z.object({
   time_range: z.string().optional(),
+  custom_date_range: customDateRangeSchema.optional(),
   species_filter: z.string().optional(),
   clinical_types: z.array(z.string()).optional(),
   economic_types: z.array(z.string()).optional(),
-  population: z.string().optional(),
-  geography: z.string().optional(),
+  population: z.array(z.string()).optional(),
+  outcomes: z.array(z.string()).optional(),
+  comparators: z.array(z.string()).optional(),
+  geography: z.array(z.string()).optional(),
+  study_duration: z.string().optional(),
+  quality_filters: z.array(z.string()).optional(),
+  cost_analysis: costAnalysisSchema.optional(),
 });
 
 export const reportInputsSchema = z.object({
@@ -129,9 +156,13 @@ export const generateReportSectionSchema = z.object({
   section_id: z.string(),
   section_type: sectionTypeSchema,
   display_name: z.string(),
+  sort_order: z.number().optional(),
   status: sectionStatusSchema,
   depends_on: z.array(z.string()).optional(),
   error: z.string().nullable().optional(),
+  started_at: z.string().nullable().optional(),
+  completed_at: z.string().nullable().optional(),
+  duration_ms: z.number().nullable().optional(),
 });
 
 export const generateReportResponseSchema = z.object({
@@ -159,7 +190,11 @@ export const reportStatusSectionSchema = z.object({
   status: sectionStatusSchema,
   section_id: z.string().optional(),
   display_name: z.string().optional(),
+  sort_order: z.number().optional(),
   error: z.string().nullable().optional(),
+  started_at: z.string().nullable().optional(),
+  completed_at: z.string().nullable().optional(),
+  duration_ms: z.number().nullable().optional(),
   pending_context: z.array(z.string()).optional(),
 });
 
@@ -296,7 +331,7 @@ export const filterStateSchema = z.object({
   clinicalStudyTypes: z.array(z.string()),
   evidenceSynthesis: z.string(),
   specializedTrialStructures: z.string(),
-  populationType: z.string(),
+  populationType: z.array(z.string()),
   studyDuration: z.string(),
   economicStudyTypes: z.array(z.string()),
   costPopulationType: z.string(),
@@ -308,8 +343,15 @@ export const filterStateSchema = z.object({
   treatmentDuration: z.string(),
   dosageFrequency: z.string(),
   regionPricingMarket: z.string(),
-  outcomeEvidenceFocus: z.string(),
-  geographyRegulatoryRegion: z.string(),
-  evidenceQuality: z.string(),
-  comparatorType: z.string(),
+  outcomeEvidenceFocus: z.array(z.string()),
+  geographyRegulatoryRegion: z.array(z.string()),
+  evidenceQuality: z.array(z.string()),
+  comparatorType: z.array(z.string()),
+  customDateFrom: z.string(),
+  customDateTo: z.string(),
+  costPatientVolume: z.string(),
+  costTreatmentDurationDays: z.string(),
+  costUnitPrice: z.string(),
+  costDosageFrequency: z.string(),
+  costRegion: z.string(),
 });

@@ -8,6 +8,7 @@ import {
   RadioCircle,
 } from "@/components/ui";
 import type { ArticleCandidate } from "../types";
+import { getTextAvailability } from "../utils/getTextAvailability";
 import { useState } from "react";
 
 type EvidenceTableProps = {
@@ -19,6 +20,14 @@ type EvidenceTableProps = {
 
 function getRowKey(item: ArticleCandidate): string {
   return item.pmcid ?? item.pmid;
+}
+
+function getPmcLink(item: ArticleCandidate): string | null {
+  if (item.pmc_url) return item.pmc_url;
+  if (item.pmcid) {
+    return `https://pmc.ncbi.nlm.nih.gov/articles/${item.pmcid}/`;
+  }
+  return item.pubmed_url ?? null;
 }
 
 export function EvidenceTable({
@@ -38,15 +47,15 @@ export function EvidenceTable({
     selectableItems.length > 0 &&
     selectableItems.every((item) => selectedPmcids.includes(item.pmcid));
 
-  const evidenceGridClass =
-    "grid grid-cols-[40px_minmax(0,1fr)_96px_112px_112px_32px] items-center gap-5";
+  const evidenceRowClass =
+    "grid grid-cols-[40px_minmax(0,1fr)_167px_122px_116px_140px_32px]";
 
   return (
     <div className="flex flex-col gap-6">
       <div
         className={cn(
-          evidenceGridClass,
-          "h-14 rounded-card bg-surface-subtle px-7",
+          evidenceRowClass,
+          "h-14 items-center rounded-card bg-surface-subtle px-7",
         )}
       >
         <Checkbox
@@ -63,6 +72,7 @@ export function EvidenceTable({
         />
 
         <span className="text-body-lg font-medium text-text-muted">Title</span>
+        <span />
         <span className="text-body-lg font-medium text-text-muted">Year</span>
         <span className="text-body-lg font-medium text-text-muted">PMC</span>
         <span className="text-body-lg font-medium text-text-muted">DOI</span>
@@ -75,6 +85,7 @@ export function EvidenceTable({
           const selectable = Boolean(item.pmcid);
           const selected = selectable && selectedPmcids.includes(item.pmcid!);
           const expanded = expandedKey === rowKey;
+          const pmcLink = getPmcLink(item);
 
           return (
             <div
@@ -87,7 +98,7 @@ export function EvidenceTable({
                 !selectable && "opacity-70",
               )}
             >
-              <div className={cn(evidenceGridClass, "px-7 py-8")}>
+              <div className={cn(evidenceRowClass, "items-center px-7 py-8")}>
                 <RadioCircle
                   selected={selected}
                   onClick={
@@ -99,17 +110,28 @@ export function EvidenceTable({
                   className={cn(!selectable && "cursor-not-allowed opacity-50")}
                 />
 
-                <span className="min-w-0 text-card-title font-medium text-white">
-                  {item.title}
+                <div className="min-w-0 overflow-hidden pr-4">
+                  <p
+                    className="wrap-break-word text-card-title font-medium leading-7 text-white"
+                    title={item.title}
+                  >
+                    {item.title}
+                  </p>
+                </div>
+
+                <span className="inline-flex h-[42px] max-w-[103px] items-center whitespace-nowrap rounded-card bg-brand-badge px-4 text-body-lg font-normal text-white">
+                  {getTextAvailability(item) === "full_text"
+                    ? "Full Text"
+                    : "Abstract"}
                 </span>
 
                 <span className="text-body-lg text-text-primary">
                   {item.year}
                 </span>
 
-                {item.pmcid ? (
+                {pmcLink ? (
                   <a
-                    href={`https://pmc.ncbi.nlm.nih.gov/articles/${item.pmcid}/`}
+                    href={pmcLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-body-lg font-medium text-brand underline"

@@ -35,7 +35,11 @@ function headingClassName(level: number): string {
     return "text-section-heading font-medium text-text-heading";
   }
 
-  return "font-medium text-text-heading";
+  if (level === 3) {
+    return "text-card-title font-medium text-text-heading";
+  }
+
+  return "text-body-lg font-medium text-text-heading";
 }
 
 function renderHeading(level: number, text: string): ReactNode {
@@ -48,7 +52,7 @@ function renderHeading(level: number, text: string): ReactNode {
   );
 }
 
-function renderBlock(block: Block, key: number): ReactNode {
+function renderBlock(block: Block, key: number, depth: number): ReactNode {
   switch (block.type) {
     case "heading":
       return <div key={key}>{renderHeading(block.level, block.text)}</div>;
@@ -122,9 +126,9 @@ function renderBlock(block: Block, key: number): ReactNode {
 
     case "definition":
       return (
-        <div key={key} className="flex flex-wrap gap-x-2 text-text-body">
-          <span className="font-medium text-text-heading">{block.label}:</span>
-          <span className="leading-report">{block.value}</span>
+        <div key={key} className="flex flex-col gap-2">
+          <p className="font-medium text-text-heading">{block.label}</p>
+          <p className="leading-report text-text-body">{block.value}</p>
         </div>
       );
 
@@ -146,9 +150,12 @@ function renderBlock(block: Block, key: number): ReactNode {
 
     case "section":
       return (
-        <div key={key} className="flex flex-col gap-4">
+        <div
+          key={key}
+          className={cn("flex flex-col gap-4", depth > 0 && "pl-6")}
+        >
           {renderHeading(block.level, block.heading)}
-          {renderBlocks(block.blocks, true)}
+          {renderBlocks(block.blocks, depth + 1)}
         </div>
       );
 
@@ -179,14 +186,20 @@ function renderBlock(block: Block, key: number): ReactNode {
   }
 }
 
-function renderBlocks(blocks: Block[], nested = false): ReactNode {
+function renderBlocks(blocks: Block[], depth: number): ReactNode {
   if (blocks.length === 0) {
     return null;
   }
 
   return (
-    <div className={nested ? "flex flex-col gap-4" : "flex flex-col gap-8"}>
-      {blocks.map((block, blockIndex) => renderBlock(block, blockIndex))}
+    <div
+      className={
+        depth > 0 ? "flex flex-col gap-4" : "flex flex-col gap-8"
+      }
+    >
+      {blocks.map((block, blockIndex) =>
+        renderBlock(block, blockIndex, depth),
+      )}
     </div>
   );
 }
@@ -211,5 +224,5 @@ export function SectionContentRenderer({
     return null;
   }
 
-  return renderBlocks(blocks);
+  return renderBlocks(blocks, 0);
 }

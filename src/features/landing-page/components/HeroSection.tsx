@@ -124,7 +124,7 @@ function AuthForm() {
       });
       clearAllReportQueries(queryClient);
       beginReportWizardSession(signinResponse.user_id);
-      router.push("/reports/new");
+      router.push("/dashboard");
     } catch (error) {
       setErrorMessage(
         error instanceof AuthApiError

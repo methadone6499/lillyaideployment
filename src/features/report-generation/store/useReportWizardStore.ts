@@ -26,7 +26,7 @@ export const DEFAULT_FILTERS: FilterState = {
   ],
   evidenceSynthesis: "",
   specializedTrialStructures: "",
-  populationType: "",
+  populationType: [],
   studyDuration: "",
   economicStudyTypes: ["cost-effectiveness", "resource-utilization"],
   costPopulationType: "",
@@ -38,10 +38,17 @@ export const DEFAULT_FILTERS: FilterState = {
   treatmentDuration: "",
   dosageFrequency: "",
   regionPricingMarket: "",
-  outcomeEvidenceFocus: "",
-  geographyRegulatoryRegion: "gcc-middle-east",
-  evidenceQuality: "",
-  comparatorType: "",
+  outcomeEvidenceFocus: [],
+  geographyRegulatoryRegion: ["gcc-middle-east"],
+  evidenceQuality: [],
+  comparatorType: [],
+  customDateFrom: "",
+  customDateTo: "",
+  costPatientVolume: "",
+  costTreatmentDurationDays: "",
+  costUnitPrice: "",
+  costDosageFrequency: "",
+  costRegion: "",
 };
 
 function createDefaultFilters(): FilterState {
@@ -49,6 +56,94 @@ function createDefaultFilters(): FilterState {
     ...DEFAULT_FILTERS,
     clinicalStudyTypes: [...DEFAULT_FILTERS.clinicalStudyTypes],
     economicStudyTypes: [...DEFAULT_FILTERS.economicStudyTypes],
+    populationType: [...DEFAULT_FILTERS.populationType],
+    geographyRegulatoryRegion: [...DEFAULT_FILTERS.geographyRegulatoryRegion],
+    outcomeEvidenceFocus: [...DEFAULT_FILTERS.outcomeEvidenceFocus],
+    evidenceQuality: [...DEFAULT_FILTERS.evidenceQuality],
+    comparatorType: [...DEFAULT_FILTERS.comparatorType],
+  };
+}
+
+function toggleFilterArray(current: string[], value: string): string[] {
+  return current.includes(value)
+    ? current.filter((item) => item !== value)
+    : [...current, value];
+}
+
+function coerceStringToStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+
+  if (typeof value === "string" && value.length > 0) {
+    return [value];
+  }
+
+  return [];
+}
+
+function coerceFilterString(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return "";
+}
+
+function migrateFiltersToV5(filters: unknown): FilterState {
+  const defaults = createDefaultFilters();
+
+  if (!filters || typeof filters !== "object") {
+    return defaults;
+  }
+
+  const legacy = filters as Record<string, unknown>;
+
+  return {
+    timeRange:
+      typeof legacy.timeRange === "string" ? legacy.timeRange : defaults.timeRange,
+    clinicalStudyTypes: coerceStringToStringArray(
+      legacy.clinicalStudyTypes ?? defaults.clinicalStudyTypes,
+    ),
+    evidenceSynthesis: coerceFilterString(legacy.evidenceSynthesis),
+    specializedTrialStructures: coerceFilterString(
+      legacy.specializedTrialStructures,
+    ),
+    populationType: coerceStringToStringArray(legacy.populationType),
+    studyDuration: coerceFilterString(legacy.studyDuration),
+    economicStudyTypes: coerceStringToStringArray(
+      legacy.economicStudyTypes ?? defaults.economicStudyTypes,
+    ),
+    costPopulationType: coerceFilterString(legacy.costPopulationType),
+    patientRange: coerceFilterString(legacy.patientRange),
+    costPopulationTypeSecondary: coerceFilterString(
+      legacy.costPopulationTypeSecondary,
+    ),
+    costStudyDuration: coerceFilterString(legacy.costStudyDuration),
+    averageWeight: coerceFilterString(legacy.averageWeight),
+    genderDistribution: coerceFilterString(legacy.genderDistribution),
+    treatmentDuration: coerceFilterString(legacy.treatmentDuration),
+    dosageFrequency: coerceFilterString(legacy.dosageFrequency),
+    regionPricingMarket: coerceFilterString(legacy.regionPricingMarket),
+    outcomeEvidenceFocus: coerceStringToStringArray(legacy.outcomeEvidenceFocus),
+    geographyRegulatoryRegion: coerceStringToStringArray(
+      legacy.geographyRegulatoryRegion ?? defaults.geographyRegulatoryRegion,
+    ),
+    evidenceQuality: coerceStringToStringArray(legacy.evidenceQuality),
+    comparatorType: coerceStringToStringArray(legacy.comparatorType),
+    customDateFrom: coerceFilterString(legacy.customDateFrom),
+    customDateTo: coerceFilterString(legacy.customDateTo),
+    costPatientVolume: coerceFilterString(legacy.costPatientVolume),
+    costTreatmentDurationDays: coerceFilterString(
+      legacy.costTreatmentDurationDays,
+    ),
+    costUnitPrice: coerceFilterString(legacy.costUnitPrice),
+    costDosageFrequency: coerceFilterString(legacy.costDosageFrequency),
+    costRegion: coerceFilterString(legacy.costRegion),
   };
 }
 
@@ -92,6 +187,11 @@ type ReportWizardState = {
   setFilters: (filters: Partial<FilterState>) => void;
   toggleClinicalStudyType: (type: string) => void;
   toggleEconomicStudyType: (type: string) => void;
+  togglePopulationType: (type: string) => void;
+  toggleGeographyRegulatoryRegion: (region: string) => void;
+  toggleOutcomeEvidenceFocus: (focus: string) => void;
+  toggleComparatorType: (type: string) => void;
+  toggleEvidenceQuality: (quality: string) => void;
   setReportId: (reportId: string | null) => void;
   setSelectedClinicalPmcids: (pmcids: string[]) => void;
   setSelectedEconomicPmcids: (pmcids: string[]) => void;
@@ -268,6 +368,13 @@ function migratePersistedState(
     };
   }
 
+  if (version < 5) {
+    state = {
+      ...state,
+      filters: migrateFiltersToV5(state.filters),
+    };
+  }
+
   return state;
 }
 
@@ -324,6 +431,50 @@ export const useReportWizardStore = create<ReportWizardState>()(
             filters: { ...state.filters, economicStudyTypes: next },
           };
         }),
+      togglePopulationType: (type) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            populationType: toggleFilterArray(state.filters.populationType, type),
+          },
+        })),
+      toggleGeographyRegulatoryRegion: (region) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            geographyRegulatoryRegion: toggleFilterArray(
+              state.filters.geographyRegulatoryRegion,
+              region,
+            ),
+          },
+        })),
+      toggleOutcomeEvidenceFocus: (focus) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            outcomeEvidenceFocus: toggleFilterArray(
+              state.filters.outcomeEvidenceFocus,
+              focus,
+            ),
+          },
+        })),
+      toggleComparatorType: (type) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            comparatorType: toggleFilterArray(state.filters.comparatorType, type),
+          },
+        })),
+      toggleEvidenceQuality: (quality) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            evidenceQuality: toggleFilterArray(
+              state.filters.evidenceQuality,
+              quality,
+            ),
+          },
+        })),
       setReportId: (reportId) => set({ reportId }),
       setSelectedClinicalPmcids: (selectedClinicalPmcids) =>
         set((state) =>
@@ -406,7 +557,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 4,
+      version: 5,
       migrate: migratePersistedState,
       partialize: (state) => ({
         currentStep: state.currentStep,
