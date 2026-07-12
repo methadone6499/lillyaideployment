@@ -41,9 +41,22 @@ export const sectionTypeSchema = z.enum([
 
 export const textAvailabilitySchema = z.enum(["full_text", "abstract_only"]);
 
+/** Coerce discovery IDs (string or number) to a trimmed non-empty string. */
+const requiredArticleIdSchema = z
+  .union([z.string(), z.number()])
+  .transform((value) => String(value).trim())
+  .pipe(z.string().min(1));
+
+/** Absent, null, or blank PMCID becomes undefined; otherwise a non-empty string. */
+const optionalArticleIdSchema = z.preprocess((value) => {
+  if (value == null || value === "") return undefined;
+  const normalized = String(value).trim();
+  return normalized.length > 0 ? normalized : undefined;
+}, z.string().min(1).optional());
+
 export const articleCandidateSchema = z.object({
-  pmid: z.string(),
-  pmcid: z.string().optional(),
+  pmid: requiredArticleIdSchema,
+  pmcid: optionalArticleIdSchema,
   title: z.string(),
   authors: z.array(z.string()),
   journal: z.string(),

@@ -70,11 +70,11 @@ export function GenerateReportShell() {
   const indications = useReportWizardStore((s) => s.indications);
   const filters = useReportWizardStore((s) => s.filters);
   const reportId = useReportWizardStore((s) => s.reportId);
-  const selectedClinicalPmcids = useReportWizardStore(
-    (s) => s.selectedClinicalPmcids,
+  const selectedClinicalArticleIds = useReportWizardStore(
+    (s) => s.selectedClinicalArticleIds,
   );
-  const selectedEconomicPmcids = useReportWizardStore(
-    (s) => s.selectedEconomicPmcids,
+  const selectedEconomicArticleIds = useReportWizardStore(
+    (s) => s.selectedEconomicArticleIds,
   );
   const selectedComparators = useReportWizardStore(
     (s) => s.selectedComparators,
@@ -193,8 +193,8 @@ export function GenerateReportShell() {
           input: {
             comparators: selectedComparators,
             custom_comparators: customComparators,
-            clinical_pmcids: selectedClinicalPmcids,
-            economic_pmcids: selectedEconomicPmcids,
+            clinical_pmcids: selectedClinicalArticleIds,
+            economic_pmcids: selectedEconomicArticleIds,
             section_types: filterApiSectionIds(selectedSectionIds),
           },
         });

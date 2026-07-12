@@ -14,11 +14,11 @@ export function Step5Sections() {
   const selectedSectionIds = useReportWizardStore(
     (s) => s.selectedSectionIds,
   );
-  const selectedClinicalPmcids = useReportWizardStore(
-    (s) => s.selectedClinicalPmcids,
+  const selectedClinicalArticleIds = useReportWizardStore(
+    (s) => s.selectedClinicalArticleIds,
   );
-  const selectedEconomicPmcids = useReportWizardStore(
-    (s) => s.selectedEconomicPmcids,
+  const selectedEconomicArticleIds = useReportWizardStore(
+    (s) => s.selectedEconomicArticleIds,
   );
   const selectedComparators = useReportWizardStore(
     (s) => s.selectedComparators,
@@ -33,8 +33,8 @@ export function Step5Sections() {
   );
 
   const sectionInputs = {
-    selectedClinicalPmcids,
-    selectedEconomicPmcids,
+    selectedClinicalArticleIds,
+    selectedEconomicArticleIds,
     selectedComparators,
   };
 

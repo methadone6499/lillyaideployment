@@ -7,6 +7,7 @@ import { EvidenceTextFilter } from "../EvidenceTextFilter";
 import { useEvidenceDiscovery } from "../../hooks/useEvidenceDiscovery";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 import type { EvidenceType, TextAvailabilityFilter } from "../../types";
+import { getArticleSelectionId } from "../../utils/getArticleSelectionId";
 import { matchesTextAvailabilityFilter } from "../../utils/getTextAvailability";
 
 const EVIDENCE_TABS = [
@@ -19,33 +20,35 @@ export function Step3Evidence() {
   const [textAvailabilityFilter, setTextAvailabilityFilter] =
     useState<TextAvailabilityFilter>("full_text");
   const reportId = useReportWizardStore((s) => s.reportId);
-  const selectedClinicalPmcids = useReportWizardStore(
-    (s) => s.selectedClinicalPmcids,
+  const selectedClinicalArticleIds = useReportWizardStore(
+    (s) => s.selectedClinicalArticleIds,
   );
-  const selectedEconomicPmcids = useReportWizardStore(
-    (s) => s.selectedEconomicPmcids,
+  const selectedEconomicArticleIds = useReportWizardStore(
+    (s) => s.selectedEconomicArticleIds,
   );
-  const toggleClinicalPmcid = useReportWizardStore(
-    (s) => s.toggleClinicalPmcid,
+  const toggleClinicalArticleId = useReportWizardStore(
+    (s) => s.toggleClinicalArticleId,
   );
-  const toggleEconomicPmcid = useReportWizardStore(
-    (s) => s.toggleEconomicPmcid,
+  const toggleEconomicArticleId = useReportWizardStore(
+    (s) => s.toggleEconomicArticleId,
   );
-  const setSelectedClinicalPmcids = useReportWizardStore(
-    (s) => s.setSelectedClinicalPmcids,
+  const setSelectedClinicalArticleIds = useReportWizardStore(
+    (s) => s.setSelectedClinicalArticleIds,
   );
-  const setSelectedEconomicPmcids = useReportWizardStore(
-    (s) => s.setSelectedEconomicPmcids,
+  const setSelectedEconomicArticleIds = useReportWizardStore(
+    (s) => s.setSelectedEconomicArticleIds,
   );
 
   const isClinical = activeTab === "clinical";
-  const selectedPmcids = isClinical
-    ? selectedClinicalPmcids
-    : selectedEconomicPmcids;
-  const togglePmcid = isClinical ? toggleClinicalPmcid : toggleEconomicPmcid;
-  const setSelectedPmcids = isClinical
-    ? setSelectedClinicalPmcids
-    : setSelectedEconomicPmcids;
+  const selectedArticleIds = isClinical
+    ? selectedClinicalArticleIds
+    : selectedEconomicArticleIds;
+  const toggleArticleId = isClinical
+    ? toggleClinicalArticleId
+    : toggleEconomicArticleId;
+  const setSelectedArticleIds = isClinical
+    ? setSelectedClinicalArticleIds
+    : setSelectedEconomicArticleIds;
 
   const {
     data: items = [],
@@ -63,20 +66,22 @@ export function Step3Evidence() {
   );
 
   const handleSelectAll = useCallback(
-    (visiblePmcids: string[]) => {
-      if (visiblePmcids.length === 0) {
+    (visibleIds: string[]) => {
+      if (visibleIds.length === 0) {
         const visibleSelectable = new Set(
-          filteredItems.flatMap((item) => (item.pmcid ? [item.pmcid] : [])),
+          filteredItems.map(getArticleSelectionId),
         );
-        setSelectedPmcids(
-          selectedPmcids.filter((pmcid) => !visibleSelectable.has(pmcid)),
+        setSelectedArticleIds(
+          selectedArticleIds.filter((id) => !visibleSelectable.has(id)),
         );
         return;
       }
 
-      setSelectedPmcids([...new Set([...selectedPmcids, ...visiblePmcids])]);
+      setSelectedArticleIds([
+        ...new Set([...selectedArticleIds, ...visibleIds]),
+      ]);
     },
-    [filteredItems, selectedPmcids, setSelectedPmcids],
+    [filteredItems, selectedArticleIds, setSelectedArticleIds],
   );
 
   if (!reportId) {
@@ -127,8 +132,8 @@ export function Step3Evidence() {
       {filteredItems.length > 0 && (
         <EvidenceTable
           items={filteredItems}
-          selectedPmcids={selectedPmcids}
-          onToggle={togglePmcid}
+          selectedIds={selectedArticleIds}
+          onToggle={toggleArticleId}
           onSelectAll={handleSelectAll}
         />
       )}

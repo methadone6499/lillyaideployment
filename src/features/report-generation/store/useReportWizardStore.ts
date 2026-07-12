@@ -155,6 +155,8 @@ type PersistedWizardState = {
   reportId?: string | null;
   selectedClinicalPmcids?: string[];
   selectedEconomicPmcids?: string[];
+  selectedClinicalArticleIds?: string[];
+  selectedEconomicArticleIds?: string[];
   selectedComparators?: string[];
   customComparators?: string[];
   selectedSectionIds?: string[];
@@ -171,8 +173,8 @@ type ReportWizardState = {
   indications: string;
   filters: FilterState;
   reportId: string | null;
-  selectedClinicalPmcids: string[];
-  selectedEconomicPmcids: string[];
+  selectedClinicalArticleIds: string[];
+  selectedEconomicArticleIds: string[];
   selectedComparators: string[];
   customComparators: string[];
   selectedSectionIds: WizardSectionId[];
@@ -193,10 +195,10 @@ type ReportWizardState = {
   toggleComparatorType: (type: string) => void;
   toggleEvidenceQuality: (quality: string) => void;
   setReportId: (reportId: string | null) => void;
-  setSelectedClinicalPmcids: (pmcids: string[]) => void;
-  setSelectedEconomicPmcids: (pmcids: string[]) => void;
-  toggleClinicalPmcid: (pmcid: string) => void;
-  toggleEconomicPmcid: (pmcid: string) => void;
+  setSelectedClinicalArticleIds: (ids: string[]) => void;
+  setSelectedEconomicArticleIds: (ids: string[]) => void;
+  toggleClinicalArticleId: (id: string) => void;
+  toggleEconomicArticleId: (id: string) => void;
   toggleComparator: (name: string) => void;
   addCustomComparator: (name: string) => void;
   toggleSectionId: (id: WizardSectionId) => void;
@@ -211,8 +213,8 @@ type ReportWizardState = {
 };
 
 const emptySectionInputs: SectionSelectionInputs = {
-  selectedClinicalPmcids: [],
-  selectedEconomicPmcids: [],
+  selectedClinicalArticleIds: [],
+  selectedEconomicArticleIds: [],
   selectedComparators: [],
 };
 
@@ -222,8 +224,8 @@ const initialState = {
   indications: "",
   filters: createDefaultFilters(),
   reportId: null as string | null,
-  selectedClinicalPmcids: [] as string[],
-  selectedEconomicPmcids: [] as string[],
+  selectedClinicalArticleIds: [] as string[],
+  selectedEconomicArticleIds: [] as string[],
   selectedComparators: [] as string[],
   customComparators: [] as string[],
   selectedSectionIds: getDefaultSelectedSectionIds(emptySectionInputs),
@@ -235,8 +237,8 @@ const initialState = {
 const reportPipelineState = {
   reportId: null as string | null,
   generationJobId: null as string | null,
-  selectedClinicalPmcids: [] as string[],
-  selectedEconomicPmcids: [] as string[],
+  selectedClinicalArticleIds: [] as string[],
+  selectedEconomicArticleIds: [] as string[],
   selectedComparators: [] as string[],
   customComparators: [] as string[],
 };
@@ -244,14 +246,14 @@ const reportPipelineState = {
 function getSectionSelectionInputs(
   state: Pick<
     ReportWizardState,
-    | "selectedClinicalPmcids"
-    | "selectedEconomicPmcids"
+    | "selectedClinicalArticleIds"
+    | "selectedEconomicArticleIds"
     | "selectedComparators"
   >,
 ): SectionSelectionInputs {
   return {
-    selectedClinicalPmcids: state.selectedClinicalPmcids,
-    selectedEconomicPmcids: state.selectedEconomicPmcids,
+    selectedClinicalArticleIds: state.selectedClinicalArticleIds,
+    selectedEconomicArticleIds: state.selectedEconomicArticleIds,
     selectedComparators: state.selectedComparators,
   };
 }
@@ -260,8 +262,8 @@ function withSyncedSectionIdsOnInputChange<
   T extends Pick<
     ReportWizardState,
     | "selectedSectionIds"
-    | "selectedClinicalPmcids"
-    | "selectedEconomicPmcids"
+    | "selectedClinicalArticleIds"
+    | "selectedEconomicArticleIds"
     | "selectedComparators"
   >,
 >(state: T, changes: Partial<T>): Partial<T> {
@@ -279,8 +281,8 @@ function withReconciledSectionIdsAtStep5<
   T extends Pick<
     ReportWizardState,
     | "selectedSectionIds"
-    | "selectedClinicalPmcids"
-    | "selectedEconomicPmcids"
+    | "selectedClinicalArticleIds"
+    | "selectedEconomicArticleIds"
     | "selectedComparators"
   >,
 >(state: T): Pick<T, "selectedSectionIds"> {
@@ -343,8 +345,14 @@ function migratePersistedState(
 
   if (version < 3) {
     const sectionInputs: SectionSelectionInputs = {
-      selectedClinicalPmcids: state.selectedClinicalPmcids ?? [],
-      selectedEconomicPmcids: state.selectedEconomicPmcids ?? [],
+      selectedClinicalArticleIds:
+        state.selectedClinicalArticleIds ??
+        state.selectedClinicalPmcids ??
+        [],
+      selectedEconomicArticleIds:
+        state.selectedEconomicArticleIds ??
+        state.selectedEconomicPmcids ??
+        [],
       selectedComparators: state.selectedComparators ?? [],
     };
 
@@ -373,6 +381,26 @@ function migratePersistedState(
       ...state,
       filters: migrateFiltersToV5(state.filters),
     };
+  }
+
+  if (version < 6) {
+    const selectedClinicalArticleIds =
+      state.selectedClinicalArticleIds ??
+      state.selectedClinicalPmcids ??
+      [];
+    const selectedEconomicArticleIds =
+      state.selectedEconomicArticleIds ??
+      state.selectedEconomicPmcids ??
+      [];
+
+    const migrated: PersistedWizardState = {
+      ...state,
+      selectedClinicalArticleIds,
+      selectedEconomicArticleIds,
+    };
+    delete migrated.selectedClinicalPmcids;
+    delete migrated.selectedEconomicPmcids;
+    state = migrated;
   }
 
   return state;
@@ -476,32 +504,36 @@ export const useReportWizardStore = create<ReportWizardState>()(
           },
         })),
       setReportId: (reportId) => set({ reportId }),
-      setSelectedClinicalPmcids: (selectedClinicalPmcids) =>
+      setSelectedClinicalArticleIds: (selectedClinicalArticleIds) =>
         set((state) =>
-          withSyncedSectionIdsOnInputChange(state, { selectedClinicalPmcids }),
+          withSyncedSectionIdsOnInputChange(state, {
+            selectedClinicalArticleIds,
+          }),
         ),
-      setSelectedEconomicPmcids: (selectedEconomicPmcids) =>
+      setSelectedEconomicArticleIds: (selectedEconomicArticleIds) =>
         set((state) =>
-          withSyncedSectionIdsOnInputChange(state, { selectedEconomicPmcids }),
+          withSyncedSectionIdsOnInputChange(state, {
+            selectedEconomicArticleIds,
+          }),
         ),
-      toggleClinicalPmcid: (pmcid) =>
+      toggleClinicalArticleId: (id) =>
         set((state) => {
-          const selected = state.selectedClinicalPmcids;
-          const selectedClinicalPmcids = selected.includes(pmcid)
-            ? selected.filter((item) => item !== pmcid)
-            : [...selected, pmcid];
+          const selected = state.selectedClinicalArticleIds;
+          const selectedClinicalArticleIds = selected.includes(id)
+            ? selected.filter((item) => item !== id)
+            : [...selected, id];
           return withSyncedSectionIdsOnInputChange(state, {
-            selectedClinicalPmcids,
+            selectedClinicalArticleIds,
           });
         }),
-      toggleEconomicPmcid: (pmcid) =>
+      toggleEconomicArticleId: (id) =>
         set((state) => {
-          const selected = state.selectedEconomicPmcids;
-          const selectedEconomicPmcids = selected.includes(pmcid)
-            ? selected.filter((item) => item !== pmcid)
-            : [...selected, pmcid];
+          const selected = state.selectedEconomicArticleIds;
+          const selectedEconomicArticleIds = selected.includes(id)
+            ? selected.filter((item) => item !== id)
+            : [...selected, id];
           return withSyncedSectionIdsOnInputChange(state, {
-            selectedEconomicPmcids,
+            selectedEconomicArticleIds,
           });
         }),
       toggleComparator: (name) =>
@@ -557,7 +589,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 5,
+      version: 6,
       migrate: migratePersistedState,
       partialize: (state) => ({
         currentStep: state.currentStep,
@@ -565,8 +597,8 @@ export const useReportWizardStore = create<ReportWizardState>()(
         indications: state.indications,
         filters: state.filters,
         reportId: state.reportId,
-        selectedClinicalPmcids: state.selectedClinicalPmcids,
-        selectedEconomicPmcids: state.selectedEconomicPmcids,
+        selectedClinicalArticleIds: state.selectedClinicalArticleIds,
+        selectedEconomicArticleIds: state.selectedEconomicArticleIds,
         selectedComparators: state.selectedComparators,
         customComparators: state.customComparators,
         selectedSectionIds: state.selectedSectionIds,

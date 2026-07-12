@@ -8,44 +8,42 @@ import {
   RadioCircle,
 } from "@/components/ui";
 import type { ArticleCandidate } from "../types";
+import { getArticleSelectionId } from "../utils/getArticleSelectionId";
 import { getTextAvailability } from "../utils/getTextAvailability";
 import { useState } from "react";
 
 type EvidenceTableProps = {
   items: ArticleCandidate[];
-  selectedPmcids: string[];
-  onToggle: (pmcid: string) => void;
-  onSelectAll: (pmcids: string[]) => void;
+  selectedIds: string[];
+  onToggle: (id: string) => void;
+  onSelectAll: (ids: string[]) => void;
 };
 
-function getRowKey(item: ArticleCandidate): string {
-  return item.pmcid ?? item.pmid;
-}
-
-function getPmcLink(item: ArticleCandidate): string | null {
-  if (item.pmc_url) return item.pmc_url;
+function getSourceLink(item: ArticleCandidate): string | null {
   if (item.pmcid) {
-    return `https://pmc.ncbi.nlm.nih.gov/articles/${item.pmcid}/`;
+    return (
+      item.pmc_url ??
+      `https://pmc.ncbi.nlm.nih.gov/articles/${item.pmcid}/`
+    );
   }
-  return item.pubmed_url ?? null;
+  return (
+    item.pubmed_url ??
+    (item.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${item.pmid}/` : null)
+  );
 }
 
 export function EvidenceTable({
   items,
-  selectedPmcids,
+  selectedIds,
   onToggle,
   onSelectAll,
 }: EvidenceTableProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
-  const selectableItems = items.filter(
-    (item): item is ArticleCandidate & { pmcid: string } =>
-      Boolean(item.pmcid),
-  );
-
+  const selectableIds = items.map(getArticleSelectionId);
   const allSelected =
-    selectableItems.length > 0 &&
-    selectableItems.every((item) => selectedPmcids.includes(item.pmcid));
+    selectableIds.length > 0 &&
+    selectableIds.every((id) => selectedIds.includes(id));
 
   const evidenceRowClass =
     "grid grid-cols-[40px_minmax(0,1fr)_167px_122px_116px_140px_32px]";
@@ -61,12 +59,8 @@ export function EvidenceTable({
         <Checkbox
           checked={allSelected}
           onChange={() => {
-            if (selectableItems.length === 0) return;
-            onSelectAll(
-              allSelected
-                ? []
-                : selectableItems.map((item) => item.pmcid),
-            );
+            if (selectableIds.length === 0) return;
+            onSelectAll(allSelected ? [] : selectableIds);
           }}
           aria-label="Select all evidence"
         />
@@ -81,33 +75,26 @@ export function EvidenceTable({
 
       <div className="flex flex-col gap-6">
         {items.map((item) => {
-          const rowKey = getRowKey(item);
-          const selectable = Boolean(item.pmcid);
-          const selected = selectable && selectedPmcids.includes(item.pmcid!);
-          const expanded = expandedKey === rowKey;
-          const pmcLink = getPmcLink(item);
+          const selectionId = getArticleSelectionId(item);
+          const selected = selectedIds.includes(selectionId);
+          const expanded = expandedKey === selectionId;
+          const sourceLink = getSourceLink(item);
 
           return (
             <div
-              key={rowKey}
+              key={selectionId}
               className={cn(
                 "rounded-card border",
                 selected
                   ? "border-brand-border bg-brand-bg"
                   : "border-border-default bg-surface-default",
-                !selectable && "opacity-70",
               )}
             >
               <div className={cn(evidenceRowClass, "items-center px-7 py-8")}>
                 <RadioCircle
                   selected={selected}
-                  onClick={
-                    selectable && item.pmcid
-                      ? () => onToggle(item.pmcid!)
-                      : undefined
-                  }
+                  onClick={() => onToggle(selectionId)}
                   aria-label={`Select ${item.title}`}
-                  className={cn(!selectable && "cursor-not-allowed opacity-50")}
                 />
 
                 <div className="min-w-0 overflow-hidden pr-4">
@@ -129,9 +116,9 @@ export function EvidenceTable({
                   {item.year}
                 </span>
 
-                {pmcLink ? (
+                {sourceLink ? (
                   <a
-                    href={pmcLink}
+                    href={sourceLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-body-lg font-medium text-brand underline"
@@ -157,7 +144,9 @@ export function EvidenceTable({
 
                 <button
                   type="button"
-                  onClick={() => setExpandedKey(expanded ? null : rowKey)}
+                  onClick={() =>
+                    setExpandedKey(expanded ? null : selectionId)
+                  }
                   className="text-white"
                   aria-label={expanded ? "Collapse" : "Expand"}
                 >

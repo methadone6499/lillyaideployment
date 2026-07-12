@@ -57,8 +57,8 @@ export function filterApiSectionIds(
 }
 
 export type SectionSelectionInputs = {
-  selectedClinicalPmcids: readonly string[];
-  selectedEconomicPmcids: readonly string[];
+  selectedClinicalArticleIds: readonly string[];
+  selectedEconomicArticleIds: readonly string[];
   selectedComparators: readonly string[];
 };
 
@@ -80,10 +80,10 @@ export function isSectionAvailable(
   inputs: SectionSelectionInputs,
 ): boolean {
   if (id === "clinical") {
-    return inputs.selectedClinicalPmcids.length > 0;
+    return inputs.selectedClinicalArticleIds.length > 0;
   }
   if (id === "economic") {
-    return inputs.selectedEconomicPmcids.length > 0;
+    return inputs.selectedEconomicArticleIds.length > 0;
   }
   if (id === "comparator") {
     return inputs.selectedComparators.length > 0;
@@ -113,10 +113,10 @@ export function syncSelectedSectionIdsOnInputChange(
 ): WizardSectionId[] {
   const next = new Set(selectedSectionIds);
 
-  if (inputs.selectedClinicalPmcids.length === 0) {
+  if (inputs.selectedClinicalArticleIds.length === 0) {
     next.delete("clinical");
   }
-  if (inputs.selectedEconomicPmcids.length === 0) {
+  if (inputs.selectedEconomicArticleIds.length === 0) {
     next.delete("economic");
   }
   if (inputs.selectedComparators.length === 0) {
@@ -133,13 +133,13 @@ export function reconcileSelectedSectionIdsWithInputs(
 ): WizardSectionId[] {
   const next = new Set(selectedSectionIds);
 
-  if (inputs.selectedClinicalPmcids.length === 0) {
+  if (inputs.selectedClinicalArticleIds.length === 0) {
     next.delete("clinical");
   } else {
     next.add("clinical");
   }
 
-  if (inputs.selectedEconomicPmcids.length === 0) {
+  if (inputs.selectedEconomicArticleIds.length === 0) {
     next.delete("economic");
   } else {
     next.add("economic");
