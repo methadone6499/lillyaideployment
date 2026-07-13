@@ -33,13 +33,7 @@ export const DEFAULT_FILTERS: FilterState = {
   patientRange: "",
   costPopulationTypeSecondary: "",
   costStudyDuration: "",
-  averageWeight: "",
-  genderDistribution: "",
-  treatmentDuration: "",
-  dosageFrequency: "",
-  regionPricingMarket: "",
   outcomeEvidenceFocus: [],
-  geographyRegulatoryRegion: ["gcc-middle-east"],
   evidenceQuality: [],
   comparatorType: [],
   customDateFrom: "",
@@ -57,7 +51,6 @@ function createDefaultFilters(): FilterState {
     clinicalStudyTypes: [...DEFAULT_FILTERS.clinicalStudyTypes],
     economicStudyTypes: [...DEFAULT_FILTERS.economicStudyTypes],
     populationType: [...DEFAULT_FILTERS.populationType],
-    geographyRegulatoryRegion: [...DEFAULT_FILTERS.geographyRegulatoryRegion],
     outcomeEvidenceFocus: [...DEFAULT_FILTERS.outcomeEvidenceFocus],
     evidenceQuality: [...DEFAULT_FILTERS.evidenceQuality],
     comparatorType: [...DEFAULT_FILTERS.comparatorType],
@@ -124,15 +117,7 @@ function migrateFiltersToV5(filters: unknown): FilterState {
       legacy.costPopulationTypeSecondary,
     ),
     costStudyDuration: coerceFilterString(legacy.costStudyDuration),
-    averageWeight: coerceFilterString(legacy.averageWeight),
-    genderDistribution: coerceFilterString(legacy.genderDistribution),
-    treatmentDuration: coerceFilterString(legacy.treatmentDuration),
-    dosageFrequency: coerceFilterString(legacy.dosageFrequency),
-    regionPricingMarket: coerceFilterString(legacy.regionPricingMarket),
     outcomeEvidenceFocus: coerceStringToStringArray(legacy.outcomeEvidenceFocus),
-    geographyRegulatoryRegion: coerceStringToStringArray(
-      legacy.geographyRegulatoryRegion ?? defaults.geographyRegulatoryRegion,
-    ),
     evidenceQuality: coerceStringToStringArray(legacy.evidenceQuality),
     comparatorType: coerceStringToStringArray(legacy.comparatorType),
     customDateFrom: coerceFilterString(legacy.customDateFrom),
@@ -190,7 +175,6 @@ type ReportWizardState = {
   toggleClinicalStudyType: (type: string) => void;
   toggleEconomicStudyType: (type: string) => void;
   togglePopulationType: (type: string) => void;
-  toggleGeographyRegulatoryRegion: (region: string) => void;
   toggleOutcomeEvidenceFocus: (focus: string) => void;
   toggleComparatorType: (type: string) => void;
   toggleEvidenceQuality: (quality: string) => void;
@@ -403,6 +387,20 @@ function migratePersistedState(
     state = migrated;
   }
 
+  if (version < 7) {
+    state = {
+      ...state,
+      filters: migrateFiltersToV5(state.filters),
+    };
+  }
+
+  if (version < 8) {
+    state = {
+      ...state,
+      filters: migrateFiltersToV5(state.filters),
+    };
+  }
+
   return state;
 }
 
@@ -464,16 +462,6 @@ export const useReportWizardStore = create<ReportWizardState>()(
           filters: {
             ...state.filters,
             populationType: toggleFilterArray(state.filters.populationType, type),
-          },
-        })),
-      toggleGeographyRegulatoryRegion: (region) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            geographyRegulatoryRegion: toggleFilterArray(
-              state.filters.geographyRegulatoryRegion,
-              region,
-            ),
           },
         })),
       toggleOutcomeEvidenceFocus: (focus) =>
@@ -589,7 +577,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 6,
+      version: 8,
       migrate: migratePersistedState,
       partialize: (state) => ({
         currentStep: state.currentStep,

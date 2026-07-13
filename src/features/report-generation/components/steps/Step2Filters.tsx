@@ -4,22 +4,18 @@ import { Chip, Select, TextField } from "@/components/ui";
 import { FilterGroupCard } from "../FilterGroupCard";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 import {
-  AVERAGE_WEIGHT_OPTIONS,
   CLINICAL_STUDY_TYPES,
   COMPARATOR_TYPE_OPTIONS,
   DOSAGE_FREQUENCY_OPTIONS,
   ECONOMIC_STUDY_TYPES,
   EVIDENCE_QUALITY_OPTIONS,
   EVIDENCE_SYNTHESIS_OPTIONS,
-  GENDER_DISTRIBUTION_OPTIONS,
-  GEOGRAPHY_REGULATORY_REGION_OPTIONS,
   OUTCOME_EVIDENCE_FOCUS_OPTIONS,
   POPULATION_TYPE_OPTIONS,
   REGION_PRICING_MARKET_OPTIONS,
   SPECIALIZED_TRIAL_STRUCTURES_OPTIONS,
   STUDY_DURATION_OPTIONS,
   TIME_RANGE_OPTIONS,
-  TREATMENT_DURATION_OPTIONS,
 } from "../../utils/filterOptions";
 
 function toDateInputValue(backendDate: string): string {
@@ -88,9 +84,6 @@ export function Step2Filters() {
   );
   const togglePopulationType = useReportWizardStore(
     (s) => s.togglePopulationType,
-  );
-  const toggleGeographyRegulatoryRegion = useReportWizardStore(
-    (s) => s.toggleGeographyRegulatoryRegion,
   );
   const toggleOutcomeEvidenceFocus = useReportWizardStore(
     (s) => s.toggleOutcomeEvidenceFocus,
@@ -271,59 +264,8 @@ export function Step2Filters() {
       </FilterGroupCard>
 
       <FilterGroupCard
-        title="Optional source filters"
-        description="Fine-tune per evidence report"
-      >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
-          <Select
-            label="Average Weight"
-            options={AVERAGE_WEIGHT_OPTIONS}
-            value={filters.averageWeight}
-            clearable
-            onChange={(e) => setFilters({ averageWeight: e.target.value })}
-          />
-          <Select
-            label="Gender Distribution"
-            options={GENDER_DISTRIBUTION_OPTIONS}
-            value={filters.genderDistribution}
-            clearable
-            onChange={(e) =>
-              setFilters({ genderDistribution: e.target.value })
-            }
-          />
-          <Select
-            label="Treatment Duration"
-            options={TREATMENT_DURATION_OPTIONS}
-            value={filters.treatmentDuration}
-            clearable
-            onChange={(e) =>
-              setFilters({ treatmentDuration: e.target.value })
-            }
-          />
-          <Select
-            label="Dosage Frequency"
-            options={DOSAGE_FREQUENCY_OPTIONS}
-            value={filters.dosageFrequency}
-            clearable
-            onChange={(e) =>
-              setFilters({ dosageFrequency: e.target.value })
-            }
-          />
-          <Select
-            label="Region / Pricing Market"
-            options={REGION_PRICING_MARKET_OPTIONS}
-            value={filters.regionPricingMarket}
-            clearable
-            onChange={(e) =>
-              setFilters({ regionPricingMarket: e.target.value })
-            }
-          />
-        </div>
-      </FilterGroupCard>
-
-      <FilterGroupCard
         title="Evidence refinement"
-        description="Narrow outcomes, geography, quality, and comparators"
+        description="Narrow outcomes, quality, and comparators"
       >
         <div className="flex flex-col gap-6">
           <ChipFilterSection
@@ -331,12 +273,6 @@ export function Step2Filters() {
             options={OUTCOME_EVIDENCE_FOCUS_OPTIONS}
             selected={filters.outcomeEvidenceFocus}
             onToggle={toggleOutcomeEvidenceFocus}
-          />
-          <ChipFilterSection
-            title="Geography / Regulatory Region"
-            options={GEOGRAPHY_REGULATORY_REGION_OPTIONS}
-            selected={filters.geographyRegulatoryRegion}
-            onToggle={toggleGeographyRegulatoryRegion}
           />
           <ChipFilterSection
             title="Evidence Quality"

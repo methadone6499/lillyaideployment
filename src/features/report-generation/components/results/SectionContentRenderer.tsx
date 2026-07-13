@@ -93,7 +93,7 @@ function renderBlock(block: Block, key: number, depth: number): ReactNode {
                 {block.columns.map((column, columnIndex) => (
                   <th
                     key={columnIndex}
-                    className="wrap-break-word whitespace-normal align-top border-r border-border-default px-4 py-3 text-body-lg font-semibold text-text-heading last:border-r-0 first:w-[35%]"
+                    className="wrap-break-word whitespace-pre-wrap align-top border-r border-border-default px-4 py-3 text-body-lg font-semibold text-text-heading last:border-r-0 first:w-[35%]"
                   >
                     {renderWithFootnotes(column)}
                   </th>
@@ -110,7 +110,7 @@ function renderBlock(block: Block, key: number, depth: number): ReactNode {
                     <td
                       key={cellIndex}
                       className={cn(
-                        "wrap-break-word whitespace-normal align-top border-r border-border-default px-4 py-3 leading-report last:border-r-0 first:w-[35%]",
+                        "wrap-break-word whitespace-pre-wrap align-top border-r border-border-default px-4 py-3 leading-report last:border-r-0 first:w-[35%]",
                         cellIndex === 0 && "font-medium text-text-heading",
                       )}
                     >

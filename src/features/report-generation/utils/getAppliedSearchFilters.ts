@@ -1,21 +1,17 @@
 import type { FilterState } from "../types";
 import {
-  AVERAGE_WEIGHT_OPTIONS,
   CLINICAL_STUDY_TYPES,
   COMPARATOR_TYPE_OPTIONS,
   DOSAGE_FREQUENCY_OPTIONS,
   ECONOMIC_STUDY_TYPES,
   EVIDENCE_QUALITY_OPTIONS,
   EVIDENCE_SYNTHESIS_OPTIONS,
-  GENDER_DISTRIBUTION_OPTIONS,
-  GEOGRAPHY_REGULATORY_REGION_OPTIONS,
   OUTCOME_EVIDENCE_FOCUS_OPTIONS,
   POPULATION_TYPE_OPTIONS,
   REGION_PRICING_MARKET_OPTIONS,
   SPECIALIZED_TRIAL_STRUCTURES_OPTIONS,
   STUDY_DURATION_OPTIONS,
   TIME_RANGE_OPTIONS,
-  TREATMENT_DURATION_OPTIONS,
 } from "./filterOptions";
 
 export type AppliedSearchFilterGroup = {
@@ -152,41 +148,8 @@ export function getAppliedSearchFilters(
   pushGroup(groups, "Cost Analysis", buildCostAnalysisLabels(filters));
   pushGroup(
     groups,
-    "Average Weight",
-    labelsForSelect(AVERAGE_WEIGHT_OPTIONS, filters.averageWeight),
-  );
-  pushGroup(
-    groups,
-    "Gender Distribution",
-    labelsForSelect(GENDER_DISTRIBUTION_OPTIONS, filters.genderDistribution),
-  );
-  pushGroup(
-    groups,
-    "Treatment Duration",
-    labelsForSelect(TREATMENT_DURATION_OPTIONS, filters.treatmentDuration),
-  );
-  pushGroup(
-    groups,
-    "Dosage Frequency",
-    labelsForSelect(DOSAGE_FREQUENCY_OPTIONS, filters.dosageFrequency),
-  );
-  pushGroup(
-    groups,
-    "Region / Pricing Market",
-    labelsForSelect(REGION_PRICING_MARKET_OPTIONS, filters.regionPricingMarket),
-  );
-  pushGroup(
-    groups,
     "Outcome / Evidence Focus",
     labelsForIds(OUTCOME_EVIDENCE_FOCUS_OPTIONS, filters.outcomeEvidenceFocus),
-  );
-  pushGroup(
-    groups,
-    "Geography / Regulatory Region",
-    labelsForIds(
-      GEOGRAPHY_REGULATORY_REGION_OPTIONS,
-      filters.geographyRegulatoryRegion,
-    ),
   );
   pushGroup(
     groups,

@@ -77,13 +77,6 @@ export const OUTCOME_EVIDENCE_FOCUS_OPTIONS = [
   { id: "hospitalization-impact", label: "Hospitalization Impact" },
 ];
 
-export const GEOGRAPHY_REGULATORY_REGION_OPTIONS = [
-  { id: "global", label: "Global" },
-  { id: "gcc-middle-east", label: "GCC / Middle East" },
-  { id: "europe", label: "Europe" },
-  { id: "usa", label: "USA" },
-];
-
 export const EVIDENCE_QUALITY_OPTIONS = [
   { id: "peer-reviewed-only", label: "Peer Reviewed Only" },
   { id: "most-cited-studies", label: "Most Cited Studies" },
@@ -98,30 +91,6 @@ export const COMPARATOR_TYPE_OPTIONS = [
   { id: "combination-therapy", label: "Combination Therapy" },
   { id: "historical-control", label: "Historical Control" },
   { id: "no-comparator", label: "No Comparator" },
-];
-
-export const AVERAGE_WEIGHT_OPTIONS = [
-  { value: "under-50kg", label: "< 50 kg" },
-  { value: "50-70kg", label: "50–70 kg" },
-  { value: "70-90kg", label: "70–90 kg" },
-  { value: "90-110kg", label: "90–110 kg" },
-  { value: "over-110kg", label: "> 110 kg" },
-];
-
-export const GENDER_DISTRIBUTION_OPTIONS = [
-  { value: "mostly-male", label: "Mostly Male (>70%)" },
-  { value: "male-majority", label: "Male Majority (50–70%)" },
-  { value: "balanced", label: "Balanced Distribution" },
-  { value: "female-majority", label: "Female Majority (50–70%)" },
-  { value: "mostly-female", label: "Mostly Female (>70%)" },
-];
-
-export const TREATMENT_DURATION_OPTIONS = [
-  { value: "acute", label: "Acute (<30 days)" },
-  { value: "short-term", label: "Short-Term (1–6 months)" },
-  { value: "medium-term", label: "Medium-Term (6–12 months)" },
-  { value: "long-term", label: "Long-Term (1–3 years)" },
-  { value: "chronic", label: "Chronic (>3 years)" },
 ];
 
 export const DOSAGE_FREQUENCY_OPTIONS = [

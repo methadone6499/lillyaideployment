@@ -19,7 +19,6 @@ type ExtendedFilterFields = {
   costDosageFrequency?: string;
   costRegion?: string;
   populationType?: string | string[];
-  geographyRegulatoryRegion?: string | string[];
   outcomeEvidenceFocus?: string | string[];
   comparatorType?: string | string[];
   evidenceQuality?: string | string[];
@@ -99,14 +98,6 @@ const POPULATION_MAP: Record<string, string> = {
   "biomarker-positive-population": "Biomarker-Positive Population",
   "oncology-line-of-therapy": "Oncology Line of Therapy",
   "general-population": "General Population",
-};
-
-/** Frontend geography values → backend `advanced_filters.geography`. */
-const GEOGRAPHY_MAP: Record<string, string> = {
-  global: "Global",
-  "gcc-middle-east": "GCC / Middle East",
-  europe: "Europe",
-  usa: "USA",
 };
 
 /** Frontend outcome focus values → backend `advanced_filters.outcomes`. */
@@ -257,18 +248,6 @@ function buildPopulation(filters: FilterState): string[] {
   return [...new Set(mapIdList(populationIds, POPULATION_MAP))];
 }
 
-function buildGeography(filters: FilterState): string[] {
-  const extendedFilters = asExtendedFilters(filters);
-  return [
-    ...new Set(
-      mapIdList(
-        normalizeToStringArray(extendedFilters.geographyRegulatoryRegion),
-        GEOGRAPHY_MAP,
-      ),
-    ),
-  ];
-}
-
 function buildOutcomes(filters: FilterState): string[] {
   const extendedFilters = asExtendedFilters(filters);
   return [
@@ -335,19 +314,14 @@ function buildCostAnalysis(filters: FilterState): CostAnalysis | undefined {
   }
 
   const dosageFrequency =
-    mapSelectValue(
-      extendedFilters.costDosageFrequency ?? filters.dosageFrequency,
-      DOSAGE_FREQUENCY_MAP,
-    ) ?? undefined;
+    mapSelectValue(extendedFilters.costDosageFrequency, DOSAGE_FREQUENCY_MAP) ??
+    undefined;
   if (dosageFrequency) {
     costAnalysis.dosage_frequency = dosageFrequency;
   }
 
   const region =
-    mapSelectValue(
-      extendedFilters.costRegion ?? filters.regionPricingMarket,
-      REGION_MAP,
-    ) ?? undefined;
+    mapSelectValue(extendedFilters.costRegion, REGION_MAP) ?? undefined;
   if (region) {
     costAnalysis.region = region;
   }
@@ -386,7 +360,6 @@ function buildAdvancedFilters(filters: FilterState): AdvancedFilters {
     ...new Set(mapIdList(filters.economicStudyTypes, ECONOMIC_STUDY_TYPE_MAP)),
   ];
   const population = buildPopulation(filters);
-  const geography = buildGeography(filters);
   const outcomes = buildOutcomes(filters);
   const comparators = buildComparators(filters);
   const qualityFilters = buildQualityFilters(filters);
@@ -408,10 +381,6 @@ function buildAdvancedFilters(filters: FilterState): AdvancedFilters {
 
   if (population.length > 0) {
     advancedFilters.population = population;
-  }
-
-  if (geography.length > 0) {
-    advancedFilters.geography = geography;
   }
 
   if (outcomes.length > 0) {
