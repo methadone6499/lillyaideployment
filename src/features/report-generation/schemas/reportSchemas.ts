@@ -110,8 +110,8 @@ export const advancedFiltersSchema = z.object({
 });
 
 export const reportInputsSchema = z.object({
-  pubmed_top_k_clinical: z.number().optional(),
-  pubmed_top_k_economic: z.number().optional(),
+  pubmed_top_k_clinical: z.number().nullable().optional(),
+  pubmed_top_k_economic: z.number().nullable().optional(),
   advanced_filters: advancedFiltersSchema.optional(),
 });
 

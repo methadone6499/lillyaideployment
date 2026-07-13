@@ -2,10 +2,6 @@ import type { AdvancedFilters, FilterState, ReportInputs } from "../types";
 
 type CostAnalysis = NonNullable<AdvancedFilters["cost_analysis"]>;
 
-/** Default PubMed result limits sent on report creation. */
-export const DEFAULT_PUBMED_TOP_K_CLINICAL = 150;
-export const DEFAULT_PUBMED_TOP_K_ECONOMIC = 150;
-
 /**
  * Optional filter fields added in store/schema v5 — read when present so mapping
  * stays compatible before and after the wizard state migration lands.
@@ -415,8 +411,8 @@ function buildAdvancedFilters(filters: FilterState): AdvancedFilters {
 /** Maps wizard filter state to the backend `inputs` payload for `POST /reports`. */
 export function mapFiltersToBackend(filters: FilterState): ReportInputs {
   return {
-    pubmed_top_k_clinical: DEFAULT_PUBMED_TOP_K_CLINICAL,
-    pubmed_top_k_economic: DEFAULT_PUBMED_TOP_K_ECONOMIC,
+    pubmed_top_k_clinical: null,
+    pubmed_top_k_economic: null,
     advanced_filters: buildAdvancedFilters(filters),
   };
 }
