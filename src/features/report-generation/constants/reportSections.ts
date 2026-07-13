@@ -67,7 +67,7 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
 export const ALL_WIZARD_SECTION_IDS: WizardSectionId[] =
   REPORT_SECTION_DEFINITIONS.map((section) => section.id);
 
-/** Default section IDs — all sections except environmental (opt-in on Step 5). */
+/** Default section IDs — all sections except environmental and compliance (hidden/opt-in). */
 export const DEFAULT_SECTION_IDS: SectionType[] = ALL_WIZARD_SECTION_IDS.filter(
-  (id) => id !== "environmental",
+  (id) => id !== "environmental" && id !== "compliance",
 );

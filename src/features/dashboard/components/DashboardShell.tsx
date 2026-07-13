@@ -2,6 +2,8 @@
 
 import { AppHeader } from "@/components/shared/AppHeader";
 import { useCurrentUserQuery } from "@/features/auth";
+import { beginReportWizardSession } from "@/features/report-generation";
+import { useRouter } from "next/navigation";
 import { dashboardQuota } from "../data/dashboardData";
 import { formatDisplayName } from "../utils/formatDisplayName";
 import { DashboardActionCard } from "./DashboardActionCard";
@@ -11,10 +13,18 @@ import { RecentReportsTable } from "./RecentReportsTable";
 import { ReportQuotaCard } from "./ReportQuotaCard";
 
 export function DashboardShell() {
+  const router = useRouter();
   const { data: user } = useCurrentUserQuery();
   const displayName = user
     ? formatDisplayName(user.first_name, user.last_name)
     : "";
+
+  const handleGenerateReport = () => {
+    if (user?.user_id) {
+      beginReportWizardSession(user.user_id);
+    }
+    router.push("/reports/new");
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-text-body">
@@ -41,7 +51,7 @@ export function DashboardShell() {
               title="Generate Report"
               description="Generate a complete assessment report aligned with HTA compliance requirements."
               ctaLabel="Generate Report"
-              href="/reports/new"
+              onCtaClick={handleGenerateReport}
             />
           </section>
 

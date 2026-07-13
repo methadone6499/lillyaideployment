@@ -3,8 +3,8 @@ import type { AdvancedFilters, FilterState, ReportInputs } from "../types";
 type CostAnalysis = NonNullable<AdvancedFilters["cost_analysis"]>;
 
 /** Default PubMed result limits sent on report creation. */
-export const DEFAULT_PUBMED_TOP_K_CLINICAL = 10;
-export const DEFAULT_PUBMED_TOP_K_ECONOMIC = 10;
+export const DEFAULT_PUBMED_TOP_K_CLINICAL = 150;
+export const DEFAULT_PUBMED_TOP_K_ECONOMIC = 150;
 
 /**
  * Optional filter fields added in store/schema v5 — read when present so mapping

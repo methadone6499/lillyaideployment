@@ -53,7 +53,7 @@ export function normalizeWizardSectionIds(
 export function filterApiSectionIds(
   ids: readonly WizardSectionId[],
 ): SectionType[] {
-  return orderWizardSectionIds(ids);
+  return orderWizardSectionIds(ids).filter((id) => id !== "compliance");
 }
 
 export type SectionSelectionInputs = {
@@ -79,6 +79,9 @@ export function isSectionAvailable(
   id: WizardSectionId,
   inputs: SectionSelectionInputs,
 ): boolean {
+  if (id === "compliance") {
+    return false;
+  }
   if (id === "clinical") {
     return inputs.selectedClinicalArticleIds.length > 0;
   }
@@ -98,11 +101,13 @@ export function getToggleableSectionIds(
   return ALL_WIZARD_SECTION_IDS.filter((id) => isSectionAvailable(id, inputs));
 }
 
-/** Default Step 5 selections: all sections except environmental and input-dependent gaps. */
+/** Default Step 5 selections: all except environmental, compliance, and input-dependent gaps. */
 export function getDefaultSelectedSectionIds(
   inputs: SectionSelectionInputs,
 ): WizardSectionId[] {
-  const base = ALL_WIZARD_SECTION_IDS.filter((id) => id !== "environmental");
+  const base = ALL_WIZARD_SECTION_IDS.filter(
+    (id) => id !== "environmental" && id !== "compliance",
+  );
   return syncSelectedSectionIdsOnInputChange(base, inputs);
 }
 
@@ -112,6 +117,7 @@ export function syncSelectedSectionIdsOnInputChange(
   inputs: SectionSelectionInputs,
 ): WizardSectionId[] {
   const next = new Set(selectedSectionIds);
+  next.delete("compliance");
 
   if (inputs.selectedClinicalArticleIds.length === 0) {
     next.delete("clinical");
@@ -132,6 +138,7 @@ export function reconcileSelectedSectionIdsWithInputs(
   inputs: SectionSelectionInputs,
 ): WizardSectionId[] {
   const next = new Set(selectedSectionIds);
+  next.delete("compliance");
 
   if (inputs.selectedClinicalArticleIds.length === 0) {
     next.delete("clinical");

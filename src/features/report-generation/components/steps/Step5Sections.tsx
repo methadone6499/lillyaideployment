@@ -66,7 +66,9 @@ export function Step5Sections() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {REPORT_SECTION_DEFINITIONS.map((section) => {
+        {REPORT_SECTION_DEFINITIONS.filter(
+          (section) => section.id !== "compliance",
+        ).map((section) => {
           const available = isSectionAvailable(section.id, sectionInputs);
           const selected =
             available && selectedSectionIds.includes(section.id);
