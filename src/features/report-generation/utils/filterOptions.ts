@@ -3,7 +3,7 @@ export const TIME_RANGE_OPTIONS = [
   { value: "last-3-years", label: "Last 3 Years" },
   { value: "last-5-years", label: "Last 5 Years" },
   { value: "last-10-years", label: "Last 10 Years" },
-  { value: "custom-date-range", label: "Custom Date Range" },
+  { value: "all-time", label: "All Time" },
 ];
 
 export const CLINICAL_STUDY_TYPES = [

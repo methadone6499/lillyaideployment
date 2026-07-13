@@ -18,7 +18,7 @@ const EVIDENCE_TABS = [
 export function Step3Evidence() {
   const [activeTab, setActiveTab] = useState<EvidenceType>("clinical");
   const [textAvailabilityFilter, setTextAvailabilityFilter] =
-    useState<TextAvailabilityFilter>("full_text");
+    useState<TextAvailabilityFilter>("all");
   const reportId = useReportWizardStore((s) => s.reportId);
   const selectedClinicalArticleIds = useReportWizardStore(
     (s) => s.selectedClinicalArticleIds,

@@ -42,7 +42,7 @@ export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type EvidenceType = "clinical" | "economic";
 
-export type TextAvailabilityFilter = "full_text" | "abstract_only";
+export type TextAvailabilityFilter = "all" | "full_text" | "abstract_only";
 
 export type ReportStatus = z.infer<typeof reportStatusSchema>;
 export type JobStatus = z.infer<typeof jobStatusSchema>;

@@ -18,25 +18,13 @@ import {
   TIME_RANGE_OPTIONS,
 } from "../../utils/filterOptions";
 
-function toDateInputValue(backendDate: string): string {
-  if (!backendDate) {
-    return "";
-  }
-
-  return backendDate.replace(/\//g, "-");
-}
-
-function toBackendDateFormat(inputDate: string): string {
-  if (!inputDate) {
-    return "";
-  }
-
-  return inputDate.replace(/-/g, "/");
-}
-
 function resolveTimeRangeValue(timeRange: string): string {
   if (timeRange === "last-2-years") {
     return "last-3-years";
+  }
+
+  if (timeRange === "custom-date-range") {
+    return "all-time";
   }
 
   return timeRange;
@@ -95,47 +83,19 @@ export function Step2Filters() {
     (s) => s.toggleEvidenceQuality,
   );
 
-  const isCustomDateRange = filters.timeRange === "custom-date-range";
-
   return (
     <div className="flex flex-col gap-6">
       <FilterGroupCard
         title="Time Range"
         description="Choose the timestamp for your required articles"
       >
-        <div className="flex flex-col gap-4">
-          <Select
-            label="Articles From"
-            options={TIME_RANGE_OPTIONS}
-            value={resolveTimeRangeValue(filters.timeRange)}
-            onChange={(e) => setFilters({ timeRange: e.target.value })}
-            containerClassName="max-w-[360px]"
-          />
-          {isCustomDateRange && (
-            <div className="grid max-w-[480px] grid-cols-1 gap-4 md:grid-cols-2">
-              <TextField
-                label="From"
-                type="date"
-                value={toDateInputValue(filters.customDateFrom)}
-                onChange={(e) =>
-                  setFilters({
-                    customDateFrom: toBackendDateFormat(e.target.value),
-                  })
-                }
-              />
-              <TextField
-                label="To"
-                type="date"
-                value={toDateInputValue(filters.customDateTo)}
-                onChange={(e) =>
-                  setFilters({
-                    customDateTo: toBackendDateFormat(e.target.value),
-                  })
-                }
-              />
-            </div>
-          )}
-        </div>
+        <Select
+          label="Articles From"
+          options={TIME_RANGE_OPTIONS}
+          value={resolveTimeRangeValue(filters.timeRange)}
+          onChange={(e) => setFilters({ timeRange: e.target.value })}
+          containerClassName="max-w-[360px]"
+        />
       </FilterGroupCard>
 
       <FilterGroupCard

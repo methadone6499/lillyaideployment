@@ -87,6 +87,22 @@ function coerceFilterString(value: unknown): string {
   return "";
 }
 
+function coerceTimeRange(value: unknown, fallback: string): string {
+  if (typeof value !== "string" || value.length === 0) {
+    return fallback;
+  }
+
+  if (value === "custom-date-range") {
+    return "all-time";
+  }
+
+  if (value === "last-2-years") {
+    return "last-3-years";
+  }
+
+  return value;
+}
+
 function migrateFiltersToV5(filters: unknown): FilterState {
   const defaults = createDefaultFilters();
 
@@ -97,8 +113,7 @@ function migrateFiltersToV5(filters: unknown): FilterState {
   const legacy = filters as Record<string, unknown>;
 
   return {
-    timeRange:
-      typeof legacy.timeRange === "string" ? legacy.timeRange : defaults.timeRange,
+    timeRange: coerceTimeRange(legacy.timeRange, defaults.timeRange),
     clinicalStudyTypes: coerceStringToStringArray(
       legacy.clinicalStudyTypes ?? defaults.clinicalStudyTypes,
     ),
@@ -401,6 +416,13 @@ function migratePersistedState(
     };
   }
 
+  if (version < 9) {
+    state = {
+      ...state,
+      filters: migrateFiltersToV5(state.filters),
+    };
+  }
+
   return state;
 }
 
@@ -577,7 +599,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 8,
+      version: 9,
       migrate: migratePersistedState,
       partialize: (state) => ({
         currentStep: state.currentStep,

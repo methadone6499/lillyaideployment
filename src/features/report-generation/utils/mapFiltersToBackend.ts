@@ -31,8 +31,21 @@ const TIME_RANGE_MAP: Record<string, string> = {
   "last-3-years": "Last 3 Years",
   "last-5-years": "Last 5 Years",
   "last-10-years": "Last 10 Years",
-  "custom-date-range": "Custom Date Range",
 };
+
+const ALL_TIME_FROM_DATE = "1993/01/01";
+
+/** Formats a Date as `YYYY/MM/DD` for backend custom_date_range. */
+function formatBackendDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}/${month}/${day}`;
+}
+
+function isAllTimeRange(timeRange: string): boolean {
+  return timeRange === "all-time" || timeRange === "custom-date-range";
+}
 
 /**
  * Frontend clinical study chip IDs (`filters.clinicalStudyTypes`) →
@@ -333,21 +346,14 @@ function buildTimeRange(filters: FilterState): Pick<
   AdvancedFilters,
   "time_range" | "custom_date_range"
 > {
-  if (filters.timeRange === "custom-date-range") {
-    const extendedFilters = asExtendedFilters(filters);
-    const timeRange: Pick<AdvancedFilters, "time_range" | "custom_date_range"> =
-      {
-        time_range: "Custom Date Range",
-      };
-
-    if (extendedFilters.customDateFrom && extendedFilters.customDateTo) {
-      timeRange.custom_date_range = {
-        from: extendedFilters.customDateFrom,
-        to: extendedFilters.customDateTo,
-      };
-    }
-
-    return timeRange;
+  if (isAllTimeRange(filters.timeRange)) {
+    return {
+      time_range: "Custom Date Range",
+      custom_date_range: {
+        from: ALL_TIME_FROM_DATE,
+        to: formatBackendDate(new Date()),
+      },
+    };
   }
 
   const timeRange = TIME_RANGE_MAP[filters.timeRange];

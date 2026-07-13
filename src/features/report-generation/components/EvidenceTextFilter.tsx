@@ -9,6 +9,7 @@ const TEXT_AVAILABILITY_OPTIONS: {
   value: TextAvailabilityFilter;
   label: string;
 }[] = [
+  { value: "all", label: "Show All" },
   { value: "full_text", label: "Full Text" },
   { value: "abstract_only", label: "Abstract only" },
 ];
@@ -30,7 +31,7 @@ export function EvidenceTextFilter({
   const selectedOption = TEXT_AVAILABILITY_OPTIONS.find(
     (option) => option.value === value,
   );
-  const displayLabel = selectedOption?.label ?? "Full Text";
+  const displayLabel = selectedOption?.label ?? "Show All";
 
   useEffect(() => {
     if (!open) return;

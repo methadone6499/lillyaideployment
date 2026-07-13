@@ -50,22 +50,10 @@ function pushGroup(
 }
 
 function buildTimeRangeLabels(filters: FilterState): string[] {
-  const labels: string[] = [];
-  const timeRangeLabel = labelForValue(TIME_RANGE_OPTIONS, filters.timeRange);
-  if (timeRangeLabel) {
-    labels.push(timeRangeLabel);
-  }
-
-  if (filters.timeRange === "custom-date-range") {
-    if (filters.customDateFrom) {
-      labels.push(`From: ${filters.customDateFrom}`);
-    }
-    if (filters.customDateTo) {
-      labels.push(`To: ${filters.customDateTo}`);
-    }
-  }
-
-  return labels;
+  const timeRangeValue =
+    filters.timeRange === "custom-date-range" ? "all-time" : filters.timeRange;
+  const timeRangeLabel = labelForValue(TIME_RANGE_OPTIONS, timeRangeValue);
+  return timeRangeLabel ? [timeRangeLabel] : [];
 }
 
 function buildCostAnalysisLabels(filters: FilterState): string[] {

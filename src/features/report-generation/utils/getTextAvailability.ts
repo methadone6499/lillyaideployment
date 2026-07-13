@@ -1,4 +1,4 @@
-import type { ArticleCandidate } from "../types";
+import type { ArticleCandidate, TextAvailabilityFilter } from "../types";
 export type TextAvailability = "full_text" | "abstract_only";
 
 export function getTextAvailability(item: ArticleCandidate): TextAvailability {
@@ -9,7 +9,8 @@ export function getTextAvailability(item: ArticleCandidate): TextAvailability {
 
 export function matchesTextAvailabilityFilter(
   item: ArticleCandidate,
-  filter: TextAvailability,
+  filter: TextAvailabilityFilter,
 ): boolean {
+  if (filter === "all") return true;
   return getTextAvailability(item) === filter;
 }
