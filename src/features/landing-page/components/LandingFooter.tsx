@@ -10,8 +10,8 @@ import {
 export function LandingFooter() {
   return (
     <footer className="w-full bg-[#111111]">
-      <div className="mx-auto flex w-full max-w-[941px] flex-col items-center gap-[104px] px-landing-section-x py-16">
-        <div className="flex w-full flex-col items-center gap-[72px]">
+      <div className="mx-auto flex w-full max-w-[941px] flex-col items-center gap-[clamp(72px,5.417vw,104px)] px-landing-section-x py-16">
+        <div className="flex w-full flex-col items-center gap-[clamp(48px,3.75vw,72px)]">
           <div className="flex flex-col items-center gap-14">
             <Image
               src="/lillyailogo.svg"

@@ -31,7 +31,7 @@ function ContactDetail({
 export function ContactSection() {
   return (
     <LandingSection id="contact">
-      <div className="grid grid-cols-1 items-center gap-16 xl:grid-cols-[minmax(0,573px)_minmax(0,723px)] xl:gap-36">
+      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-16 xl:grid-cols-[minmax(0,573px)_minmax(0,723px)] xl:gap-[clamp(80px,7.5vw,144px)]">
         <div className="flex flex-col gap-14">
           <div className="flex flex-col gap-9">
             <h2 className="text-landing-section-size leading-landing-section-line text-landing-text-heading">
@@ -62,7 +62,7 @@ export function ContactSection() {
 
         <div className="flex flex-col items-center gap-9 rounded-button border border-border-default bg-surface-default px-6 pb-7 pt-2">
           <div className="flex w-full max-w-[667px] flex-col gap-5">
-            <h3 className="text-[28px] leading-[72px] text-landing-text-heading">
+            <h3 className="text-[clamp(24px,1.458vw,28px)] leading-9 text-landing-text-heading">
               Premium Add-on Services
             </h3>
             <p className="text-label leading-[26px] text-text-step">

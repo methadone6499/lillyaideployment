@@ -5,6 +5,7 @@ import { Card, Switch, TextLink } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { REPORT_SECTION_DEFINITIONS } from "../../constants/reportSections";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
+import { AddCustomSectionCard } from "./AddCustomSectionCard";
 import {
   getToggleableSectionIds,
   isSectionAvailable,
@@ -103,6 +104,7 @@ export function Step5Sections() {
             </Card>
           );
         })}
+        <AddCustomSectionCard />
       </div>
     </div>
   );

@@ -7,22 +7,24 @@ import {
 } from "../api/reportApi";
 import { reportQueryKeys } from "../api/reportQueryKeys";
 import type { EvidenceType } from "../types";
+import { useReportQueriesEnabled } from "./useReportQueriesEnabled";
 
 export function useEvidenceDiscovery(
   reportId: string | null,
   type: EvidenceType,
 ) {
   const isClinical = type === "clinical";
+  const queriesEnabled = useReportQueriesEnabled(Boolean(reportId));
 
   return useQuery({
     queryKey: isClinical
       ? reportQueryKeys.clinicalArticles(reportId ?? "")
       : reportQueryKeys.economicArticles(reportId ?? ""),
-    queryFn: () =>
+    queryFn: ({ signal }) =>
       isClinical
-        ? discoverClinicalArticles(reportId!)
-        : discoverEconomicArticles(reportId!),
-    enabled: Boolean(reportId),
+        ? discoverClinicalArticles(reportId!, signal)
+        : discoverEconomicArticles(reportId!, signal),
+    enabled: queriesEnabled,
     staleTime: 60_000,
     select: (data) => data.candidates,
   });

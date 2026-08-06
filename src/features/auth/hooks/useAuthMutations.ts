@@ -1,9 +1,24 @@
 "use client";
 
-import { setAuthToken, setAuthUserId } from "@/lib/authToken";
-import { useMutation } from "@tanstack/react-query";
-import { signin, signup } from "../api/authApi";
-import type { SigninRequest, SignupRequest } from "../schemas/authSchemas";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import {
+  forgotPassword,
+  login,
+  resendVerification,
+  resetPassword,
+  signup,
+  verifyEmail,
+} from "../api/authApi";
+import { performLogout } from "../session/authSession";
+import type {
+  ForgotPasswordRequest,
+  LoginRequest,
+  ResendVerificationRequest,
+  ResetPasswordRequest,
+  SignupRequest,
+  VerifyEmailRequest,
+} from "../schemas/authSchemas";
 
 export function useSignupMutation() {
   return useMutation({
@@ -13,10 +28,38 @@ export function useSignupMutation() {
 
 export function useSigninMutation() {
   return useMutation({
-    mutationFn: (input: SigninRequest) => signin(input),
-    onSuccess: (data) => {
-      setAuthToken(data.access_token);
-      setAuthUserId(data.user_id);
-    },
+    mutationFn: (input: LoginRequest) => login(input),
+  });
+}
+
+export function useResendVerificationMutation() {
+  return useMutation({
+    mutationFn: (input: ResendVerificationRequest) => resendVerification(input),
+  });
+}
+
+export function useForgotPasswordMutation() {
+  return useMutation({
+    mutationFn: (input: ForgotPasswordRequest) => forgotPassword(input),
+  });
+}
+
+export function useResetPasswordMutation() {
+  return useMutation({
+    mutationFn: (input: ResetPasswordRequest) => resetPassword(input),
+  });
+}
+
+export function useVerifyEmailMutation() {
+  return useMutation({
+    mutationFn: (input: VerifyEmailRequest) => verifyEmail(input),
+  });
+}
+
+export function useLogoutMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => performLogout(queryClient),
   });
 }

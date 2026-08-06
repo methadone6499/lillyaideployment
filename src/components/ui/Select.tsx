@@ -3,7 +3,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { ChevronDownIcon } from "./icons";
-import type { ChangeEvent, SelectHTMLAttributes } from "react";
+import type {
+  ChangeEvent,
+  KeyboardEvent,
+  ReactNode,
+  SelectHTMLAttributes,
+} from "react";
 
 type SelectOption = {
   value: string;
@@ -15,8 +20,9 @@ type SelectProps = Omit<
   "children" | "onChange"
 > & {
   label?: string;
-  helper?: string;
-  options: SelectOption[];
+  helper?: ReactNode;
+  error?: ReactNode;
+  options: readonly SelectOption[];
   placeholder?: string;
   clearable?: boolean;
   clearLabel?: string;
@@ -28,6 +34,7 @@ type SelectProps = Omit<
 export function Select({
   label,
   helper,
+  error,
   options,
   placeholder = "Select an Option",
   clearable = false,
@@ -40,12 +47,23 @@ export function Select({
   disabled,
   name,
   id: idProp,
+  required,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const generatedId = useId();
   const id = idProp ?? generatedId;
+  const labelId = `${id}-label`;
   const listboxId = `${id}-listbox`;
+  const helperId = helper && !error ? `${id}-helper` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy =
+    [ariaDescribedBy, helperId, errorId].filter(Boolean).join(" ") || undefined;
+  const hasError = Boolean(error);
 
   const menuOptions = clearable
     ? [{ value: "", label: clearLabel }, ...options]
@@ -53,6 +71,8 @@ export function Select({
 
   const selectedOption = options.find((option) => option.value === value);
   const displayLabel = selectedOption?.label ?? placeholder;
+  const activeOptionId =
+    open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
 
   useEffect(() => {
     if (!open) return;
@@ -63,23 +83,31 @@ export function Select({
       }
     };
 
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
 
+  const findSelectedIndex = () => {
+    const selectedIndex = menuOptions.findIndex(
+      (option) => option.value === value,
+    );
+
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  };
+
+  const openMenu = (initialIndex = findSelectedIndex()) => {
+    if (menuOptions.length === 0) return;
+
+    setActiveIndex(initialIndex);
+    setOpen(true);
+  };
+
   const handleSelect = (optionValue: string) => {
     setOpen(false);
+    triggerRef.current?.focus();
 
     if (!onChange) return;
 
@@ -91,34 +119,119 @@ export function Select({
     onChange(syntheticEvent);
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (disabled || menuOptions.length === 0) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+
+      if (open && activeIndex >= 0) {
+        handleSelect(menuOptions[activeIndex].value);
+      } else {
+        openMenu();
+      }
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      if (!open) {
+        openMenu();
+      } else {
+        setActiveIndex((current) =>
+          Math.min(current + 1, menuOptions.length - 1),
+        );
+      }
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+
+      if (!open) {
+        openMenu(
+          value === "" && !clearable
+            ? menuOptions.length - 1
+            : findSelectedIndex(),
+        );
+      } else {
+        setActiveIndex((current) => Math.max(current - 1, 0));
+      }
+      return;
+    }
+
+    if (open && event.key === "Home") {
+      event.preventDefault();
+      setActiveIndex(0);
+      return;
+    }
+
+    if (open && event.key === "End") {
+      event.preventDefault();
+      setActiveIndex(menuOptions.length - 1);
+      return;
+    }
+
+    if (open && event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+      return;
+    }
+
+    if (event.key === "Tab") {
+      setOpen(false);
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-2", containerClassName)}>
       {label && (
-        <span id={`${id}-label`} className="text-label font-medium text-white">
+        <span id={labelId} className="text-label font-medium text-white">
           {label}
+          {required && <span className="text-brand"> *</span>}
         </span>
       )}
       <div className="relative" ref={containerRef}>
-        {name ? <input type="hidden" name={name} value={value} /> : null}
+        {name ? (
+          <input
+            type="hidden"
+            name={name}
+            value={value}
+            disabled={disabled}
+          />
+        ) : null}
         <button
           type="button"
           id={id}
+          ref={triggerRef}
           disabled={disabled}
+          role="combobox"
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-controls={listboxId}
-          aria-labelledby={label ? `${id}-label` : undefined}
+          aria-activedescendant={activeOptionId}
+          aria-describedby={describedBy}
+          aria-invalid={hasError ? true : ariaInvalid}
+          aria-required={required || undefined}
+          aria-labelledby={label ? labelId : undefined}
           className={cn(
             "h-12 w-full rounded-card border border-border-default bg-surface-default px-[17px] pr-10 text-left text-input font-medium outline-none focus:border-brand-chip-border",
             value ? "text-white" : "text-text-muted",
+            hasError && "border-status-running",
             disabled && "cursor-not-allowed opacity-50",
             className,
           )}
           onClick={() => {
             if (!disabled) {
-              setOpen((isOpen) => !isOpen);
+              if (open) {
+                setOpen(false);
+              } else {
+                openMenu();
+              }
             }
           }}
+          onKeyDown={handleKeyDown}
         >
           {displayLabel}
         </button>
@@ -132,7 +245,7 @@ export function Select({
           <ul
             id={listboxId}
             role="listbox"
-            aria-labelledby={label ? `${id}-label` : id}
+            aria-labelledby={label ? labelId : id}
             className={cn(
               "absolute left-0 right-0 z-50 overflow-hidden rounded-card border border-border-default bg-input-fill",
               menuPlacement === "top"
@@ -143,14 +256,18 @@ export function Select({
             {menuOptions.map((option, index) => (
               <li
                 key={option.value || "__clear__"}
+                id={`${listboxId}-option-${index}`}
                 role="option"
                 aria-selected={value === option.value}
                 className={cn(
                   "cursor-pointer px-[17px] py-3 text-input font-medium hover:bg-surface-elevated",
                   option.value === "" ? "text-text-muted" : "text-white",
                   index < menuOptions.length - 1 && "border-b border-white",
-                  value === option.value && "bg-surface-elevated",
+                  (value === option.value || activeIndex === index) &&
+                    "bg-surface-elevated",
                 )}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseMove={() => setActiveIndex(index)}
                 onClick={() => handleSelect(option.value)}
               >
                 {option.label}
@@ -159,7 +276,16 @@ export function Select({
           </ul>
         ) : null}
       </div>
-      {helper ? <p className="text-helper text-text-muted">{helper}</p> : null}
+      {helper && !error ? (
+        <p id={helperId} className="text-helper text-text-muted">
+          {helper}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={errorId} role="alert" className="text-helper text-status-running">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

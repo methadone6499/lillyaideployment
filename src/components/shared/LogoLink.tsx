@@ -1,9 +1,8 @@
 "use client";
 
-import { getAuthToken } from "@/lib/authToken";
+import { useAuthUser } from "@/features/auth";
 import Image from "next/image";
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
 
 type LogoLinkProps = {
   width: number;
@@ -11,20 +10,9 @@ type LogoLinkProps = {
   className?: string;
 };
 
-function subscribe() {
-  return () => {};
-}
-
-function getLogoHref() {
-  return getAuthToken() ? "/dashboard" : "/";
-}
-
-function getServerLogoHref() {
-  return "/";
-}
-
 export function LogoLink({ width, height, className }: LogoLinkProps) {
-  const href = useSyncExternalStore(subscribe, getLogoHref, getServerLogoHref);
+  const { isAuthenticated } = useAuthUser();
+  const href = isAuthenticated ? "/dashboard" : "/";
 
   return (
     <Link

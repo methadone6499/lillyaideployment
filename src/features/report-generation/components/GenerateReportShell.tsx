@@ -1,6 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/AppHeader";
+import { useIsAuthenticated } from "@/features/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
@@ -65,6 +66,7 @@ function canContinueStep(
 
 export function GenerateReportShell() {
   const queryClient = useQueryClient();
+  const isAuthenticated = useIsAuthenticated();
   const currentStep = useReportWizardStore((s) => s.currentStep);
   const drugName = useReportWizardStore((s) => s.drugName);
   const indications = useReportWizardStore((s) => s.indications);
@@ -99,7 +101,7 @@ export function GenerateReportShell() {
   const [isPrefetchingDiscovery, setIsPrefetchingDiscovery] = useState(false);
 
   const createReportMutation = useMutation({
-    mutationFn: createReport,
+    mutationFn: (input: Parameters<typeof createReport>[0]) => createReport(input),
   });
   const saveSelectionsMutation = useUpdateReportSelectionsMutation();
   const generateMutation = useGenerateReportMutation();
@@ -128,6 +130,10 @@ export function GenerateReportShell() {
 
   const handleContinue = async () => {
     if (currentStep === 2) {
+      if (!isAuthenticated) {
+        return;
+      }
+
       setStep2Error(null);
       setDiscoveryWarnings([]);
 
@@ -144,15 +150,18 @@ export function GenerateReportShell() {
         const prefetchResults = await Promise.allSettled([
           queryClient.prefetchQuery({
             queryKey: reportQueryKeys.clinicalArticles(report.report_id),
-            queryFn: () => discoverClinicalArticles(report.report_id),
+            queryFn: ({ signal }) =>
+              discoverClinicalArticles(report.report_id, signal),
           }),
           queryClient.prefetchQuery({
             queryKey: reportQueryKeys.economicArticles(report.report_id),
-            queryFn: () => discoverEconomicArticles(report.report_id),
+            queryFn: ({ signal }) =>
+              discoverEconomicArticles(report.report_id, signal),
           }),
           queryClient.prefetchQuery({
             queryKey: reportQueryKeys.comparators(report.report_id),
-            queryFn: () => discoverComparators(report.report_id),
+            queryFn: ({ signal }) =>
+              discoverComparators(report.report_id, signal),
           }),
         ]);
 

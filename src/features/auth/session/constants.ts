@@ -1,0 +1,1 @@
+export const EXPIRY_SAFETY_WINDOW_MS = 60_000;

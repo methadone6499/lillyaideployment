@@ -17,7 +17,7 @@ export function EvaluationCta() {
         <div className="absolute inset-0 bg-black/8" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-(--layout-landing-cta-panel-width) flex-col items-center gap-10 rounded-panel border border-white/20 bg-landing-surface-panel px-[23px] py-10 text-center sm:py-[41px]">
+      <div className="relative z-10 mx-auto flex w-full max-w-(--layout-landing-cta-panel-width) flex-col items-center gap-[clamp(28px,2.083vw,40px)] rounded-panel border border-white/20 bg-landing-surface-panel px-[23px] py-[clamp(32px,2.135vw,41px)] text-center">
         <h2 className="text-landing-cta-size leading-landing-cta-line font-medium text-text-heading">
           Start Your Evaluation
         </h2>

@@ -10,15 +10,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   downloadPdfWhenReady,
-  queuePdfExport,
   ReportApiError,
 } from "../../api/reportApi";
 import { reportQueryKeys } from "../../api/reportQueryKeys";
 import {
   useGenerateReportMutation,
+  useQueuePdfExport,
   useReportStatus,
 } from "../../hooks/useGenerateReport";
-import { clearAllReportQueries } from "../../store/reportWizardSession";
+import { clearReportQueriesForReport } from "../../store/reportWizardSession";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 import type { ReportStatusSection, WizardSectionId } from "../../types";
 import { getReportSectionDefinition } from "../../utils/sectionOrdering";
@@ -105,7 +105,6 @@ export function ReportResults() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const pdfQueuedRef = useRef<string | null>(null);
 
   const sections = reportStatus?.sections;
 
@@ -121,6 +120,11 @@ export function ReportResults() {
     Boolean(reportStatus) &&
     !isCompleted &&
     !isFailed;
+
+  const pdfQueueQuery = useQueuePdfExport(reportId, isCompleted);
+  const pdfQueueErrorMessage = pdfQueueQuery.isError
+    ? getErrorMessage(pdfQueueQuery.error)
+    : null;
 
   useLayoutEffect(() => {
     const pending = scrollCompensationRef.current;
@@ -169,18 +173,6 @@ export function ReportResults() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
   }, [isCompleted]);
 
-  useEffect(() => {
-    if (!isCompleted || !reportId) return;
-    if (pdfQueuedRef.current === reportId) return;
-
-    pdfQueuedRef.current = reportId;
-
-    queuePdfExport(reportId).catch((queueFailure) => {
-      pdfQueuedRef.current = null;
-      setExportError(getErrorMessage(queueFailure));
-    });
-  }, [isCompleted, reportId]);
-
   const subtitle = isCompleted
     ? `Evidence Report - Generated on ${new Date().toLocaleDateString()}`
     : isFailed
@@ -193,7 +185,6 @@ export function ReportResults() {
     }
 
     setRetryError(null);
-    pdfQueuedRef.current = null;
 
     try {
       const result = await retryMutation.mutateAsync({
@@ -206,6 +197,9 @@ export function ReportResults() {
       setGenerationJobId(result.job_id);
       await queryClient.invalidateQueries({
         queryKey: reportQueryKeys.status(reportId),
+      });
+      await queryClient.removeQueries({
+        queryKey: reportQueryKeys.pdfQueue(reportId),
       });
     } catch (retryFailure) {
       setRetryError(getErrorMessage(retryFailure));
@@ -338,16 +332,18 @@ export function ReportResults() {
       </div>
 
       <footer className="mt-auto border-t border-border-default pt-7">
-        {exportError && (
+        {(exportError || pdfQueueErrorMessage) && (
           <p className="mb-4 text-body-lg text-red-400" role="alert">
-            {exportError}
+            {exportError ?? pdfQueueErrorMessage}
           </p>
         )}
         <div className="flex items-center justify-between">
           <Button
             variant="secondary"
             onClick={() => {
-              clearAllReportQueries(queryClient);
+              if (reportId) {
+                clearReportQueriesForReport(queryClient, reportId);
+              }
               resetWizard();
               setStep(1);
             }}

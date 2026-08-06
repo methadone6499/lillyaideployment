@@ -5,11 +5,13 @@ import {
   fetchReportSection,
   fetchReportStatus,
   generateReport,
+  queuePdfExport,
   updateReportSelections,
 } from "../api/reportApi";
 import { ReportApiError } from "../api/reportFetch";
 import { reportQueryKeys } from "../api/reportQueryKeys";
 import type { GenerateReportInput, UpdateReportSelectionsInput } from "../types";
+import { useReportQueriesEnabled } from "./useReportQueriesEnabled";
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
 
@@ -18,10 +20,12 @@ export function useUpdateReportSelectionsMutation() {
     mutationFn: ({
       reportId,
       input,
+      signal,
     }: {
       reportId: string;
       input: UpdateReportSelectionsInput;
-    }) => updateReportSelections(reportId, input),
+      signal?: AbortSignal;
+    }) => updateReportSelections(reportId, input, signal),
   });
 }
 
@@ -30,19 +34,27 @@ export function useGenerateReportMutation() {
     mutationFn: ({
       reportId,
       input,
+      signal,
     }: {
       reportId: string;
       input: GenerateReportInput;
-    }) => generateReport(reportId, input),
+      signal?: AbortSignal;
+    }) => generateReport(reportId, input, signal),
   });
 }
 
 export function useReportStatus(reportId: string | null) {
+  const queriesEnabled = useReportQueriesEnabled(Boolean(reportId));
+
   return useQuery({
     queryKey: reportQueryKeys.status(reportId ?? ""),
-    queryFn: () => fetchReportStatus(reportId!),
-    enabled: Boolean(reportId),
+    queryFn: ({ signal }) => fetchReportStatus(reportId!, signal),
+    enabled: queriesEnabled,
     refetchInterval: (query) => {
+      if (!queriesEnabled) {
+        return false;
+      }
+
       const reportStatus = query.state.data?.report_status;
       if (reportStatus === "completed" || reportStatus === "failed") {
         return false;
@@ -57,10 +69,14 @@ export function useReportSection(
   sectionId: string | undefined,
   enabled: boolean,
 ) {
+  const queriesEnabled = useReportQueriesEnabled(
+    Boolean(reportId && sectionId && enabled),
+  );
+
   return useQuery({
     queryKey: reportQueryKeys.section(reportId ?? "", sectionId ?? ""),
-    queryFn: () => fetchReportSection(reportId!, sectionId!),
-    enabled: Boolean(reportId && sectionId && enabled),
+    queryFn: ({ signal }) => fetchReportSection(reportId!, sectionId!, signal),
+    enabled: queriesEnabled,
     staleTime: 0,
     retry: (failureCount, error) => {
       if (error instanceof ReportApiError && error.status === 409) {
@@ -68,5 +84,23 @@ export function useReportSection(
       }
       return failureCount < 2;
     },
+  });
+}
+
+export function useQueuePdfExport(reportId: string | null, isCompleted: boolean) {
+  const queriesEnabled = useReportQueriesEnabled(
+    Boolean(reportId) && isCompleted,
+  );
+
+  return useQuery({
+    queryKey: reportQueryKeys.pdfQueue(reportId ?? ""),
+    queryFn: ({ signal }) => queuePdfExport(reportId!, signal),
+    enabled: queriesEnabled,
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

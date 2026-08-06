@@ -74,25 +74,81 @@
   --layout-landing-section-width: 1560px;
   --layout-landing-grid-width: 1472px;
   --layout-landing-pricing-width: 1442px;
-  --layout-landing-header-height: 96px;
+  --layout-landing-header-height: clamp(72px, 5vw, 96px);
   --layout-landing-hero-form-width: 480px;
   --layout-landing-cta-panel-width: 960px;
-  --layout-landing-section-padding-x: clamp(24px, 6vw, 180px);
-  --layout-landing-section-padding-y: clamp(64px, 8vw, 105px);
+  --layout-landing-header-padding-x: clamp(24px, 10.625vw, 204px);
+  --layout-landing-section-padding-x: clamp(24px, 9.375vw, 180px);
+  --layout-landing-section-padding-y: clamp(56px, 5.469vw, 105px);
+  --layout-landing-hero-gap: clamp(28px, 2.5vw, 48px);
+  --layout-landing-hero-title-gap: clamp(16px, 1.25vw, 24px);
+
+  /*
+   * Auth layout (Figma nodes 464:322 and 464:364).
+   * The middle value follows the smaller viewport scale; clamps keep controls
+   * usable on short desktop and mobile screens.
+   */
+  --layout-auth-header-height: clamp(64px, min(5vw, 8.889vh), 96px);
+  --layout-auth-guide-inset: min(9.375vw, 180px);
+  --layout-auth-form-width: clamp(
+    320px,
+    min(25vw, 44.444vh),
+    480px
+  );
+  --layout-auth-main-top: clamp(72px, min(7.5vw, 13.333vh), 144px);
+  --layout-auth-title-form-gap: clamp(
+    32px,
+    min(3.229vw, 5.741vh),
+    62px
+  );
+  --layout-auth-main-bottom: clamp(40px, min(3.333vw, 5.926vh), 64px);
+  --layout-auth-footer-bottom: clamp(20px, min(2.5vw, 4.444vh), 48px);
+  --text-auth-title: clamp(24px, min(1.875vw, 3.333vh), 36px);
+  --text-auth-label: clamp(14px, min(0.938vw, 1.667vh), 18px);
+  --text-auth-footer: clamp(12px, min(0.833vw, 1.481vh), 16px);
+  --layout-auth-field-height: clamp(40px, min(2.917vw, 5.185vh), 56px);
+  --layout-auth-field-label-gap: clamp(
+    14px,
+    min(1.042vw, 1.852vh),
+    20px
+  );
+  --layout-auth-field-group-gap: clamp(
+    16px,
+    min(1.25vw, 2.222vh),
+    24px
+  );
+  --layout-auth-field-padding-x: clamp(16px, 1.276vw, 24.5px);
+  --layout-auth-submit-gap: clamp(21px, min(1.667vw, 2.963vh), 32px);
+  --layout-auth-login-detail-gap: clamp(
+    18px,
+    min(1.458vw, 2.593vh),
+    28px
+  );
+  --layout-auth-login-link-gap: clamp(
+    28px,
+    min(2.188vw, 3.889vh),
+    42px
+  );
+  --layout-auth-signup-link-gap: clamp(
+    28px,
+    min(2.292vw, 4.074vh),
+    44px
+  );
+  --layout-auth-button-height: clamp(42px, min(3.021vw, 5.37vh), 58px);
 
   /* Landing typography — fixed sizes for controls; clamp() for display/section headings */
-  --text-landing-hero: clamp(40px, 5vw, 72px);
-  --leading-landing-hero: clamp(48px, 5.5vw, 80px);
-  --text-landing-section: clamp(32px, 4vw, 56px);
-  --leading-landing-section: clamp(40px, 5vw, 72px);
-  --text-landing-cta: 32px;
-  --leading-landing-cta: 46px;
-  --text-landing-body-lg: 24px;
-  --leading-landing-body-lg: 36px;
+  --text-landing-hero: clamp(40px, 3.75vw, 72px);
+  --leading-landing-hero: clamp(48px, 4.167vw, 80px);
+  --text-landing-section: clamp(32px, 2.917vw, 56px);
+  --leading-landing-section: clamp(40px, 3.75vw, 72px);
+  --text-landing-cta: clamp(26px, 1.667vw, 32px);
+  --leading-landing-cta: clamp(38px, 2.396vw, 46px);
+  --text-landing-body-lg: clamp(20px, 1.25vw, 24px);
+  --leading-landing-body-lg: clamp(30px, 1.875vw, 36px);
   --text-landing-body: 18px;
   --leading-landing-body: 32px;
-  --text-landing-price: 42px;
-  --text-landing-price-suffix: 20px;
+  --text-landing-price: clamp(36px, 2.188vw, 42px);
+  --text-landing-price-suffix: clamp(18px, 1.042vw, 20px);
 
   /*
    * Deferred to existing tokens at implementation (no new alias):
@@ -210,17 +266,28 @@
 
   /* Landing typography scale */
   --text-landing-hero-size: var(--text-landing-hero);
-  --text-landing-hero-line: var(--leading-landing-hero);
   --text-landing-section-size: var(--text-landing-section);
-  --text-landing-section-line: var(--leading-landing-section);
   --text-landing-cta-size: var(--text-landing-cta);
-  --text-landing-cta-line: var(--leading-landing-cta);
   --text-landing-body-lg-size: var(--text-landing-body-lg);
-  --text-landing-body-lg-line: var(--leading-landing-body-lg);
   --text-landing-body-size: var(--text-landing-body);
-  --text-landing-body-line: var(--leading-landing-body);
   --text-landing-price-size: var(--text-landing-price);
   --text-landing-price-suffix-size: var(--text-landing-price-suffix);
+  --leading-landing-hero-line: var(--leading-landing-hero);
+  --leading-landing-section-line: var(--leading-landing-section);
+  --leading-landing-cta-line: var(--leading-landing-cta);
+  --leading-landing-body-lg-line: var(--leading-landing-body-lg);
+  --leading-landing-body-line: var(--leading-landing-body);
+}
+
+@media (min-width: 1024px) and (max-height: 850px) {
+  :root {
+    --layout-landing-header-height: 72px;
+    --layout-landing-section-padding-y: 64px;
+    --layout-landing-hero-gap: 24px;
+    --layout-landing-hero-title-gap: 16px;
+    --text-landing-hero: 52px;
+    --leading-landing-hero: 58px;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

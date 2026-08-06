@@ -17,19 +17,17 @@ export function FinalCtaSection() {
         />
         <div className="absolute inset-0 bg-black/56" aria-hidden />
 
-        <div className="relative flex min-h-[420px] flex-col items-center justify-center gap-16 px-6 py-24 text-center sm:min-h-[560px]">
-          <div className="flex w-full flex-col items-center gap-12">
-            <div className="flex flex-col items-center gap-8">
-              <div className="flex flex-wrap items-center justify-center gap-5 text-landing-hero-size leading-landing-hero-line text-landing-text-heading">
-                <span>Ready to</span>
-                <GradientText>Streamline</GradientText>
-                <span>Your</span>
-              </div>
-              <p className="text-landing-hero-size leading-landing-hero-line text-landing-text-heading">
+        <div className="relative flex min-h-[clamp(420px,29.167vw,560px)] flex-col items-center justify-center gap-[clamp(40px,3.333vw,64px)] px-6 py-[clamp(64px,5vw,96px)] text-center">
+          <div className="flex w-full flex-col items-center gap-[clamp(32px,2.5vw,48px)]">
+            <h2 className="text-landing-hero-size leading-landing-hero-line text-landing-text-heading">
+              <span className="block">
+                Ready to <GradientText>Streamline</GradientText> Your
+              </span>
+              <span className="block">
                 Reimbursement Decisions?
-              </p>
-            </div>
-            <p className="max-w-[711px] text-[20px] leading-8 text-landing-text-subtle">
+              </span>
+            </h2>
+            <p className="max-w-[711px] text-[clamp(18px,1.042vw,20px)] leading-8 text-landing-text-subtle">
               Join HTA committees and formulary decision-makers who rely on
               Lilly HTA for comprehensive, evidence-based evaluation packages.
             </p>

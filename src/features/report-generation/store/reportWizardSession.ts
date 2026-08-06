@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { getAuthUserId } from "@/lib/authToken";
+import { getCachedAuthMe } from "@/features/auth";
 import { reportQueryKeys } from "../api/reportQueryKeys";
 import { useReportWizardStore } from "./useReportWizardStore";
 
@@ -28,7 +28,7 @@ export function clearAllReportQueries(queryClient: QueryClient) {
 }
 
 export function syncWizardWithAuthSession(queryClient: QueryClient) {
-  const authUserId = getAuthUserId();
+  const authUserId = getCachedAuthMe(queryClient)?.user.id;
   if (!authUserId) {
     return;
   }
@@ -45,4 +45,38 @@ export function syncWizardWithAuthSession(queryClient: QueryClient) {
   if (!userId) {
     setUserId(authUserId);
   }
+}
+
+function isReportRelatedQueryKey(queryKey: readonly unknown[]): boolean {
+  return queryKey[0] === reportQueryKeys.root[0];
+}
+
+let clearReportSessionPromise: Promise<void> | null = null;
+
+export async function clearReportSession(
+  queryClient: QueryClient,
+): Promise<void> {
+  if (clearReportSessionPromise) {
+    return clearReportSessionPromise;
+  }
+
+  clearReportSessionPromise = (async () => {
+    await queryClient.cancelQueries({
+      predicate: (query) => isReportRelatedQueryKey(query.queryKey),
+    });
+
+    clearAllReportQueries(queryClient);
+
+    queryClient.removeQueries({
+      predicate: (query) => isReportRelatedQueryKey(query.queryKey),
+    });
+
+    useReportWizardStore.getState().resetWizard();
+    useReportWizardStore.setState({ userId: null });
+    await useReportWizardStore.persist.clearStorage();
+  })().finally(() => {
+    clearReportSessionPromise = null;
+  });
+
+  return clearReportSessionPromise;
 }

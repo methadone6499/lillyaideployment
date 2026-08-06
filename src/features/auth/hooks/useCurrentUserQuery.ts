@@ -1,14 +1,15 @@
 "use client";
 
-import { getAuthToken } from "@/lib/authToken";
-import { useQuery } from "@tanstack/react-query";
-import { getMe } from "../api/authApi";
+import { skipToken, useQuery } from "@tanstack/react-query";
+
 import { authQueryKeys } from "../api/authQueryKeys";
+import type { AuthMeResponse } from "../schemas/authSchemas";
 
 export function useCurrentUserQuery() {
-  return useQuery({
+  return useQuery<AuthMeResponse>({
     queryKey: authQueryKeys.me,
-    queryFn: getMe,
-    enabled: Boolean(getAuthToken()),
+    queryFn: skipToken,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
   });
 }

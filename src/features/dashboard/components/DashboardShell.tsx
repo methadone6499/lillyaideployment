@@ -1,11 +1,10 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/AppHeader";
-import { useCurrentUserQuery } from "@/features/auth";
+import { useAuthUser } from "@/features/auth";
 import { beginReportWizardSession } from "@/features/report-generation";
 import { useRouter } from "next/navigation";
 import { dashboardQuota } from "../data/dashboardData";
-import { formatDisplayName } from "../utils/formatDisplayName";
 import { DashboardActionCard } from "./DashboardActionCard";
 import { DashboardGreeting } from "./DashboardGreeting";
 import { DashboardHeaderActions } from "./DashboardHeaderActions";
@@ -14,14 +13,11 @@ import { ReportQuotaCard } from "./ReportQuotaCard";
 
 export function DashboardShell() {
   const router = useRouter();
-  const { data: user } = useCurrentUserQuery();
-  const displayName = user
-    ? formatDisplayName(user.first_name, user.last_name)
-    : "";
+  const { displayName, userId } = useAuthUser();
 
   const handleGenerateReport = () => {
-    if (user?.user_id) {
-      beginReportWizardSession(user.user_id);
+    if (userId) {
+      beginReportWizardSession(userId);
     }
     router.push("/reports/new");
   };
@@ -44,6 +40,7 @@ export function DashboardShell() {
               title="Dosage Calculator"
               description="Quickly verify dosage assumptions and dosing rationale for HTA submissions."
               ctaLabel="Use Dosage Calculator"
+              href="/dosage-calculator"
             />
 
             <DashboardActionCard

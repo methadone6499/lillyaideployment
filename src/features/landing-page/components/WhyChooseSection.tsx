@@ -6,13 +6,13 @@ import { SectionHeading } from "./SectionHeading";
 
 function WhyCard({ card }: { card: WhyCardContent }) {
   return (
-    <article className="flex flex-1 flex-col items-center gap-16 text-center lg:gap-[99px] lg:text-left">
-      <div className="relative h-[220px] w-[220px] shrink-0 overflow-hidden sm:h-[280px] sm:w-[270px]">
+    <article className="flex flex-1 flex-col items-center gap-12 text-center lg:gap-[clamp(48px,5.156vw,99px)] lg:text-left">
+      <div className="relative h-[clamp(220px,14.583vw,280px)] w-[clamp(220px,14.063vw,270px)] shrink-0 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={card.imageUrl}
           alt=""
-          className={`absolute max-w-none object-cover ${card.imageClassName ?? "inset-0 h-full w-full"}`}
+          className={`absolute max-w-none object-contain ${card.imageClassName ?? "inset-0 h-full w-full"}`}
         />
         <div className="absolute inset-0 bg-landing-background/40" aria-hidden />
       </div>
@@ -28,8 +28,8 @@ function WhyCard({ card }: { card: WhyCardContent }) {
 
 export function WhyChooseSection() {
   return (
-    <LandingSection id="why-us" className="pt-[105px]">
-      <div className="flex flex-col items-center gap-[63px] px-0 lg:px-[60px]">
+    <LandingSection id="why-us">
+      <div className="flex flex-col items-center gap-[clamp(40px,3.281vw,63px)] px-0 lg:px-[clamp(0px,3.125vw,60px)]">
         <SectionHeading
           title="Why Choose Lilly HTA?"
           subtitle="Purpose-built for HTA committees and formulary decision-makers to streamline reimbursement evaluation with evidence-based automation."

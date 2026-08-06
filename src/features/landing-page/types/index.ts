@@ -12,6 +12,7 @@ export type WhyCardContent = {
 
 export type PricingPlanContent = {
   id: string;
+  iconSrc: string;
   name: string;
   audience: string;
   highlight: string;

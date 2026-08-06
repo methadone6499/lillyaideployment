@@ -23,11 +23,11 @@ function AddOnChecklist({ items }: { items: string[] }) {
 export function AddOnsSection() {
   return (
     <LandingSection id="add-ons">
-      <div className="flex flex-col items-center gap-14">
+      <div className="flex flex-col items-center gap-[clamp(40px,2.917vw,56px)]">
         <SectionHeading
           title="Premium Add-on Services"
           subtitle="Enhance HTA evaluation process with expert validation & support"
-          titleClassName="text-[42px] leading-[72px]"
+          titleClassName="text-[clamp(32px,2.188vw,42px)] leading-[clamp(40px,3.75vw,72px)]"
         />
 
         <div className="w-full max-w-[723px] rounded-button border border-border-default bg-surface-default p-6">
