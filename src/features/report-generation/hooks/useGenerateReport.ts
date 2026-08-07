@@ -56,7 +56,10 @@ export function useReportStatus(reportId: string | null) {
       }
 
       const reportStatus = query.state.data?.report_status;
-      if (reportStatus === "completed" || reportStatus === "failed") {
+      if (
+        reportStatus === "completed" ||
+        reportStatus === "partially_completed"
+      ) {
         return false;
       }
       return STATUS_POLL_INTERVAL_MS;
@@ -87,9 +90,12 @@ export function useReportSection(
   });
 }
 
-export function useQueuePdfExport(reportId: string | null, isCompleted: boolean) {
+export function useQueuePdfExport(
+  reportId: string | null,
+  isReportReady: boolean,
+) {
   const queriesEnabled = useReportQueriesEnabled(
-    Boolean(reportId) && isCompleted,
+    Boolean(reportId) && isReportReady,
   );
 
   return useQuery({

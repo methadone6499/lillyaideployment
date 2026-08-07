@@ -115,13 +115,14 @@ export function ReportResults() {
 
   const reportTitle = buildReportTitle(drugName, indications);
   const isCompleted = reportStatus?.report_status === "completed";
-  const isFailed = reportStatus?.report_status === "failed";
+  const isPartiallyCompleted =
+    reportStatus?.report_status === "partially_completed";
+  const isReportReady = isCompleted || isPartiallyCompleted;
   const isGenerating =
-    Boolean(reportStatus) &&
-    !isCompleted &&
-    !isFailed;
+    reportStatus?.report_status === "pending" ||
+    reportStatus?.report_status === "processing";
 
-  const pdfQueueQuery = useQueuePdfExport(reportId, isCompleted);
+  const pdfQueueQuery = useQueuePdfExport(reportId, isReportReady);
   const pdfQueueErrorMessage = pdfQueueQuery.isError
     ? getErrorMessage(pdfQueueQuery.error)
     : null;
@@ -161,7 +162,7 @@ export function ReportResults() {
   };
 
   useEffect(() => {
-    if (!isCompleted || !reportId || !sections) return;
+    if (!isReportReady || !reportId || !sections) return;
     sections
       .filter((s) => s.status === "partially_completed" && s.section_id)
       .forEach((s) =>
@@ -169,14 +170,14 @@ export function ReportResults() {
           queryKey: reportQueryKeys.section(reportId, s.section_id!),
         }),
       );
-    // Intentionally keyed on completion transition only — sections at that moment
+    // Intentionally keyed on the terminal-status transition only — sections at that moment
     // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
-  }, [isCompleted]);
+  }, [isReportReady]);
 
   const subtitle = isCompleted
     ? `Evidence Report - Generated on ${new Date().toLocaleDateString()}`
-    : isFailed
-      ? "Evidence Report - Generation failed"
+    : isPartiallyCompleted
+      ? `Evidence Report - Partially generated on ${new Date().toLocaleDateString()}`
       : "Evidence Report - Generation in progress";
 
   const handleRetry = async () => {
@@ -288,13 +289,14 @@ export function ReportResults() {
         filters={filters}
       />
 
-      {isFailed && reportStatus.status_reason && (
+      {isPartiallyCompleted && (
         <div
-          className="rounded-card border border-red-400/40 bg-red-400/10 px-8 py-6"
-          role="alert"
+          className="rounded-card border border-status-partial/30 bg-status-partial/10 px-8 py-6"
+          role="status"
         >
-          <p className="text-body-lg text-red-400">
-            {reportStatus.status_reason}
+          <p className="text-body-lg text-status-partial">
+            {reportStatus.status_reason ??
+              "Some sections could not be completed. Available sections can still be reviewed and exported."}
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <Button
@@ -355,7 +357,7 @@ export function ReportResults() {
           <Button
             trailingIcon={<ArrowNarrowRightIcon />}
             className="pl-5 pr-3"
-            disabled={!isCompleted || isExporting}
+            disabled={!isReportReady || isExporting}
             onClick={handleExport}
           >
             {isExporting ? "Preparing PDF…" : "Get Report"}

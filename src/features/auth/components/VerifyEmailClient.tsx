@@ -1,8 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
+import { ArrowNarrowRightIcon } from "@/components/ui";
 import { ApiRequestError } from "@/services/ApiRequestError";
 
 import { verifyEmail } from "../api/authApi";
@@ -134,7 +136,9 @@ export function VerifyEmailClient({ token }: VerifyEmailClientProps) {
   };
 
   return (
-    <AuthPageShell title="Verify Email">
+    <AuthPageShell
+      title={viewState.status === "success" ? "Email Confirmed" : "Verify Email"}
+    >
       {viewState.status === "loading" ? (
         <AuthFormAlert variant="info" role="status">
           Verifying your email address...
@@ -142,13 +146,47 @@ export function VerifyEmailClient({ token }: VerifyEmailClientProps) {
       ) : null}
 
       {viewState.status === "success" ? (
-        <div className="flex flex-col gap-4">
-          <AuthFormAlert variant="success" role="status">
-            {viewState.message}
-          </AuthFormAlert>
-          <p className="text-center font-inter text-label leading-normal font-medium text-landing-text-heading">
-            <AuthGradientLink href="/login">Continue to login</AuthGradientLink>
-          </p>
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-col items-center gap-6 rounded-2xl border border-brand/25 bg-landing-surface-card px-6 py-8 text-center"
+        >
+          <div
+            aria-hidden
+            className="flex size-16 items-center justify-center rounded-full border border-brand/35 bg-brand/10 text-brand shadow-landing-emerald-glow"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="size-8"
+            >
+              <path
+                d="M5 12.5L9.25 16.5L19 7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-[20px] leading-tight font-medium text-landing-text-heading">
+              Your email has been verified
+            </p>
+            <p className="text-label leading-normal text-landing-text-subtle">
+              Your LillyAI account is ready. Sign in to continue.
+            </p>
+            <span className="sr-only">{viewState.message}</span>
+          </div>
+
+          <Link
+            href="/login"
+            className="inline-flex h-[var(--layout-auth-button-height)] w-full items-center justify-center gap-1.5 rounded-[10.5px] border-[1.75px] border-[rgba(1,176,89,0.72)] bg-landing-emerald-gradient px-6 text-[16px] font-medium text-white shadow-landing-emerald-glow transition-opacity hover:opacity-95"
+          >
+            Continue to Login
+            <ArrowNarrowRightIcon className="size-[18px]" />
+          </Link>
         </div>
       ) : null}
 

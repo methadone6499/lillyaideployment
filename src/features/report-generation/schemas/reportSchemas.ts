@@ -1,13 +1,10 @@
 import { z } from "zod";
 
 export const reportStatusSchema = z.enum([
-  "draft",
-  "ready",
-  "queued",
+  "pending",
   "processing",
-  "generating",
   "completed",
-  "failed",
+  "partially_completed",
 ]);
 
 export const jobStatusSchema = z.enum([
