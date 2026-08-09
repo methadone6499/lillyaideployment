@@ -7,6 +7,17 @@ export const reportStatusSchema = z.enum([
   "partially_completed",
 ]);
 
+// Mutation responses can still expose pre-processing lifecycle states even
+// though the status polling endpoint uses the four canonical report statuses.
+const reportMutationStatusSchema = z.enum([
+  ...reportStatusSchema.options,
+  "draft",
+  "ready",
+  "queued",
+  "generating",
+  "failed",
+]);
+
 export const jobStatusSchema = z.enum([
   "queued",
   "processing",
@@ -135,7 +146,7 @@ export const createReportResponseSchema = z.object({
   report_id: z.string(),
   drug: z.string(),
   disease: z.string(),
-  status: reportStatusSchema,
+  status: reportMutationStatusSchema,
   inputs: reportInputsSchema,
   discovery: reportDiscoveryStateSchema.optional(),
   selections: reportSelectionsSchema.optional(),
@@ -152,7 +163,7 @@ export const updateReportSelectionsInputSchema = z.object({
 
 export const updateReportSelectionsResponseSchema = z.object({
   report_id: z.string(),
-  status: reportStatusSchema,
+  status: reportMutationStatusSchema,
   selections: updateReportSelectionsInputSchema,
   warnings: z.array(z.string()),
 });
@@ -179,7 +190,7 @@ export const generateReportResponseSchema = z.object({
   job_id: z.string(),
   report_id: z.string(),
   job_status: jobStatusSchema,
-  report_status: reportStatusSchema,
+  report_status: reportMutationStatusSchema,
   sections: z.array(generateReportSectionSchema),
   poll_urls: z
     .object({
