@@ -18,6 +18,8 @@ const reportMutationStatusSchema = z.enum([
   "failed",
 ]);
 
+// Live Report Service contract: queued | processing | completed | failed.
+// Do not add `cancelled` unless the upstream status endpoint confirms it.
 export const jobStatusSchema = z.enum([
   "queued",
   "processing",

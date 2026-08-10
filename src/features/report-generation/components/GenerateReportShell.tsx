@@ -2,8 +2,24 @@
 
 import { AppHeader } from "@/components/shared/AppHeader";
 import { useIsAuthenticated } from "@/features/auth";
+import {
+  buildCreateReportInput,
+  createReportInputSchema,
+  enqueuePendingPlatformSave,
+  enqueuePendingPlatformSaveValidationFailure,
+  generationFiltersSchema,
+  markPendingPlatformSaveFailed,
+  platformReportQueryKeys,
+  removePendingPlatformSave,
+  savePlatformReportWithRetry,
+  syncPendingPlatformSavesWithAuthSession,
+  type CreateReportInput,
+} from "@/features/reports";
+import { ApiRequestError } from "@/services/ApiRequestError";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ZodError } from "zod";
 import {
   createReport,
   discoverClinicalArticles,
@@ -42,6 +58,23 @@ function getErrorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
+function formatValidationDiagnostic(error: unknown): string {
+  if (error instanceof ZodError) {
+    return error.issues
+      .map((issue) => {
+        const path = issue.path.length > 0 ? issue.path.join(".") : "(root)";
+        return `${path}: ${issue.message}`;
+      })
+      .join("; ");
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Client validation failed while building the Platform save payload.";
+}
+
 const DISCOVERY_PREFETCH_LABELS = [
   "Clinical article discovery",
   "Economic article discovery",
@@ -64,14 +97,28 @@ function canContinueStep(
   }
 }
 
+function isStillCurrentPlatformSave(
+  originatingUserId: string | null,
+  originatingReportServiceId: string,
+): boolean {
+  const current = useReportWizardStore.getState();
+
+  return (
+    current.userId === originatingUserId &&
+    current.reportServiceId === originatingReportServiceId &&
+    current.currentStep === 6
+  );
+}
+
 export function GenerateReportShell() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const isAuthenticated = useIsAuthenticated();
   const currentStep = useReportWizardStore((s) => s.currentStep);
   const drugName = useReportWizardStore((s) => s.drugName);
   const indications = useReportWizardStore((s) => s.indications);
   const filters = useReportWizardStore((s) => s.filters);
-  const reportId = useReportWizardStore((s) => s.reportId);
+  const reportServiceId = useReportWizardStore((s) => s.reportServiceId);
   const selectedClinicalArticleIds = useReportWizardStore(
     (s) => s.selectedClinicalArticleIds,
   );
@@ -90,9 +137,12 @@ export function GenerateReportShell() {
   const resetReportPipeline = useReportWizardStore((s) => s.resetReportPipeline);
   const resetFilters = useReportWizardStore((s) => s.resetFilters);
   const setStep = useReportWizardStore((s) => s.setStep);
-  const setReportId = useReportWizardStore((s) => s.setReportId);
+  const setReportServiceId = useReportWizardStore((s) => s.setReportServiceId);
   const setGenerationJobId = useReportWizardStore(
     (s) => s.setGenerationJobId,
+  );
+  const setPlatformSaveState = useReportWizardStore(
+    (s) => s.setPlatformSaveState,
   );
 
   const [step2Error, setStep2Error] = useState<string | null>(null);
@@ -108,6 +158,7 @@ export function GenerateReportShell() {
 
   useEffect(() => {
     syncWizardWithAuthSession(queryClient);
+    void syncPendingPlatformSavesWithAuthSession(queryClient);
   }, [queryClient]);
 
   useEffect(() => {
@@ -117,8 +168,8 @@ export function GenerateReportShell() {
   const handleBack = () => {
     const nextStepNumber = currentStep - 1;
 
-    if (nextStepNumber <= 2 && reportId) {
-      clearReportQueriesForReport(queryClient, reportId);
+    if (nextStepNumber <= 2 && reportServiceId) {
+      clearReportQueriesForReport(queryClient, reportServiceId);
       resetReportPipeline();
       setDiscoveryWarnings([]);
       setStep2Error(null);
@@ -144,7 +195,7 @@ export function GenerateReportShell() {
           inputs: mapFiltersToBackend(filters),
         });
 
-        setReportId(report.report_id);
+        setReportServiceId(report.report_id);
         setIsPrefetchingDiscovery(true);
 
         const prefetchResults = await Promise.allSettled([
@@ -189,7 +240,7 @@ export function GenerateReportShell() {
     if (currentStep === 5) {
       setStep5Error(null);
 
-      if (!reportId) {
+      if (!reportServiceId) {
         setStep5Error(
           "Report is not configured. Go back to Filters and continue again.",
         );
@@ -198,7 +249,7 @@ export function GenerateReportShell() {
 
       try {
         await saveSelectionsMutation.mutateAsync({
-          reportId,
+          reportServiceId,
           input: {
             comparators: selectedComparators,
             custom_comparators: customComparators,
@@ -214,14 +265,119 @@ export function GenerateReportShell() {
 
       try {
         const result = await generateMutation.mutateAsync({
-          reportId,
+          reportServiceId,
           input: {
             force_regenerate: false,
             idempotency_key: crypto.randomUUID(),
           },
         });
-        setGenerationJobId(result.job_id);
+
+        if (result.report_id !== reportServiceId) {
+          setStep5Error(
+            `Report Service ID mismatch: expected ${reportServiceId}, got ${result.report_id}.`,
+          );
+          return;
+        }
+
+        const generationJobId = result.job_id;
+        const originatingReportServiceId = result.report_id;
+        setGenerationJobId(generationJobId);
+        setReportServiceId(originatingReportServiceId);
+
+        const wizard = useReportWizardStore.getState();
+        const originatingUserId = wizard.userId;
+
+        let createInput: CreateReportInput;
+        let candidatePayload: CreateReportInput | null = null;
+        try {
+          const parsedFilters = generationFiltersSchema.parse(wizard.filters);
+          candidatePayload = buildCreateReportInput({
+            reportServiceId: originatingReportServiceId,
+            generationJobId,
+            drugName: wizard.drugName,
+            indications: wizard.indications,
+            filters: parsedFilters,
+            selectedClinicalArticleIds: wizard.selectedClinicalArticleIds,
+            selectedEconomicArticleIds: wizard.selectedEconomicArticleIds,
+            selectedComparators: wizard.selectedComparators,
+            customComparators: wizard.customComparators,
+            selectedSectionIds: [...wizard.selectedSectionIds],
+            customSections: [...wizard.customSections],
+            submittedAt: new Date().toISOString(),
+          });
+          createInput = createReportInputSchema.parse(candidatePayload);
+        } catch (validationError) {
+          const validationDiagnostic =
+            formatValidationDiagnostic(validationError);
+
+          if (originatingUserId) {
+            enqueuePendingPlatformSaveValidationFailure({
+              userId: originatingUserId,
+              reportServiceId: originatingReportServiceId,
+              candidatePayload,
+              validationDiagnostic,
+            });
+          }
+
+          console.error(
+            "Platform save payload validation failed",
+            validationDiagnostic,
+            validationError,
+          );
+
+          setPlatformSaveState("save_failed");
+          setStep(6);
+          return;
+        }
+
+        if (!originatingUserId) {
+          setStep5Error(
+            "Authenticated user is unavailable. Please refresh and try again.",
+          );
+          return;
+        }
+
+        enqueuePendingPlatformSave(originatingUserId, createInput);
+        setPlatformSaveState("saving");
         setStep(6);
+
+        void (async () => {
+          try {
+            const savedReport =
+              await savePlatformReportWithRetry(createInput);
+
+            removePendingPlatformSave(originatingReportServiceId);
+            await queryClient.invalidateQueries({
+              queryKey: platformReportQueryKeys.lists(),
+            });
+
+            if (
+              isStillCurrentPlatformSave(
+                originatingUserId,
+                originatingReportServiceId,
+              )
+            ) {
+              const current = useReportWizardStore.getState();
+              current.setPlatformReportId(savedReport.id);
+              current.setPlatformSaveState("saved");
+              router.replace(`/reports/${savedReport.id}`);
+            }
+          } catch (error) {
+            markPendingPlatformSaveFailed(
+              originatingReportServiceId,
+              error instanceof ApiRequestError ? error.requestId : null,
+            );
+
+            if (
+              isStillCurrentPlatformSave(
+                originatingUserId,
+                originatingReportServiceId,
+              )
+            ) {
+              useReportWizardStore.getState().setPlatformSaveState("save_failed");
+            }
+          }
+        })();
       } catch (error) {
         setStep5Error(getErrorMessage(error));
       }

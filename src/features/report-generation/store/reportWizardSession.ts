@@ -18,9 +18,11 @@ export function beginReportWizardSession(userId: string) {
 
 export function clearReportQueriesForReport(
   queryClient: QueryClient,
-  reportId: string,
+  reportServiceId: string,
 ) {
-  queryClient.removeQueries({ queryKey: reportQueryKeys.byReport(reportId) });
+  queryClient.removeQueries({
+    queryKey: reportQueryKeys.byReport(reportServiceId),
+  });
 }
 
 export function clearAllReportQueries(queryClient: QueryClient) {
@@ -51,16 +53,20 @@ function isReportRelatedQueryKey(queryKey: readonly unknown[]): boolean {
   return queryKey[0] === reportQueryKeys.root[0];
 }
 
-let clearReportSessionPromise: Promise<void> | null = null;
+let clearReportGenerationSessionPromise: Promise<void> | null = null;
 
-export async function clearReportSession(
+/**
+ * Clears Report Service React Query caches and the wizard persist store.
+ * Used on logout / authenticated-user change. Does not touch Platform reports.
+ */
+export async function clearReportGenerationSession(
   queryClient: QueryClient,
 ): Promise<void> {
-  if (clearReportSessionPromise) {
-    return clearReportSessionPromise;
+  if (clearReportGenerationSessionPromise) {
+    return clearReportGenerationSessionPromise;
   }
 
-  clearReportSessionPromise = (async () => {
+  clearReportGenerationSessionPromise = (async () => {
     await queryClient.cancelQueries({
       predicate: (query) => isReportRelatedQueryKey(query.queryKey),
     });
@@ -75,8 +81,11 @@ export async function clearReportSession(
     useReportWizardStore.setState({ userId: null });
     await useReportWizardStore.persist.clearStorage();
   })().finally(() => {
-    clearReportSessionPromise = null;
+    clearReportGenerationSessionPromise = null;
   });
 
-  return clearReportSessionPromise;
+  return clearReportGenerationSessionPromise;
 }
+
+/** @deprecated Prefer {@link clearReportGenerationSession}. */
+export const clearReportSession = clearReportGenerationSession;

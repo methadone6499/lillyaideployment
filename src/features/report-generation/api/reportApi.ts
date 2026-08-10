@@ -73,10 +73,10 @@ export async function createReport(
 }
 
 export async function discoverClinicalArticles(
-  reportId: string,
+  reportServiceId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportId}/discovery/clinical-articles`, {
+  return reportFetch(`/reports/${reportServiceId}/discovery/clinical-articles`, {
     method: "POST",
     schema: articleDiscoveryResponseSchema,
     signal,
@@ -84,10 +84,10 @@ export async function discoverClinicalArticles(
 }
 
 export async function discoverEconomicArticles(
-  reportId: string,
+  reportServiceId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportId}/discovery/economic-articles`, {
+  return reportFetch(`/reports/${reportServiceId}/discovery/economic-articles`, {
     method: "POST",
     schema: articleDiscoveryResponseSchema,
     signal,
@@ -95,10 +95,10 @@ export async function discoverEconomicArticles(
 }
 
 export async function discoverComparators(
-  reportId: string,
+  reportServiceId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportId}/discovery/comparators`, {
+  return reportFetch(`/reports/${reportServiceId}/discovery/comparators`, {
     method: "POST",
     schema: comparatorDiscoveryResponseSchema,
     signal,
@@ -106,11 +106,11 @@ export async function discoverComparators(
 }
 
 export async function updateReportSelections(
-  reportId: string,
+  reportServiceId: string,
   input: UpdateReportSelectionsInput,
   signal?: AbortSignal,
 ): Promise<UpdateReportSelectionsResponse> {
-  return reportFetch(`/reports/${reportId}/selections`, {
+  return reportFetch(`/reports/${reportServiceId}/selections`, {
     method: "PUT",
     body: input,
     schema: updateReportSelectionsResponseSchema,
@@ -119,11 +119,11 @@ export async function updateReportSelections(
 }
 
 export async function generateReport(
-  reportId: string,
+  reportServiceId: string,
   input: GenerateReportInput,
   signal?: AbortSignal,
 ): Promise<GenerateReportResponse> {
-  return reportFetch(`/reports/${reportId}/generate`, {
+  return reportFetch(`/reports/${reportServiceId}/generate`, {
     method: "POST",
     body: input,
     schema: generateReportResponseSchema,
@@ -132,31 +132,31 @@ export async function generateReport(
 }
 
 export async function fetchReportStatus(
-  reportId: string,
+  reportServiceId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportId}/status`, {
+  return reportFetch(`/reports/${reportServiceId}/status`, {
     schema: reportStatusResponseSchema,
     signal,
   });
 }
 
 export async function fetchReportSection(
-  reportId: string,
+  reportServiceId: string,
   sectionId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportId}/sections/${sectionId}`, {
+  return reportFetch(`/reports/${reportServiceId}/sections/${sectionId}`, {
     schema: reportSectionResponseSchema,
     signal,
   });
 }
 
 export async function queuePdfExport(
-  reportId: string,
+  reportServiceId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportId}/export/pdf`, {
+  return reportFetch(`/reports/${reportServiceId}/export/pdf`, {
     method: "POST",
     schema: pdfExportResponseSchema,
     signal,
@@ -164,17 +164,17 @@ export async function queuePdfExport(
 }
 
 export async function downloadPdf(
-  reportId: string,
+  reportServiceId: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  return reportFetch(`/reports/${reportId}/export/pdf`, {
+  return reportFetch(`/reports/${reportServiceId}/export/pdf`, {
     responseType: "blob",
     signal,
   });
 }
 
 export async function downloadPdfWhenReady(
-  reportId: string,
+  reportServiceId: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
   for (let attempt = 0; attempt < PDF_MAX_ATTEMPTS; attempt++) {
@@ -183,7 +183,7 @@ export async function downloadPdfWhenReady(
     }
 
     try {
-      return await downloadPdf(reportId, signal);
+      return await downloadPdf(reportServiceId, signal);
     } catch (error) {
       if (
         error instanceof ReportApiError &&

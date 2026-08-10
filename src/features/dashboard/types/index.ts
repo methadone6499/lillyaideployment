@@ -1,9 +1,8 @@
-export type DashboardReportStatus =
-  | "completed"
-  | "sent_for_review"
-  | "in_progress"
-  | "reviewed"
-  | "failed";
+import type { GenerationStatus } from "@/features/reports";
+
+export type DashboardGenerationStatus = GenerationStatus;
+
+export type DashboardStatusFilterValue = DashboardGenerationStatus | "all";
 
 export type DashboardUser = {
   displayName: string;
@@ -20,16 +19,4 @@ export type DashboardNotification = {
   message: string;
   reportName?: string;
   timestamp: string;
-};
-
-export type DashboardReport = {
-  id: string;
-  name: string;
-  dateTime: string;
-  status: DashboardReportStatus;
-};
-
-export type DashboardPagination = {
-  currentPage: number;
-  totalPages: number;
 };

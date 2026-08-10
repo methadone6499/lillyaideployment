@@ -147,12 +147,22 @@ function migrateFiltersToV5(filters: unknown): FilterState {
   };
 }
 
+export type PlatformSaveState =
+  | "not_started"
+  | "saving"
+  | "saved"
+  | "save_failed";
+
 type PersistedWizardState = {
   currentStep?: WizardStep;
   drugName?: string;
   indications?: string;
   filters?: FilterState;
+  /** @deprecated Migrated to `reportServiceId` in persist version 10. */
   reportId?: string | null;
+  reportServiceId?: string | null;
+  platformReportId?: string | null;
+  platformSaveState?: PlatformSaveState;
   selectedClinicalPmcids?: string[];
   selectedEconomicPmcids?: string[];
   selectedClinicalArticleIds?: string[];
@@ -172,7 +182,9 @@ type ReportWizardState = {
   drugName: string;
   indications: string;
   filters: FilterState;
-  reportId: string | null;
+  reportServiceId: string | null;
+  platformReportId: string | null;
+  platformSaveState: PlatformSaveState;
   selectedClinicalArticleIds: string[];
   selectedEconomicArticleIds: string[];
   selectedComparators: string[];
@@ -193,7 +205,9 @@ type ReportWizardState = {
   toggleOutcomeEvidenceFocus: (focus: string) => void;
   toggleComparatorType: (type: string) => void;
   toggleEvidenceQuality: (quality: string) => void;
-  setReportId: (reportId: string | null) => void;
+  setReportServiceId: (reportServiceId: string | null) => void;
+  setPlatformReportId: (platformReportId: string | null) => void;
+  setPlatformSaveState: (platformSaveState: PlatformSaveState) => void;
   setSelectedClinicalArticleIds: (ids: string[]) => void;
   setSelectedEconomicArticleIds: (ids: string[]) => void;
   toggleClinicalArticleId: (id: string) => void;
@@ -222,7 +236,9 @@ const initialState = {
   drugName: "",
   indications: "",
   filters: createDefaultFilters(),
-  reportId: null as string | null,
+  reportServiceId: null as string | null,
+  platformReportId: null as string | null,
+  platformSaveState: "not_started" as PlatformSaveState,
   selectedClinicalArticleIds: [] as string[],
   selectedEconomicArticleIds: [] as string[],
   selectedComparators: [] as string[],
@@ -234,7 +250,9 @@ const initialState = {
 };
 
 const reportPipelineState = {
-  reportId: null as string | null,
+  reportServiceId: null as string | null,
+  platformReportId: null as string | null,
+  platformSaveState: "not_started" as PlatformSaveState,
   generationJobId: null as string | null,
   selectedClinicalArticleIds: [] as string[],
   selectedEconomicArticleIds: [] as string[],
@@ -316,6 +334,7 @@ function migratePersistedState(
     const migrated: PersistedWizardState = { ...state };
 
     migrated.reportId = state.reportId ?? null;
+    migrated.reportServiceId = state.reportServiceId ?? state.reportId ?? null;
 
     if (state.selectedEvidenceIds) {
       migrated.selectedClinicalPmcids = [];
@@ -423,6 +442,17 @@ function migratePersistedState(
     };
   }
 
+  if (version < 10) {
+    const migrated: PersistedWizardState = {
+      ...state,
+      reportServiceId: state.reportServiceId ?? state.reportId ?? null,
+      platformReportId: null,
+      platformSaveState: "not_started",
+    };
+    delete migrated.reportId;
+    state = migrated;
+  }
+
   return state;
 }
 
@@ -513,7 +543,9 @@ export const useReportWizardStore = create<ReportWizardState>()(
             ),
           },
         })),
-      setReportId: (reportId) => set({ reportId }),
+      setReportServiceId: (reportServiceId) => set({ reportServiceId }),
+      setPlatformReportId: (platformReportId) => set({ platformReportId }),
+      setPlatformSaveState: (platformSaveState) => set({ platformSaveState }),
       setSelectedClinicalArticleIds: (selectedClinicalArticleIds) =>
         set((state) =>
           withSyncedSectionIdsOnInputChange(state, {
@@ -599,14 +631,16 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 9,
+      version: 10,
       migrate: migratePersistedState,
       partialize: (state) => ({
         currentStep: state.currentStep,
         drugName: state.drugName,
         indications: state.indications,
         filters: state.filters,
-        reportId: state.reportId,
+        reportServiceId: state.reportServiceId,
+        platformReportId: state.platformReportId,
+        platformSaveState: state.platformSaveState,
         selectedClinicalArticleIds: state.selectedClinicalArticleIds,
         selectedEconomicArticleIds: state.selectedEconomicArticleIds,
         selectedComparators: state.selectedComparators,

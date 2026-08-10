@@ -10,20 +10,20 @@ import type { EvidenceType } from "../types";
 import { useReportQueriesEnabled } from "./useReportQueriesEnabled";
 
 export function useEvidenceDiscovery(
-  reportId: string | null,
+  reportServiceId: string | null,
   type: EvidenceType,
 ) {
   const isClinical = type === "clinical";
-  const queriesEnabled = useReportQueriesEnabled(Boolean(reportId));
+  const queriesEnabled = useReportQueriesEnabled(Boolean(reportServiceId));
 
   return useQuery({
     queryKey: isClinical
-      ? reportQueryKeys.clinicalArticles(reportId ?? "")
-      : reportQueryKeys.economicArticles(reportId ?? ""),
+      ? reportQueryKeys.clinicalArticles(reportServiceId ?? "")
+      : reportQueryKeys.economicArticles(reportServiceId ?? ""),
     queryFn: ({ signal }) =>
       isClinical
-        ? discoverClinicalArticles(reportId!, signal)
-        : discoverEconomicArticles(reportId!, signal),
+        ? discoverClinicalArticles(reportServiceId!, signal)
+        : discoverEconomicArticles(reportServiceId!, signal),
     enabled: queriesEnabled,
     staleTime: 60_000,
     select: (data) => data.candidates,

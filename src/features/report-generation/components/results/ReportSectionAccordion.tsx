@@ -24,14 +24,16 @@ export type ReportSectionAccordionItem = {
 };
 
 type ReportSectionAccordionProps = {
-  reportId: string;
+  reportServiceId: string;
+  reportStatus: string;
   item: ReportSectionAccordionItem;
   expanded: boolean;
   onToggle: (element: HTMLDivElement) => void;
 };
 
 export function ReportSectionAccordion({
-  reportId,
+  reportServiceId,
+  reportStatus,
   item,
   expanded,
   onToggle,
@@ -50,9 +52,11 @@ export function ReportSectionAccordion({
     isError: isContentError,
     error: contentError,
   } = useReportSection(
-    reportId,
+    reportServiceId,
     section.section_id,
     !isLocalSection && canExpand && expanded,
+    section.status,
+    reportStatus,
   );
   const rootRef = useRef<HTMLDivElement>(null);
 

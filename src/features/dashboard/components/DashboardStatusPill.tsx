@@ -1,30 +1,22 @@
 import { cn } from "@/lib/cn";
-import type { DashboardReportStatus } from "../types";
+import type { DashboardGenerationStatus } from "../types";
 
-type DashboardStatusPillProps = {
-  status: DashboardReportStatus;
+type DashboardGenerationStatusPillProps = {
+  status: DashboardGenerationStatus;
   className?: string;
 };
 
-const statusConfig: Record<
-  DashboardReportStatus,
+const generationStatusConfig: Record<
+  DashboardGenerationStatus,
   { label: string; className: string }
 > = {
   completed: {
     label: "Completed",
     className: "bg-[rgba(16,185,129,0.12)] text-status-success",
   },
-  sent_for_review: {
-    label: "Sent for Review",
-    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
-  },
-  in_progress: {
+  generating: {
     label: "In Progress",
     className: "bg-[rgba(255,200,92,0.12)] text-status-running",
-  },
-  reviewed: {
-    label: "Reviewed",
-    className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
   },
   failed: {
     label: "Failed",
@@ -32,21 +24,39 @@ const statusConfig: Record<
   },
 };
 
-export function DashboardStatusPill({
-  status,
+function StatusPill({
+  label,
+  toneClassName,
   className,
-}: DashboardStatusPillProps) {
-  const config = statusConfig[status];
-
+}: {
+  label: string;
+  toneClassName: string;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
         "inline-flex items-center justify-center rounded-card p-2.5 text-input font-medium whitespace-nowrap",
-        config.className,
+        toneClassName,
         className,
       )}
     >
-      {config.label}
+      {label}
     </span>
+  );
+}
+
+export function DashboardStatusPill({
+  status,
+  className,
+}: DashboardGenerationStatusPillProps) {
+  const config = generationStatusConfig[status];
+
+  return (
+    <StatusPill
+      label={config.label}
+      toneClassName={config.className}
+      className={className}
+    />
   );
 }

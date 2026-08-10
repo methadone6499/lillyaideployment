@@ -2,15 +2,29 @@ export const reportQueryKeys = {
   root: ["report"] as const,
   drugValidation: (drug: string, disease: string) =>
     ["report", "drug-validation", drug, disease] as const,
-  byReport: (reportId: string) => ["report", reportId] as const,
-  clinicalArticles: (reportId: string) =>
-    ["report", reportId, "clinical-articles"] as const,
-  economicArticles: (reportId: string) =>
-    ["report", reportId, "economic-articles"] as const,
-  comparators: (reportId: string) =>
-    ["report", reportId, "comparators"] as const,
-  status: (reportId: string) => ["report", reportId, "status"] as const,
-  section: (reportId: string, sectionId: string) =>
-    ["report", reportId, "section", sectionId] as const,
-  pdfQueue: (reportId: string) => ["report", reportId, "pdf-queue"] as const,
+  byReport: (reportServiceId: string) => ["report", reportServiceId] as const,
+  clinicalArticles: (reportServiceId: string) =>
+    ["report", reportServiceId, "clinical-articles"] as const,
+  economicArticles: (reportServiceId: string) =>
+    ["report", reportServiceId, "economic-articles"] as const,
+  comparators: (reportServiceId: string) =>
+    ["report", reportServiceId, "comparators"] as const,
+  status: (reportServiceId: string) =>
+    ["report", reportServiceId, "status"] as const,
+  section: (
+    reportServiceId: string,
+    sectionId: string,
+    sectionStatus?: string,
+    reportStatus?: string,
+  ) =>
+    [
+      "report",
+      reportServiceId,
+      "section",
+      sectionId,
+      sectionStatus ?? "unknown",
+      reportStatus ?? "unknown",
+    ] as const,
+  pdfQueue: (reportServiceId: string) =>
+    ["report", reportServiceId, "pdf-queue"] as const,
 };

@@ -19,7 +19,7 @@ export function Step3Evidence() {
   const [activeTab, setActiveTab] = useState<EvidenceType>("clinical");
   const [textAvailabilityFilter, setTextAvailabilityFilter] =
     useState<TextAvailabilityFilter>("all");
-  const reportId = useReportWizardStore((s) => s.reportId);
+  const reportServiceId = useReportWizardStore((s) => s.reportServiceId);
   const selectedClinicalArticleIds = useReportWizardStore(
     (s) => s.selectedClinicalArticleIds,
   );
@@ -55,7 +55,7 @@ export function Step3Evidence() {
     isLoading,
     isError,
     error,
-  } = useEvidenceDiscovery(reportId, activeTab);
+  } = useEvidenceDiscovery(reportServiceId, activeTab);
 
   const filteredItems = useMemo(
     () =>
@@ -84,7 +84,7 @@ export function Step3Evidence() {
     [filteredItems, selectedArticleIds, setSelectedArticleIds],
   );
 
-  if (!reportId) {
+  if (!reportServiceId) {
     return (
       <p className="text-body-lg text-red-400" role="alert">
         Report is not configured. Go back to Filters and continue again.

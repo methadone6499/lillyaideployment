@@ -6,7 +6,7 @@ import { useComparatorDiscovery } from "../../hooks/useComparatorDiscovery";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 
 export function Step4Comparators() {
-  const reportId = useReportWizardStore((s) => s.reportId);
+  const reportServiceId = useReportWizardStore((s) => s.reportServiceId);
   const selectedComparators = useReportWizardStore(
     (s) => s.selectedComparators,
   );
@@ -23,7 +23,7 @@ export function Step4Comparators() {
     isLoading,
     isError,
     error,
-  } = useComparatorDiscovery(reportId);
+  } = useComparatorDiscovery(reportServiceId);
 
   const customOnly = customComparators.filter(
     (name) => !suggestions.includes(name),
@@ -41,7 +41,7 @@ export function Step4Comparators() {
     setDraftName("");
   };
 
-  if (!reportId) {
+  if (!reportServiceId) {
     return (
       <p className="text-body-lg text-red-400" role="alert">
         Report is not configured. Go back to Filters and continue again.

@@ -3,9 +3,9 @@
 import { ChevronDownIcon, FilterLinesIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { useEffect, useId, useRef, useState } from "react";
-import type { DashboardReportStatus } from "../types";
+import type { DashboardStatusFilterValue } from "../types";
 
-export type DashboardStatusFilterValue = DashboardReportStatus | "all";
+export type { DashboardStatusFilterValue };
 
 const STATUS_FILTER_OPTIONS: {
   value: DashboardStatusFilterValue;
@@ -13,9 +13,7 @@ const STATUS_FILTER_OPTIONS: {
 }[] = [
   { value: "all", label: "All statuses" },
   { value: "completed", label: "Completed" },
-  { value: "sent_for_review", label: "Sent for Review" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "reviewed", label: "Reviewed" },
+  { value: "generating", label: "In Progress" },
   { value: "failed", label: "Failed" },
 ];
 

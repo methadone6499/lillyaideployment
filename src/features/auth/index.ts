@@ -25,6 +25,7 @@ export {
   AuthSessionError,
   AuthSessionUnavailableError,
 } from "./session/authSessionErrors";
+export { authenticatedAuthRequest } from "./session/authenticatedAuthRequest";
 export {
   ensureAuthenticatedSession,
   getCachedAuthMe,

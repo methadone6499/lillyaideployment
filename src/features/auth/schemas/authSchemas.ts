@@ -15,6 +15,7 @@ export const effectiveRoleSchema = z.enum(["standard_user", "super_admin"]);
 export const permissionSchema = z.enum([
   "account:read",
   "account:update",
+  "report:create",
   "report:read_own",
   "settings:read",
   "settings:update",

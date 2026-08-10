@@ -1,14 +1,14 @@
 "use client";
 
+import type { GenerationFilters } from "@/features/reports";
 import { useEffect } from "react";
 import { Chip, CloseIcon } from "@/components/ui";
-import type { FilterState } from "../../types";
 import { getAppliedSearchFilters } from "../../utils/getAppliedSearchFilters";
 
 type SearchFiltersModalProps = {
   open: boolean;
   onClose: () => void;
-  filters: FilterState;
+  filters: GenerationFilters;
 };
 
 export function SearchFiltersModal({

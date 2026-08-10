@@ -1,6 +1,10 @@
 "use client";
 
-import { clearReportSession } from "@/features/report-generation";
+import { clearReportGenerationSession } from "@/features/report-generation";
+import {
+  clearPlatformReportSession,
+  syncPendingPlatformSavesWithAuthSession,
+} from "@/features/reports";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -25,13 +29,22 @@ export function UserSessionIsolationProvider({
       const becameUnauthenticated =
         prevStatus === "authenticated" && status === "unauthenticated";
 
+      const becameAuthenticated =
+        prevStatus !== "authenticated" &&
+        status === "authenticated" &&
+        confirmedUserId !== null;
+
       const userChanged =
         prevUserId !== null &&
         confirmedUserId !== null &&
         prevUserId !== confirmedUserId;
 
       if (becameUnauthenticated || userChanged) {
-        void clearReportSession(queryClient);
+        // Cross-feature orchestration: each feature clears only its own session.
+        void clearReportGenerationSession(queryClient);
+        void clearPlatformReportSession(queryClient);
+      } else if (becameAuthenticated) {
+        void syncPendingPlatformSavesWithAuthSession(queryClient);
       }
 
       prevStatusRef.current = status;
