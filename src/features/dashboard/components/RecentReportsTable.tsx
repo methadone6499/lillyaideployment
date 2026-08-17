@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRightIcon, SearchIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import {
   usePlatformReports,
@@ -20,44 +21,6 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 const reportRowClass =
   "grid min-w-[860px] grid-cols-[minmax(260px,1fr)_240px_160px_24px] items-center gap-x-12 px-6";
-
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={cn("size-6", className)}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ChevronRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={cn("size-6", className)}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M9 18L15 12L9 6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function getListErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {

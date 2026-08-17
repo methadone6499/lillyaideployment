@@ -1,13 +1,14 @@
 import { cn } from "@/lib/cn";
+import type { CompanyReportStatus } from "../schemas/companyAdminDashboardSchemas";
 import type { DashboardGenerationStatus } from "../types";
 
 type DashboardGenerationStatusPillProps = {
-  status: DashboardGenerationStatus;
+  status: DashboardGenerationStatus | CompanyReportStatus;
   className?: string;
 };
 
 const generationStatusConfig: Record<
-  DashboardGenerationStatus,
+  DashboardGenerationStatus | CompanyReportStatus,
   { label: string; className: string }
 > = {
   completed: {
@@ -21,6 +22,18 @@ const generationStatusConfig: Record<
   failed: {
     label: "Failed",
     className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+  },
+  in_progress: {
+    label: "In Progress",
+    className: "bg-[rgba(255,200,92,0.12)] text-status-running",
+  },
+  sent_for_review: {
+    label: "Sent for Review",
+    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
+  },
+  reviewed: {
+    label: "Reviewed",
+    className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
   },
 };
 
