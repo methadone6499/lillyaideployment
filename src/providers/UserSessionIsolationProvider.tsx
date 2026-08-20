@@ -1,10 +1,14 @@
 "use client";
 
+import { clearCompanyInvitationSession } from "@/features/company-invitations";
+import { clearCompanyQuotaSession } from "@/features/company-quota";
+import { clearEnterpriseActivationSession } from "@/features/enterprise-activation";
 import { clearReportGenerationSession } from "@/features/report-generation";
 import {
   clearPlatformReportSession,
   syncPendingPlatformSavesWithAuthSession,
 } from "@/features/reports";
+import { clearCompanySeatSession } from "@/features/seat-management";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -43,6 +47,10 @@ export function UserSessionIsolationProvider({
         // Cross-feature orchestration: each feature clears only its own session.
         void clearReportGenerationSession(queryClient);
         void clearPlatformReportSession(queryClient);
+        void clearEnterpriseActivationSession(queryClient);
+        void clearCompanySeatSession(queryClient);
+        void clearCompanyInvitationSession(queryClient);
+        void clearCompanyQuotaSession(queryClient);
       } else if (becameAuthenticated) {
         void syncPendingPlatformSavesWithAuthSession(queryClient);
       }

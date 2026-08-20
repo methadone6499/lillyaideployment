@@ -8,21 +8,39 @@ import {
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
-import { useMemo, useState } from "react";
 import type {
-  CompanySeat,
+  MembershipStatus,
+  Seat,
   SeatStatus,
 } from "../schemas/seatManagementSchemas";
 import { SeatStatusToggle } from "./SeatStatusToggle";
 
-const ROWS_PER_PAGE = 6;
-
 type SeatStatusFilterValue = SeatStatus | "all";
 
 type SeatListTableProps = {
-  seats: CompanySeat[];
-  onEditSeat: (seat: CompanySeat) => void;
-  onStatusChange: (seatId: string, status: SeatStatus) => void;
+  seats: Seat[];
+  searchQuery: string;
+  statusFilter: SeatStatusFilterValue;
+  currentPage: number;
+  totalPages: number;
+  rowOffset: number;
+  isPageChangePending?: boolean;
+  isLoading?: boolean;
+  isError?: boolean;
+  isEmpty?: boolean;
+  isUpdatingResults?: boolean;
+  errorMessage?: string | null;
+  nextPageErrorMessage?: string | null;
+  pendingMembershipId?: string | null;
+  emptyMessage: string;
+  onSearchChange: (value: string) => void;
+  onStatusFilterChange: (value: SeatStatusFilterValue) => void;
+  onPageChange: (page: number) => void | Promise<void>;
+  onRetry?: () => void;
+  onRetryNextPage?: () => void;
+  onEditSeat: (seat: Seat) => void;
+  onStatusChange: (seat: Seat, status: SeatStatus) => void;
+  onRemoveSeat: (seat: Seat) => void;
 };
 
 const SEAT_STATUS_OPTIONS = [
@@ -31,53 +49,68 @@ const SEAT_STATUS_OPTIONS = [
   { value: "disabled", label: "Disabled" },
 ] as const satisfies readonly DashboardStatusFilterOption<SeatStatusFilterValue>[];
 
+function getSeatStatusLabel(status: MembershipStatus): string {
+  if (status === "active") {
+    return "Active";
+  }
+
+  if (status === "disabled") {
+    return "Disabled";
+  }
+
+  return "Removed";
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      className="size-[18px]"
+      viewBox="0 0 18 18"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M3.75 5.25h10.5M7.5 8.25v4.5M10.5 8.25v4.5M4.5 5.25l.75 9a1.5 1.5 0 0 0 1.5 1.5h4.5a1.5 1.5 0 0 0 1.5-1.5l.75-9M6.75 5.25V3.75A1.5 1.5 0 0 1 8.25 2.25h1.5a1.5 1.5 0 0 1 1.5 1.5v1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function SeatListTable({
   seats,
+  searchQuery,
+  statusFilter,
+  currentPage,
+  totalPages,
+  rowOffset,
+  isPageChangePending = false,
+  isLoading = false,
+  isError = false,
+  isEmpty = false,
+  isUpdatingResults = false,
+  errorMessage = null,
+  nextPageErrorMessage = null,
+  pendingMembershipId = null,
+  emptyMessage,
+  onSearchChange,
+  onStatusFilterChange,
+  onPageChange,
+  onRetry,
+  onRetryNextPage,
   onEditSeat,
   onStatusChange,
+  onRemoveSeat,
 }: SeatListTableProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState<SeatStatusFilterValue>("all");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const filteredSeats = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
-
-    return seats.filter((seat) => {
-      const matchesStatus =
-        statusFilter === "all" || seat.status === statusFilter;
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        seat.userName.toLocaleLowerCase().includes(normalizedSearch) ||
-        seat.userEmail.toLocaleLowerCase().includes(normalizedSearch);
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [searchQuery, seats, statusFilter]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredSeats.length / ROWS_PER_PAGE),
-  );
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const visibleSeats = filteredSeats.slice(
-    (safeCurrentPage - 1) * ROWS_PER_PAGE,
-    safeCurrentPage * ROWS_PER_PAGE,
-  );
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
-
-  const handleStatusFilterChange = (value: SeatStatusFilterValue) => {
-    setStatusFilter(value);
-    setCurrentPage(1);
-  };
-
   return (
-    <section aria-labelledby="seats-list-heading" className="mt-12 lg:mt-14">
+    <section
+      aria-labelledby="seats-list-heading"
+      aria-busy={isLoading || isUpdatingResults || isPageChangePending}
+      className="mt-12 lg:mt-14"
+    >
       <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-6">
           <h2
@@ -96,8 +129,9 @@ export function SeatListTable({
               <input
                 type="search"
                 value={searchQuery}
-                placeholder="Search subscriptions"
-                onChange={(event) => handleSearchChange(event.target.value)}
+                maxLength={100}
+                placeholder="Search seats"
+                onChange={(event) => onSearchChange(event.target.value)}
                 className="h-14 w-full rounded-button bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none placeholder:text-white/28 focus:ring-1 focus:ring-border-default"
               />
             </label>
@@ -106,24 +140,24 @@ export function SeatListTable({
               value={statusFilter}
               options={SEAT_STATUS_OPTIONS}
               showSelectedLabel
-              onChange={handleStatusFilterChange}
+              onChange={onStatusFilterChange}
             />
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1040px] table-fixed">
+          <table className="w-full min-w-[1100px] table-fixed">
             <caption className="sr-only">
               Company seats, report quotas, usage, and account status
             </caption>
             <colgroup>
-              <col className="w-[24%]" />
-              <col className="w-[19%]" />
-              <col className="w-[11%]" />
-              <col className="w-[11%]" />
-              <col className="w-[13%]" />
-              <col className="w-[9%]" />
-              <col className="w-[13%]" />
+              <col className="w-[22%]" />
+              <col className="w-[18%]" />
+              <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[12%]" />
+              <col className="w-[10%]" />
+              <col className="w-[18%]" />
             </colgroup>
             <thead className="h-14 bg-surface-subtle text-left text-label font-medium text-text-step">
               <tr>
@@ -151,25 +185,57 @@ export function SeatListTable({
               </tr>
             </thead>
             <tbody>
-              {visibleSeats.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td
                     colSpan={7}
                     className="h-[172px] px-6 text-center text-label text-text-muted"
                   >
-                    No seats match your search or status filter.
+                    Loading seats…
+                  </td>
+                </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={7} className="h-[172px] px-6">
+                    <div
+                      className="flex flex-col items-center gap-4 text-center text-label text-text-muted"
+                      role="alert"
+                    >
+                      <p>{errorMessage ?? "Unable to load seats."}</p>
+                      {onRetry ? (
+                        <button
+                          type="button"
+                          className="rounded-button border border-border-default px-4 py-2 font-medium text-white transition-colors hover:bg-surface-elevated"
+                          onClick={onRetry}
+                        >
+                          Try again
+                        </button>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ) : isEmpty ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="h-[172px] px-6 text-center text-label text-text-muted"
+                  >
+                    {emptyMessage}
                   </td>
                 </tr>
               ) : (
-                visibleSeats.map((seat, index) => {
-                  const rowNumber =
-                    (safeCurrentPage - 1) * ROWS_PER_PAGE + index + 1;
-                  const remainingReports =
-                    seat.reportQuota - seat.usedReports;
+                seats.map((seat, index) => {
+                  const rowNumber = rowOffset + index + 1;
+                  const isRowPending =
+                    pendingMembershipId === seat.membership_id;
+                  const canToggleStatus =
+                    seat.can_manage_status && seat.status !== "removed";
+                  const canRemove =
+                    seat.can_manage && seat.status !== "removed";
 
                   return (
                     <tr
-                      key={seat.id}
+                      key={seat.membership_id}
                       className={cn(
                         "h-[86px] border-b border-border-subtle text-label font-medium text-white transition-colors last:border-b-0 hover:bg-brand-bg focus-within:bg-brand-bg",
                         rowNumber === 1 && "bg-brand-bg",
@@ -180,32 +246,41 @@ export function SeatListTable({
                           <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-toggle-knob bg-surface-elevated text-input text-white">
                             {rowNumber}
                           </span>
-                          <span className="truncate">{seat.userName}</span>
+                          <span className="flex min-w-0 flex-col">
+                            <span className="truncate">{seat.full_name}</span>
+                            {seat.role === "company_admin" ? (
+                              <span className="text-helper font-normal text-text-muted">
+                                Admin
+                              </span>
+                            ) : null}
+                          </span>
                         </span>
                       </td>
-                      <td className="truncate px-3 py-4">
-                        {seat.userEmail}
+                      <td className="truncate px-3 py-4">{seat.email}</td>
+                      <td className="px-3 py-4">{seat.report_quota_total}</td>
+                      <td className="px-3 py-4">{seat.report_quota_used}</td>
+                      <td className="px-3 py-4">
+                        {seat.report_quota_remaining}
                       </td>
-                      <td className="px-3 py-4">{seat.reportQuota}</td>
-                      <td className="px-3 py-4">{seat.usedReports}</td>
-                      <td className="px-3 py-4">{remainingReports}</td>
                       <td className="px-3 py-4">
                         <span
                           className={cn(
                             "inline-flex rounded-card px-2 py-2 text-input",
                             seat.status === "active"
                               ? "bg-brand-border text-status-success"
-                              : "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+                              : seat.status === "disabled"
+                                ? "bg-[rgba(217,34,68,0.12)] text-[#d92244]"
+                                : "bg-white/10 text-text-muted",
                           )}
                         >
-                          {seat.status === "active" ? "Active" : "Disabled"}
+                          {getSeatStatusLabel(seat.status)}
                         </span>
                       </td>
                       <td className="py-4 pr-6 pl-3">
-                        <span className="flex items-center gap-4">
+                        <span className="flex items-center gap-3">
                           <button
                             type="button"
-                            aria-label={`Edit seat for ${seat.userName}`}
+                            aria-label={`View seat for ${seat.full_name}`}
                             onClick={() => onEditSeat(seat)}
                             className="inline-flex size-10 shrink-0 items-center justify-center rounded-card bg-surface-elevated transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                           >
@@ -218,13 +293,32 @@ export function SeatListTable({
                             />
                           </button>
 
-                          <SeatStatusToggle
-                            userName={seat.userName}
-                            status={seat.status}
-                            onChange={(status) => {
-                              onStatusChange(seat.id, status);
-                            }}
-                          />
+                          {canRemove ? (
+                            <button
+                              type="button"
+                              aria-label={`Remove seat for ${seat.full_name}`}
+                              disabled={isRowPending}
+                              onClick={() => onRemoveSeat(seat)}
+                              className="inline-flex size-10 shrink-0 items-center justify-center rounded-card bg-surface-elevated text-[#d92244] transition-colors hover:bg-[rgba(217,34,68,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d92244] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <TrashIcon />
+                            </button>
+                          ) : null}
+
+                          {canToggleStatus ? (
+                            <SeatStatusToggle
+                              userName={seat.full_name}
+                              status={
+                                seat.status === "disabled"
+                                  ? "disabled"
+                                  : "active"
+                              }
+                              disabled={isRowPending}
+                              onChange={(nextStatus) => {
+                                onStatusChange(seat, nextStatus);
+                              }}
+                            />
+                          ) : null}
                         </span>
                       </td>
                     </tr>
@@ -236,10 +330,34 @@ export function SeatListTable({
         </div>
       </div>
 
+      <p className="sr-only" aria-live="polite">
+        {isUpdatingResults ? "Updating seat results." : ""}
+      </p>
+
+      {nextPageErrorMessage ? (
+        <div
+          className="mt-4 flex items-center justify-end gap-3 px-2 text-label text-text-muted"
+          role="alert"
+        >
+          <span>{nextPageErrorMessage}</span>
+          {onRetryNextPage ? (
+            <button
+              type="button"
+              className="rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"
+              disabled={isPageChangePending}
+              onClick={onRetryNextPage}
+            >
+              Retry
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <DashboardPagination
-        currentPage={safeCurrentPage}
+        currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        isPageChangePending={isPageChangePending}
+        onPageChange={onPageChange}
         ariaLabel="Seat list pagination"
         className="mt-4 px-2"
       />

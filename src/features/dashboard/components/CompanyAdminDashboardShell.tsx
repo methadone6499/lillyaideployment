@@ -9,16 +9,9 @@ import { DashboardActionCard } from "./DashboardActionCard";
 import { DashboardGreeting } from "./DashboardGreeting";
 import { DashboardHeaderActions } from "./DashboardHeaderActions";
 
-type CompanyAdminDashboardShellProps = {
-  previewMode?: boolean;
-};
-
-export function CompanyAdminDashboardShell({
-  previewMode = false,
-}: CompanyAdminDashboardShellProps) {
+export function CompanyAdminDashboardShell() {
   const router = useRouter();
   const { displayName, userId } = useAuthUser();
-  const greetingName = displayName || (previewMode ? "Ahmad M." : "");
 
   const handleGenerateReport = () => {
     if (userId) {
@@ -29,12 +22,10 @@ export function CompanyAdminDashboardShell({
 
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-text-body">
-      <AppHeader
-        actions={<DashboardHeaderActions accountMenuVariant="company-admin" />}
-      />
+      <AppHeader actions={<DashboardHeaderActions />} />
 
       <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 pt-10 pb-14 sm:px-6 lg:px-12 lg:pt-[57px]">
-        <DashboardGreeting user={{ displayName: greetingName }} />
+        <DashboardGreeting user={{ displayName }} />
 
         <section
           aria-label="Company administrator actions"

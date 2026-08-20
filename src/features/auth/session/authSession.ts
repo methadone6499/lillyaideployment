@@ -11,6 +11,7 @@ import {
   AuthSessionError,
   AuthSessionUnavailableError,
 } from "./authSessionErrors";
+import { isClosedSessionAuthError } from "./closedSessionAuthError";
 
 let authQueryClient: QueryClient | null = null;
 let bootstrapPromise: Promise<void> | null = null;
@@ -41,10 +42,7 @@ function isAbortError(error: unknown): boolean {
 }
 
 function isTerminalRefreshError(error: unknown): boolean {
-  return (
-    error instanceof ApiRequestError &&
-    (error.status === 401 || error.status === 403)
-  );
+  return isClosedSessionAuthError(error);
 }
 
 function isTransientRefreshError(error: unknown): boolean {
@@ -74,7 +72,20 @@ async function applyTokenAndMe(
     return;
   }
 
-  const me = await getMe(token.access_token, signal);
+  let me: AuthMeResponse;
+
+  try {
+    me = await getMe(token.access_token, signal);
+  } catch (error) {
+    if (
+      isClosedSessionAuthError(error) &&
+      useAuthStore.getState().isGenerationCurrent(generation)
+    ) {
+      performTerminalAuthCleanup(requireAuthQueryClient(), generation);
+    }
+
+    throw error;
+  }
 
   if (!useAuthStore.getState().isGenerationCurrent(generation)) {
     return;
@@ -299,6 +310,32 @@ export function getCachedAuthMe(
   queryClient: QueryClient,
 ): AuthMeResponse | undefined {
   return queryClient.getQueryData<AuthMeResponse>(authQueryKeys.me);
+}
+
+export async function refetchAuthMe(
+  signal?: AbortSignal,
+): Promise<AuthMeResponse> {
+  const queryClient = requireAuthQueryClient();
+  const generation = useAuthStore.getState().sessionGeneration;
+
+  try {
+    const accessToken = await getAccessTokenForAuthenticatedRequest(signal);
+    const me = await getMe(accessToken, signal);
+
+    if (!useAuthStore.getState().isGenerationCurrent(generation)) {
+      throw new AuthSessionError();
+    }
+
+    cacheAuthMe(me);
+    return me;
+  } catch (error) {
+    if (isClosedSessionAuthError(error)) {
+      performTerminalAuthCleanup(queryClient, generation);
+      throw new AuthSessionError();
+    }
+
+    throw error;
+  }
 }
 
 export async function performLogout(queryClient: QueryClient): Promise<void> {

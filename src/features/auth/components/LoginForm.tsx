@@ -18,6 +18,8 @@ type LoginFormProps = {
   fieldErrors?: Partial<Record<keyof LoginFormState | "email" | "password", string>>;
   isSubmitting?: boolean;
   isResendingVerification?: boolean;
+  showSignUpLink?: boolean;
+  emailDescription?: string;
   onSubmit?: (values: LoginFormState) => void | Promise<void>;
   onResendVerification?: (email: string) => void | Promise<void>;
 };
@@ -34,6 +36,8 @@ export function LoginForm({
   fieldErrors,
   isSubmitting = false,
   isResendingVerification = false,
+  showSignUpLink = true,
+  emailDescription,
   onSubmit,
   onResendVerification,
 }: LoginFormProps) {
@@ -107,6 +111,7 @@ export function LoginForm({
               autoComplete="email"
               placeholder="johndoe@example.com"
               value={form.email}
+              description={emailDescription}
               error={resolveError("email") ?? fieldErrors?.email ?? null}
               onChange={(event) => updateField("email", event.target.value)}
             />
@@ -154,10 +159,12 @@ export function LoginForm({
         </AuthSubmitButton>
       </div>
 
-      <p className="text-center font-inter text-label leading-normal font-medium text-landing-text-heading">
-        Don&apos;t have an account?{" "}
-        <AuthGradientLink href="/signup">Sign Up</AuthGradientLink>
-      </p>
+      {showSignUpLink ? (
+        <p className="text-center font-inter text-label leading-normal font-medium text-landing-text-heading">
+          Don&apos;t have an account?{" "}
+          <AuthGradientLink href="/signup">Sign Up</AuthGradientLink>
+        </p>
+      ) : null}
     </form>
   );
 }

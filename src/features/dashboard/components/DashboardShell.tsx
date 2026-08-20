@@ -1,10 +1,14 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/AppHeader";
-import { useAuthUser } from "@/features/auth";
+import { hasPermission, useAuthUser } from "@/features/auth";
+import {
+  classifyQuotaQueryError,
+  useOwnCompanyQuota,
+} from "@/features/company-quota";
 import { beginReportWizardSession } from "@/features/report-generation";
 import { useRouter } from "next/navigation";
-import { dashboardQuota } from "../data/dashboardData";
+import { additionalReportPrice } from "../data/dashboardData";
 import { DashboardActionCard } from "./DashboardActionCard";
 import { DashboardGreeting } from "./DashboardGreeting";
 import { DashboardHeaderActions } from "./DashboardHeaderActions";
@@ -13,7 +17,11 @@ import { ReportQuotaCard } from "./ReportQuotaCard";
 
 export function DashboardShell() {
   const router = useRouter();
-  const { displayName, userId } = useAuthUser();
+  const { displayName, userId, authMe } = useAuthUser();
+  const canReadOwnQuota = hasPermission(authMe, "company:quota_read_own");
+  const ownQuotaQuery = useOwnCompanyQuota({
+    enabled: canReadOwnQuota,
+  });
 
   const handleGenerateReport = () => {
     if (userId) {
@@ -21,6 +29,18 @@ export function DashboardShell() {
     }
     router.push("/reports/new");
   };
+
+  const quota = canReadOwnQuota
+    ? {
+        used: ownQuotaQuery.data?.quota_used ?? null,
+        total: ownQuotaQuery.data?.quota_total ?? null,
+        additionalReportPrice,
+      }
+    : {
+        used: 0,
+        total: 0,
+        additionalReportPrice,
+      };
 
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-text-body">
@@ -34,7 +54,22 @@ export function DashboardShell() {
             aria-label="Dashboard actions"
             className="grid grid-cols-1 gap-7 md:grid-cols-2 xl:grid-cols-3"
           >
-            <ReportQuotaCard quota={dashboardQuota} />
+            <ReportQuotaCard
+              quota={quota}
+              isLoading={canReadOwnQuota && ownQuotaQuery.isLoading}
+              errorMessage={
+                canReadOwnQuota && ownQuotaQuery.isError
+                  ? classifyQuotaQueryError(ownQuotaQuery.error, "own")
+                  : null
+              }
+              onRetry={
+                canReadOwnQuota && ownQuotaQuery.isError
+                  ? () => {
+                      void ownQuotaQuery.refetch();
+                    }
+                  : undefined
+              }
+            />
 
             <DashboardActionCard
               title="Dosage Calculator"

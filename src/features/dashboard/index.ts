@@ -1,4 +1,5 @@
 export { CompanyAdminDashboardShell } from "./components/CompanyAdminDashboardShell";
+export { SuperAdminDashboardShell } from "./components/SuperAdminDashboardShell";
 export {
   DashboardHeaderActions,
   type AccountMenuVariant,

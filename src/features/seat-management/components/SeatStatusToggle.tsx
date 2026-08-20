@@ -5,12 +5,14 @@ import type { SeatStatus } from "../schemas/seatManagementSchemas";
 type SeatStatusToggleProps = {
   userName: string;
   status: SeatStatus;
+  disabled?: boolean;
   onChange: (status: SeatStatus) => void;
 };
 
 export function SeatStatusToggle({
   userName,
   status,
+  disabled = false,
   onChange,
 }: SeatStatusToggleProps) {
   const isDisabled = status === "disabled";
@@ -18,6 +20,7 @@ export function SeatStatusToggle({
   return (
     <Switch
       checked={isDisabled}
+      disabled={disabled}
       onChange={(nextDisabled) => {
         onChange(nextDisabled ? "disabled" : "active");
       }}

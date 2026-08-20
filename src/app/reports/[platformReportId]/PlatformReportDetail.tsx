@@ -2,6 +2,7 @@
 
 import { AppHeader } from "@/components/shared/AppHeader";
 import { Button } from "@/components/ui";
+import { getPostAuthHomePath, useAuthUser } from "@/features/auth";
 import { ReportViewer } from "@/features/report-generation";
 import { usePlatformReport } from "@/features/reports";
 import { ApiRequestError } from "@/services/ApiRequestError";
@@ -55,6 +56,8 @@ export function PlatformReportDetail({
   platformReportId,
 }: PlatformReportDetailProps) {
   const router = useRouter();
+  const { authMe } = useAuthUser();
+  const homePath = getPostAuthHomePath(authMe);
   const reportQuery = usePlatformReport(platformReportId);
 
   if (reportQuery.isLoading && !reportQuery.data) {
@@ -86,7 +89,7 @@ export function PlatformReportDetail({
           <div>
             <Button
               variant="secondary"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push(homePath)}
             >
               Back to Dashboard
             </Button>
@@ -120,7 +123,7 @@ export function PlatformReportDetail({
           selectedSectionIds={
             report.generation_snapshot.selected_section_ids
           }
-          onBack={() => router.push("/dashboard")}
+          onBack={() => router.push(homePath)}
         />
       </main>
     </div>

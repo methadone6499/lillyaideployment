@@ -11,7 +11,7 @@ export function SeatManagementShell() {
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-text-body">
       <AppHeader
-        actions={<DashboardHeaderActions accountMenuVariant="company-admin" />}
+        actions={<DashboardHeaderActions />}
       />
 
       <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 pt-8 pb-14 sm:px-6 sm:pt-10 lg:px-12 lg:pt-11">

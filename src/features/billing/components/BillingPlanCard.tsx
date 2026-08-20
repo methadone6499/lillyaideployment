@@ -1,3 +1,5 @@
+"use client";
+
 import { Button, Card } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
@@ -5,9 +7,12 @@ import type { BillingPlan } from "../schemas/billingSchemas";
 
 type BillingPlanCardProps = {
   plan: BillingPlan;
+  onCtaClick?: () => void;
 };
 
-export function BillingPlanCard({ plan }: BillingPlanCardProps) {
+export function BillingPlanCard({ plan, onCtaClick }: BillingPlanCardProps) {
+  const isActivateCta = Boolean(onCtaClick) && !plan.current;
+
   return (
     <Card
       variant={plan.current ? "accent" : "default"}
@@ -68,12 +73,13 @@ export function BillingPlanCard({ plan }: BillingPlanCardProps) {
       <Button
         variant="secondary"
         disabled={plan.current}
+        onClick={isActivateCta ? onCtaClick : undefined}
         className={cn(
           "mt-auto h-14 w-full text-label",
           plan.current && "border-white/8 bg-white/8",
         )}
         title={
-          plan.current
+          plan.current || isActivateCta
             ? undefined
             : "Available when billing services are connected"
         }

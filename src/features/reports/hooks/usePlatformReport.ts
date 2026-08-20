@@ -2,23 +2,46 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { useIsAuthenticated } from "@/features/auth";
+import {
+  hasPermission,
+  useConfirmedUserId,
+  useCurrentUserQuery,
+  useIsAuthenticated,
+} from "@/features/auth";
 
-import { getPlatformReport } from "../api/platformReportApi";
+import { getResolvedPlatformReport } from "../api/companyReportApi";
 import { platformReportQueryKeys } from "../api/platformReportQueryKeys";
+import { shouldRetryCompanyReportQuery } from "../utils/shouldRetryCompanyReportQuery";
 
 const GENERATING_POLL_INTERVAL_MS = 25_000;
 
 export function usePlatformReport(platformReportId: string | null | undefined) {
   const isAuthenticated = useIsAuthenticated();
-  const enabled = isAuthenticated && Boolean(platformReportId);
+  const userId = useConfirmedUserId();
+  const { data: authMe } = useCurrentUserQuery();
+  const canReadCompany = hasPermission(authMe, "report:read_company");
+  const enabled =
+    isAuthenticated &&
+    Boolean(userId) &&
+    Boolean(platformReportId) &&
+    Boolean(authMe);
 
   return useQuery({
-    queryKey: platformReportQueryKeys.detail(platformReportId ?? ""),
-    queryFn: ({ signal }) => getPlatformReport(platformReportId!, signal),
+    queryKey: platformReportQueryKeys.resolvedDetail(
+      userId ?? "",
+      platformReportId ?? "",
+      canReadCompany,
+    ),
+    queryFn: ({ signal }) =>
+      getResolvedPlatformReport(
+        platformReportId!,
+        { companyFallback: canReadCompany },
+        signal,
+      ),
     enabled,
     staleTime: 0,
     refetchOnWindowFocus: "always",
+    retry: shouldRetryCompanyReportQuery,
     refetchIntervalInBackground: false,
     refetchInterval: (query) =>
       enabled && query.state.data?.generation_status === "generating"

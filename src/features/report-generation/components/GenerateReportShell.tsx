@@ -350,6 +350,9 @@ export function GenerateReportShell() {
             await queryClient.invalidateQueries({
               queryKey: platformReportQueryKeys.lists(),
             });
+            await queryClient.invalidateQueries({
+              queryKey: platformReportQueryKeys.companyLists(originatingUserId),
+            });
 
             if (
               isStillCurrentPlatformSave(

@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, type FormEvent, type ReactNode } from "react";
 
+import { cn } from "@/lib/cn";
+
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
   "input:not([disabled])",
@@ -16,6 +18,10 @@ type SeatFormDialogProps = {
   title: string;
   confirmLabel?: string;
   confirmDisabled?: boolean;
+  confirmTone?: "brand" | "danger";
+  hideConfirm?: boolean;
+  cancelLabel?: string;
+  closeDisabled?: boolean;
   children: ReactNode;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -26,6 +32,10 @@ export function SeatFormDialog({
   title,
   confirmLabel = "Confirm",
   confirmDisabled = false,
+  confirmTone = "brand",
+  hideConfirm = false,
+  cancelLabel = "Cancel",
+  closeDisabled = false,
   children,
   onClose,
   onSubmit,
@@ -33,10 +43,15 @@ export function SeatFormDialog({
   const titleId = useId();
   const dialogRef = useRef<HTMLFormElement>(null);
   const onCloseRef = useRef(onClose);
+  const closeDisabledRef = useRef(closeDisabled);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    closeDisabledRef.current = closeDisabled;
+  }, [closeDisabled]);
 
   useEffect(() => {
     if (!open) {
@@ -59,7 +74,11 @@ export function SeatFormDialog({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onCloseRef.current();
+
+        if (!closeDisabledRef.current) {
+          onCloseRef.current();
+        }
+
         return;
       }
 
@@ -106,7 +125,7 @@ export function SeatFormDialog({
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (event.target === event.currentTarget && !closeDisabled) {
           onClose();
         }
       }}
@@ -131,21 +150,34 @@ export function SeatFormDialog({
           {children}
         </div>
 
-        <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-border-default px-6 py-5 sm:px-7">
+        <footer
+          className={cn(
+            "flex shrink-0 items-center gap-4 border-t border-border-default px-6 py-5 sm:px-7",
+            hideConfirm ? "justify-end" : "justify-between",
+          )}
+        >
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-[42px] items-center justify-center rounded-button border border-border-default bg-white/[0.04] px-[18px] text-label font-medium text-white/72 transition-colors hover:bg-surface-default hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            disabled={closeDisabled}
+            className="inline-flex h-[42px] items-center justify-center rounded-button border border-border-default bg-white/[0.04] px-[18px] text-label font-medium text-white/72 transition-colors hover:bg-surface-default hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Cancel
+            {cancelLabel}
           </button>
-          <button
-            type="submit"
-            disabled={confirmDisabled}
-            className="inline-flex h-[42px] items-center justify-center rounded-button bg-brand px-[18px] text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {confirmLabel}
-          </button>
+          {hideConfirm ? null : (
+            <button
+              type="submit"
+              disabled={confirmDisabled}
+              className={cn(
+                "inline-flex h-[42px] items-center justify-center rounded-button px-[18px] text-label font-medium text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                confirmTone === "danger"
+                  ? "bg-[#d92244] hover:bg-[#c01e3c] focus-visible:outline-[#d92244]"
+                  : "bg-brand hover:bg-brand/90 focus-visible:outline-brand",
+              )}
+            >
+              {confirmLabel}
+            </button>
+          )}
         </footer>
       </form>
     </div>

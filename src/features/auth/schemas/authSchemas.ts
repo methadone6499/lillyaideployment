@@ -8,14 +8,30 @@ export const userStatusSchema = z.enum([
 
 export const globalRoleSchema = z.enum(["super_admin"]);
 
-export const contextTypeSchema = z.enum(["personal", "global"]);
+export const contextTypeSchema = z.enum(["personal", "company", "global"]);
 
-export const effectiveRoleSchema = z.enum(["standard_user", "super_admin"]);
+export const effectiveRoleSchema = z.enum([
+  "standard_user",
+  "company_admin",
+  "company_seat_user",
+  "super_admin",
+]);
 
 export const permissionSchema = z.enum([
   "account:read",
   "account:update",
+  "admin:companies_read",
+  "admin:reports_read",
+  "admin:users_read",
+  "company:read",
+  "company:billing_read",
+  "company:members_read",
+  "company:members_manage",
+  "company:quota_read",
+  "company:quota_read_own",
+  "company:quota_manage",
   "report:create",
+  "report:read_company",
   "report:read_own",
   "settings:read",
   "settings:update",
@@ -88,6 +104,8 @@ export const publicUserResponseSchema = z.object({
 export const contextResponseSchema = z.object({
   type: contextTypeSchema,
   role: effectiveRoleSchema,
+  company_id: z.string().nullish(),
+  membership_id: z.string().nullish(),
 });
 
 export const authMeResponseSchema = z.object({

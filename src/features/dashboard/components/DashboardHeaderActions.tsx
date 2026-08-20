@@ -1,7 +1,13 @@
 "use client";
 
 import { BellIcon, ChevronDownIcon } from "@/components/ui/icons";
-import { useLogoutMutation } from "@/features/auth";
+import {
+  getActiveContext,
+  useAuthUser,
+  useLogoutMutation,
+  type ContextType,
+  type EffectiveRole,
+} from "@/features/auth";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,15 +18,30 @@ import type { DashboardNotification } from "../types";
 
 type OpenPanel = "notifications" | "account" | null;
 
-/**
- * UI-only menu composition until company and seat roles are exposed by /auth/me.
- * This is not an authorization boundary.
- */
-export type AccountMenuVariant = "standard" | "company-admin" | "seat";
+export type AccountMenuVariant =
+  | "standard"
+  | "company-admin"
+  | "seat"
+  | "super-admin";
 
-type DashboardHeaderActionsProps = {
-  accountMenuVariant?: AccountMenuVariant;
-};
+function getAccountMenuVariant(
+  contextType: ContextType | undefined,
+  contextRole: EffectiveRole | undefined,
+): AccountMenuVariant {
+  if (contextType === "global" && contextRole === "super_admin") {
+    return "super-admin";
+  }
+
+  if (contextType === "company" && contextRole === "company_admin") {
+    return "company-admin";
+  }
+
+  if (contextType === "company" && contextRole === "company_seat_user") {
+    return "seat";
+  }
+
+  return "standard";
+}
 
 function NotificationItem({ notification }: { notification: DashboardNotification }) {
   const hasReportLeadIn = notification.message.startsWith("Your report");
@@ -57,18 +78,28 @@ function NotificationItem({ notification }: { notification: DashboardNotificatio
   );
 }
 
-export function DashboardHeaderActions({
-  accountMenuVariant = "standard",
-}: DashboardHeaderActionsProps) {
+export function DashboardHeaderActions() {
   const router = useRouter();
+  const { authMe } = useAuthUser();
+  const activeContext = getActiveContext(authMe);
+  const accountMenuVariant = getAccountMenuVariant(
+    activeContext?.type,
+    activeContext?.role,
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(
     dashboardNotifications.length > 0,
   );
   const logoutMutation = useLogoutMutation();
-  const showCompanyMenu = accountMenuVariant === "company-admin";
-  const showBilling = accountMenuVariant !== "seat";
+  const contextMenuItem =
+    accountMenuVariant === "company-admin"
+      ? { href: "/company-admin/dashboard", label: "Company Menu" }
+      : accountMenuVariant === "super-admin"
+        ? { href: "/super-admin/dashboard", label: "Admin Menu" }
+        : null;
+  const showBilling =
+    accountMenuVariant !== "seat" && accountMenuVariant !== "super-admin";
   const billingHref =
     accountMenuVariant === "company-admin"
       ? "/company-admin/billing"
@@ -208,14 +239,14 @@ export function DashboardHeaderActions({
             aria-label="Account menu"
             className="absolute right-0 top-full z-50 mt-2 w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-button bg-[#222] shadow-[0_36px_174px_rgba(0,0,0,0.13),0_10.63px_51.859px_rgba(0,0,0,0.09),0_2.555px_15.698px_rgba(0,0,0,0.08),0_-0.567px_1.537px_rgba(0,0,0,0.06),0_-1.483px_0_rgba(0,0,0,0.05),0_-1.147px_0_rgba(0,0,0,0.04)]"
           >
-            {showCompanyMenu ? (
+            {contextMenuItem ? (
               <Link
-                href="/company-admin/dashboard"
+                href={contextMenuItem.href}
                 role="menuitem"
                 className="flex h-13.25 items-center justify-between border-b border-white/6 pl-5.5 pr-4.5 text-body-lg font-medium leading-normal text-white transition-colors hover:bg-white/6 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand"
                 onClick={() => setOpenPanel(null)}
               >
-                <span>Company Menu</span>
+                <span>{contextMenuItem.label}</span>
                 <span
                   aria-hidden
                   className="flex size-5 items-center justify-center"

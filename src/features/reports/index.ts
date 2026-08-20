@@ -1,17 +1,38 @@
 export {
+  getCompanyReport,
+  listCompanyReports,
+} from "./api/companyReportApi";
+export {
   createPlatformReport,
   getPlatformReport,
   listPlatformReports,
 } from "./api/platformReportApi";
 export {
   platformReportQueryKeys,
+  type CompanyReportListQueryParams,
   type PlatformReportListQueryParams,
 } from "./api/platformReportQueryKeys";
+export { useCompanyReport } from "./hooks/useCompanyReport";
+export {
+  useCompanyReports,
+  type UseCompanyReportsParams,
+} from "./hooks/useCompanyReports";
 export { usePlatformReport } from "./hooks/usePlatformReport";
 export {
   usePlatformReports,
   type UsePlatformReportsParams,
 } from "./hooks/usePlatformReports";
+export {
+  companyReportCreatorSchema,
+  companyReportListResponseSchema,
+  companyReportSummarySchema,
+} from "./schemas/companyReportSchemas";
+export type {
+  CompanyReportCreator,
+  CompanyReportListResponse,
+  CompanyReportSummary,
+  ListCompanyReportsParams,
+} from "./schemas/companyReportSchemas";
 export {
   createReportInputSchema,
   generationFiltersSchema,
