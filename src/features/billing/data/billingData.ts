@@ -12,7 +12,7 @@ export const billingPageData = billingPageDataSchema.parse({
     secondaryActionLabel: "Cancel Plan",
   },
   paymentMethod: {
-    cardholderName: "Bilal Ahmed",
+    cardholderName: "User Name",
     expirationDate: "12/28",
     brand: "Mastercard",
     lastFour: "5432",

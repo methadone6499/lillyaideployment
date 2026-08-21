@@ -1,7 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/AppHeader";
-import { hasPermission, useAuthUser } from "@/features/auth";
+import { getActiveContext, hasPermission, useAuthUser } from "@/features/auth";
 import {
   classifyQuotaQueryError,
   useOwnCompanyQuota,
@@ -18,6 +18,7 @@ import { ReportQuotaCard } from "./ReportQuotaCard";
 export function DashboardShell() {
   const router = useRouter();
   const { displayName, userId, authMe } = useAuthUser();
+  const role = getActiveContext(authMe)?.role;
   const canReadOwnQuota = hasPermission(authMe, "company:quota_read_own");
   const ownQuotaQuery = useOwnCompanyQuota({
     enabled: canReadOwnQuota,
@@ -69,6 +70,7 @@ export function DashboardShell() {
                     }
                   : undefined
               }
+              showBuyAdditional={role !== "company_seat_user"}
             />
 
             <DashboardActionCard

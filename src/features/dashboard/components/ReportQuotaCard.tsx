@@ -6,6 +6,7 @@ type ReportQuotaCardProps = {
   isLoading?: boolean;
   errorMessage?: string | null;
   onRetry?: () => void;
+  showBuyAdditional?: boolean;
 };
 
 function formatQuotaValue(value: number | null): string {
@@ -21,6 +22,7 @@ export function ReportQuotaCard({
   isLoading = false,
   errorMessage = null,
   onRetry,
+  showBuyAdditional = true,
 }: ReportQuotaCardProps) {
   return (
     <Card
@@ -57,12 +59,14 @@ export function ReportQuotaCard({
         </div>
       ) : null}
 
-      <button
-        type="button"
-        className="mt-auto flex w-full items-center rounded-step-badge border border-dashed border-brand-chip-border bg-brand-bg px-5 py-5 text-left text-label font-medium text-brand transition-colors hover:bg-brand-bg/80"
-      >
-        + Buy additional reports ({quota.additionalReportPrice} each)
-      </button>
+      {showBuyAdditional ? (
+        <button
+          type="button"
+          className="mt-auto flex w-full items-center rounded-step-badge border border-dashed border-brand-chip-border bg-brand-bg px-5 py-5 text-left text-label font-medium text-brand transition-colors hover:bg-brand-bg/80"
+        >
+          + Buy additional reports ({quota.additionalReportPrice} each)
+        </button>
+      ) : null}
     </Card>
   );
 }
