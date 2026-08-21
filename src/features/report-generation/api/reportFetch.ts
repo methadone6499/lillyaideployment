@@ -50,18 +50,23 @@ async function parseErrorMessage(response: Response): Promise<string> {
   return response.statusText || `Request failed with status ${response.status}`;
 }
 
-type ReportFetchOptions<TSchema extends z.ZodType> = {
+type ReportFetchBaseOptions = {
   method?: string;
   body?: unknown;
-  schema: TSchema;
+  headers?: HeadersInit;
   signal?: AbortSignal;
 };
 
-type ReportFetchBlobOptions = {
-  method?: string;
-  body?: unknown;
+type ReportFetchOptions<TSchema extends z.ZodType> = ReportFetchBaseOptions & {
+  schema: TSchema;
+};
+
+type ReportFetchBlobOptions = ReportFetchBaseOptions & {
   responseType: "blob";
-  signal?: AbortSignal;
+};
+
+type ReportFetchEmptyOptions = ReportFetchBaseOptions & {
+  responseType: "empty";
 };
 
 export async function reportFetch<TSchema extends z.ZodType>(
@@ -74,16 +79,28 @@ export async function reportFetch(
   options: ReportFetchBlobOptions,
 ): Promise<Blob>;
 
+export async function reportFetch(
+  path: string,
+  options: ReportFetchEmptyOptions,
+): Promise<void>;
+
 export async function reportFetch<TSchema extends z.ZodType>(
   path: string,
-  options: ReportFetchOptions<TSchema> | ReportFetchBlobOptions,
-): Promise<z.infer<TSchema> | Blob> {
+  options:
+    | ReportFetchOptions<TSchema>
+    | ReportFetchBlobOptions
+    | ReportFetchEmptyOptions,
+): Promise<z.infer<TSchema> | Blob | void> {
   await ensureAuthenticatedSession(options.signal);
 
-  const headers = new Headers();
+  const headers = new Headers(options.headers);
 
   let body: BodyInit | undefined;
-  if (options.body !== undefined) {
+  if (options.body instanceof FormData) {
+    body = options.body;
+    // Let the browser set multipart Content-Type including the boundary.
+    headers.delete("Content-Type");
+  } else if (options.body !== undefined) {
     headers.set("Content-Type", "application/json");
     body = JSON.stringify(options.body);
   }
@@ -100,8 +117,11 @@ export async function reportFetch<TSchema extends z.ZodType>(
     throw new ReportApiError(response.status, await parseErrorMessage(response));
   }
 
-  if ("responseType" in options && options.responseType === "blob") {
-    return response.blob();
+  if ("responseType" in options) {
+    if (options.responseType === "blob") {
+      return response.blob();
+    }
+    return;
   }
 
   const json: unknown = await response.json();

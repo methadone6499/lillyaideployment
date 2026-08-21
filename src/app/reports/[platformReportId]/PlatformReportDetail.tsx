@@ -123,6 +123,7 @@ export function PlatformReportDetail({
           selectedSectionIds={
             report.generation_snapshot.selected_section_ids
           }
+          customSectionTitles={report.generation_snapshot.custom_sections}
           onBack={() => router.push(homePath)}
         />
       </main>

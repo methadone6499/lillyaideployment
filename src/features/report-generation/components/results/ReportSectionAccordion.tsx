@@ -214,9 +214,11 @@ export function ReportSectionAccordion({
             <span className="block text-card-title font-medium text-white">
               {title}
             </span>
-            <span className="mt-4 block text-helper text-text-muted">
-              {description}
-            </span>
+            {description ? (
+              <span className="mt-4 block text-helper text-text-muted">
+                {description}
+              </span>
+            ) : null}
             {section.error && (
               <span className="mt-3 block text-helper text-red-400" role="alert">
                 {section.error}

@@ -2,24 +2,52 @@ import {
   articleDiscoveryResponseSchema,
   comparatorDiscoveryResponseSchema,
   createReportResponseSchema,
+  customSectionResponseSchema,
   drugValidationResponseSchema,
   generateReportResponseSchema,
+  listCustomSectionsResponseSchema,
   pdfExportResponseSchema,
+  pptxExportQueueResponseSchema,
+  pptxExportStatusResponseSchema,
   reportSectionResponseSchema,
   reportStatusResponseSchema,
   updateReportSelectionsResponseSchema,
 } from "../schemas/reportSchemas";
 import type {
+  CreateCustomSectionInput,
   CreateReportInput,
+  CustomSectionResponse,
   GenerateReportInput,
   GenerateReportResponse,
+  ListCustomSectionsResponse,
+  PatchCustomSectionInput,
+  PptxExportProgress,
+  PptxExportQueueResponse,
+  PptxExportStatusResponse,
+  QueuePptxExportInput,
   UpdateReportSelectionsInput,
   UpdateReportSelectionsResponse,
 } from "../types";
+import {
+  getCustomSectionMode,
+  validateCustomSectionFile,
+} from "../utils/customSections";
 import { ReportApiError, reportFetch } from "./reportFetch";
+
+const CUSTOM_SECTION_MODE_HEADER = "X-Custom-Section-Mode";
 
 const PDF_POLL_INTERVAL_MS = 2_000;
 const PDF_MAX_ATTEMPTS = 30;
+const PPTX_POLL_INTERVAL_MS = 2_000;
+const PPTX_MAX_ATTEMPTS = 150;
+
+export type DownloadPptxWhenReadyOptions = {
+  signal?: AbortSignal;
+  onProgress?: (
+    progress: PptxExportProgress | undefined,
+    status: PptxExportStatusResponse,
+  ) => void;
+};
 
 export { ReportApiError } from "./reportFetch";
 
@@ -118,6 +146,111 @@ export async function updateReportSelections(
   });
 }
 
+export async function listCustomSections(
+  reportServiceId: string,
+  signal?: AbortSignal,
+): Promise<ListCustomSectionsResponse> {
+  return reportFetch(`/reports/${reportServiceId}/custom-sections`, {
+    schema: listCustomSectionsResponseSchema,
+    signal,
+  });
+}
+
+export async function createOrReplaceCustomSection(
+  reportServiceId: string,
+  input: CreateCustomSectionInput,
+  signal?: AbortSignal,
+): Promise<CustomSectionResponse> {
+  const title = input.title.trim();
+  const prompt = input.prompt?.trim();
+  if (!title) {
+    throw new Error("Enter a title for this section.");
+  }
+  if (input.file) {
+    const fileError = validateCustomSectionFile(input.file);
+    if (fileError) {
+      throw new Error(fileError);
+    }
+  }
+
+  const file = input.file;
+  const mode = getCustomSectionMode({ prompt, file });
+  if (mode === "prompt" && !prompt) {
+    throw new Error("Enter a prompt for this section.");
+  }
+  if ((mode === "file" || mode === "both") && !file) {
+    throw new Error("Upload a .pdf or .docx file.");
+  }
+
+  const headers = { [CUSTOM_SECTION_MODE_HEADER]: mode };
+  const path = `/reports/${reportServiceId}/custom-sections`;
+
+  if (mode === "prompt") {
+    return reportFetch(path, {
+      method: "POST",
+      headers,
+      body: {
+        title,
+        prompt,
+        custom_id: input.customId ?? null,
+      },
+      schema: customSectionResponseSchema,
+      signal,
+    });
+  }
+
+  if (!file) {
+    throw new Error("Upload a .pdf or .docx file.");
+  }
+
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("file", file);
+  if (prompt) {
+    formData.append("prompt", prompt);
+  }
+  if (input.customId) {
+    formData.append("custom_id", input.customId);
+  }
+
+  return reportFetch(path, {
+    method: "POST",
+    headers,
+    body: formData,
+    schema: customSectionResponseSchema,
+    signal,
+  });
+}
+
+export async function patchCustomSection(
+  reportServiceId: string,
+  customId: string,
+  input: PatchCustomSectionInput,
+  signal?: AbortSignal,
+): Promise<void> {
+  await reportFetch(
+    `/reports/${reportServiceId}/custom-sections/${customId}`,
+    {
+      method: "PATCH",
+      body: input,
+      responseType: "empty",
+      signal,
+    },
+  );
+}
+
+export async function deleteCustomSection(
+  reportServiceId: string,
+  customId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  await reportFetch(`/reports/${reportServiceId}/custom-sections/${customId}`, {
+    method: "DELETE",
+    responseType: "empty",
+    signal,
+  });
+}
+
 export async function generateReport(
   reportServiceId: string,
   input: GenerateReportInput,
@@ -200,5 +333,138 @@ export async function downloadPdfWhenReady(
   throw new ReportApiError(
     408,
     "PDF is still being prepared. Please try again.",
+  );
+}
+
+function isPptxInFlightError(error: unknown): boolean {
+  return error instanceof ReportApiError && error.status === 409;
+}
+
+function isPptxRetryablePollError(error: unknown): boolean {
+  return (
+    error instanceof ReportApiError &&
+    (error.status === 409 || error.status === 404)
+  );
+}
+
+function isQueuedPptxReady(queued: PptxExportQueueResponse): boolean {
+  return queued.pptx_ready === true || queued.job_status === "completed";
+}
+
+export async function queuePptxExport(
+  reportServiceId: string,
+  input: QueuePptxExportInput = { force_regenerate: false },
+  signal?: AbortSignal,
+) {
+  const body: QueuePptxExportInput = {
+    force_regenerate: input.force_regenerate,
+  };
+  if (input.idempotency_key !== undefined) {
+    body.idempotency_key = input.idempotency_key;
+  }
+
+  return reportFetch(`/reports/${reportServiceId}/export/pptx`, {
+    method: "POST",
+    body,
+    schema: pptxExportQueueResponseSchema,
+    signal,
+  });
+}
+
+export async function fetchPptxExportStatus(
+  reportServiceId: string,
+  signal?: AbortSignal,
+) {
+  return reportFetch(`/reports/${reportServiceId}/export/pptx/status`, {
+    schema: pptxExportStatusResponseSchema,
+    signal,
+  });
+}
+
+export async function downloadPptx(
+  reportServiceId: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  return reportFetch(`/reports/${reportServiceId}/export/pptx`, {
+    responseType: "blob",
+    signal,
+  });
+}
+
+export async function downloadPptxWhenReady(
+  reportServiceId: string,
+  options?: DownloadPptxWhenReadyOptions,
+): Promise<Blob> {
+  const signal = options?.signal;
+
+  try {
+    const queued = await queuePptxExport(
+      reportServiceId,
+      { force_regenerate: false },
+      signal,
+    );
+    if (isQueuedPptxReady(queued)) {
+      try {
+        return await downloadPptx(reportServiceId, signal);
+      } catch (error) {
+        if (!isPptxInFlightError(error)) {
+          throw error;
+        }
+      }
+    }
+  } catch (error) {
+    if (!isPptxInFlightError(error)) {
+      throw error;
+    }
+  }
+
+  for (let attempt = 0; attempt < PPTX_MAX_ATTEMPTS; attempt++) {
+    if (signal?.aborted) {
+      throw signal.reason;
+    }
+
+    let status: PptxExportStatusResponse;
+    try {
+      status = await fetchPptxExportStatus(reportServiceId, signal);
+    } catch (error) {
+      if (isPptxRetryablePollError(error) && attempt < PPTX_MAX_ATTEMPTS - 1) {
+        await delay(PPTX_POLL_INTERVAL_MS, signal);
+        continue;
+      }
+      throw error;
+    }
+
+    options?.onProgress?.(status.progress, status);
+
+    if (status.job_status === "failed") {
+      throw new ReportApiError(
+        500,
+        status.error?.trim() || "Presentation export failed.",
+      );
+    }
+
+    if (status.pptx_ready) {
+      try {
+        return await downloadPptx(reportServiceId, signal);
+      } catch (error) {
+        if (
+          isPptxRetryablePollError(error) &&
+          attempt < PPTX_MAX_ATTEMPTS - 1
+        ) {
+          await delay(PPTX_POLL_INTERVAL_MS, signal);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (attempt < PPTX_MAX_ATTEMPTS - 1) {
+      await delay(PPTX_POLL_INTERVAL_MS, signal);
+    }
+  }
+
+  throw new ReportApiError(
+    408,
+    "Presentation is still being prepared. Please try again.",
   );
 }

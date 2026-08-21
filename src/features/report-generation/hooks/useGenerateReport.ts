@@ -1,16 +1,30 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  createOrReplaceCustomSection,
+  deleteCustomSection,
+  downloadPptxWhenReady,
+  fetchPptxExportStatus,
   fetchReportSection,
   fetchReportStatus,
   generateReport,
+  listCustomSections,
+  patchCustomSection,
   queuePdfExport,
+  queuePptxExport,
   updateReportSelections,
+  type DownloadPptxWhenReadyOptions,
 } from "../api/reportApi";
 import { ReportApiError } from "../api/reportFetch";
 import { reportQueryKeys } from "../api/reportQueryKeys";
-import type { GenerateReportInput, UpdateReportSelectionsInput } from "../types";
+import type {
+  CreateCustomSectionInput,
+  GenerateReportInput,
+  PatchCustomSectionInput,
+  QueuePptxExportInput,
+  UpdateReportSelectionsInput,
+} from "../types";
 import { useReportQueriesEnabled } from "./useReportQueriesEnabled";
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
@@ -62,7 +76,8 @@ export function useReportStatus(reportServiceId: string | null) {
       const reportStatus = data?.report_status;
       if (
         reportStatus === "completed" ||
-        reportStatus === "partially_completed"
+        reportStatus === "partially_completed" ||
+        reportStatus === "failed"
       ) {
         return false;
       }
@@ -127,5 +142,131 @@ export function useQueuePdfExport(
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+  });
+}
+
+export function useQueuePptxExportMutation() {
+  return useMutation({
+    mutationKey: reportQueryKeys.pptxExportMutation,
+    mutationFn: ({
+      reportServiceId,
+      input = { force_regenerate: false },
+      signal,
+    }: {
+      reportServiceId: string;
+      input?: QueuePptxExportInput;
+      signal?: AbortSignal;
+    }) => queuePptxExport(reportServiceId, input, signal),
+  });
+}
+
+export function usePptxExportStatus(
+  reportServiceId: string | null,
+  enabled = false,
+) {
+  const queriesEnabled = useReportQueriesEnabled(
+    Boolean(reportServiceId) && enabled,
+  );
+
+  return useQuery({
+    queryKey: reportQueryKeys.pptxStatus(reportServiceId ?? ""),
+    queryFn: ({ signal }) => fetchPptxExportStatus(reportServiceId!, signal),
+    enabled: queriesEnabled,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useDownloadPptxWhenReadyMutation() {
+  return useMutation({
+    mutationKey: reportQueryKeys.pptxDownloadMutation,
+    mutationFn: ({
+      reportServiceId,
+      signal,
+      onProgress,
+    }: {
+      reportServiceId: string;
+      signal?: AbortSignal;
+      onProgress?: DownloadPptxWhenReadyOptions["onProgress"];
+    }) => downloadPptxWhenReady(reportServiceId, { signal, onProgress }),
+  });
+}
+
+export function useListCustomSections(reportServiceId: string | null) {
+  const queriesEnabled = useReportQueriesEnabled(Boolean(reportServiceId));
+
+  return useQuery({
+    queryKey: reportQueryKeys.customSections(reportServiceId ?? ""),
+    queryFn: ({ signal }) => listCustomSections(reportServiceId!, signal),
+    enabled: queriesEnabled,
+    staleTime: 0,
+  });
+}
+
+export function useCreateCustomSectionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: reportQueryKeys.customSectionMutation,
+    mutationFn: ({
+      reportServiceId,
+      input,
+      signal,
+    }: {
+      reportServiceId: string;
+      input: CreateCustomSectionInput;
+      signal?: AbortSignal;
+    }) => createOrReplaceCustomSection(reportServiceId, input, signal),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: reportQueryKeys.customSections(variables.reportServiceId),
+      });
+    },
+  });
+}
+
+export function usePatchCustomSectionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: reportQueryKeys.customSectionMutation,
+    mutationFn: ({
+      reportServiceId,
+      customId,
+      input,
+      signal,
+    }: {
+      reportServiceId: string;
+      customId: string;
+      input: PatchCustomSectionInput;
+      signal?: AbortSignal;
+    }) => patchCustomSection(reportServiceId, customId, input, signal),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: reportQueryKeys.customSections(variables.reportServiceId),
+      });
+    },
+  });
+}
+
+export function useDeleteCustomSectionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: reportQueryKeys.customSectionMutation,
+    mutationFn: ({
+      reportServiceId,
+      customId,
+      signal,
+    }: {
+      reportServiceId: string;
+      customId: string;
+      signal?: AbortSignal;
+    }) => deleteCustomSection(reportServiceId, customId, signal),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: reportQueryKeys.customSections(variables.reportServiceId),
+      });
+    },
   });
 }

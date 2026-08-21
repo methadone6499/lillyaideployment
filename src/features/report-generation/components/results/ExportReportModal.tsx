@@ -7,12 +7,15 @@ import { useEffect, useRef, useState } from "react";
 
 type ExportFormat = "pdf" | "docx" | "presentation";
 
+export type ExportReportFormat = Exclude<ExportFormat, "docx">;
+
 type ExportReportModalProps = {
   open: boolean;
   onClose: () => void;
-  onExport: () => Promise<void>;
+  onExport: (format: ExportReportFormat) => Promise<void>;
   isExporting: boolean;
   errorMessage?: string | null;
+  statusMessage?: string | null;
 };
 
 type ExportFormatOption = {
@@ -39,7 +42,7 @@ const EXPORT_FORMATS: ExportFormatOption[] = [
     id: "presentation",
     label: "Presentation",
     description: "AI-generated slide deck with narration",
-    available: false,
+    available: true,
   },
 ];
 
@@ -56,6 +59,7 @@ export function ExportReportModal({
   onExport,
   isExporting,
   errorMessage,
+  statusMessage,
 }: ExportReportModalProps) {
   const [selectedFormat, setSelectedFormat] =
     useState<ExportFormat>("pdf");
@@ -144,11 +148,14 @@ export function ExportReportModal({
     }
   };
 
+  const canExport =
+    selectedFormat === "pdf" || selectedFormat === "presentation";
+
   const handleExport = async () => {
     if (
-      selectedFormat !== "pdf" ||
       isExporting ||
-      exportInFlightRef.current
+      exportInFlightRef.current ||
+      (selectedFormat !== "pdf" && selectedFormat !== "presentation")
     ) {
       return;
     }
@@ -156,7 +163,7 @@ export function ExportReportModal({
     exportInFlightRef.current = true;
 
     try {
-      await onExport();
+      await onExport(selectedFormat);
       onClose();
     } catch {
       // The parent owns and renders the normalized export error message.
@@ -165,9 +172,13 @@ export function ExportReportModal({
     }
   };
 
-  const descriptionIds = errorMessage
-    ? "export-report-description export-report-error"
-    : "export-report-description";
+  const descriptionIds = [
+    "export-report-description",
+    statusMessage ? "export-report-progress" : null,
+    errorMessage ? "export-report-error" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
@@ -272,6 +283,17 @@ export function ExportReportModal({
             })}
           </fieldset>
 
+          {statusMessage && (
+            <p
+              id="export-report-progress"
+              className="mt-4 text-helper leading-[18px] text-text-muted"
+              role="status"
+              aria-live="polite"
+            >
+              {statusMessage}
+            </p>
+          )}
+
           {errorMessage && (
             <p
               id="export-report-error"
@@ -294,7 +316,7 @@ export function ExportReportModal({
             <button
               type="button"
               onClick={() => void handleExport()}
-              disabled={isExporting || selectedFormat !== "pdf"}
+              disabled={isExporting || !canExport}
               className="inline-flex h-[42px] items-center justify-center gap-2 rounded-button bg-brand pl-[18px] pr-3 text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isExporting ? "Exporting…" : "Export"}

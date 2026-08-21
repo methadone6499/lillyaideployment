@@ -5,6 +5,8 @@ import { reportQueryKeys } from "../../api/reportQueryKeys";
 import { useGenerateReportMutation } from "../../hooks/useGenerateReport";
 import { clearReportQueriesForReport } from "../../store/reportWizardSession";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
+import { enabledCustomSectionTitles } from "../../utils/customSections";
+import { buildApiSectionTypes } from "../../utils/sectionOrdering";
 import { ReportViewer } from "./ReportViewer";
 
 function buildReportTitle(drugName: string, indications: string): string {
@@ -25,6 +27,7 @@ export function ReportResults() {
   const indications = useReportWizardStore((s) => s.indications);
   const filters = useReportWizardStore((s) => s.filters);
   const selectedSectionIds = useReportWizardStore((s) => s.selectedSectionIds);
+  const customSections = useReportWizardStore((s) => s.customSections);
   const setStep = useReportWizardStore((s) => s.setStep);
   const resetWizard = useReportWizardStore((s) => s.resetWizard);
   const setGenerationJobId = useReportWizardStore((s) => s.setGenerationJobId);
@@ -67,7 +70,11 @@ export function ReportResults() {
       reportServiceId={reportServiceId}
       title={buildReportTitle(drugName, indications)}
       filters={filters}
-      selectedSectionIds={selectedSectionIds}
+      selectedSectionIds={buildApiSectionTypes(
+        selectedSectionIds,
+        customSections,
+      )}
+      customSectionTitles={enabledCustomSectionTitles(customSections)}
       onBack={handleBack}
       onRegenerate={handleRegenerate}
     />

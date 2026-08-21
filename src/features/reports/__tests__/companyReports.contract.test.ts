@@ -4,7 +4,11 @@ import {
   companyReportListResponseSchema,
   companyReportSummarySchema,
 } from "../schemas/companyReportSchemas";
-import { reportSchema } from "../schemas/platformReportSchemas";
+import {
+  createReportInputSchema,
+  reportSchema,
+} from "../schemas/platformReportSchemas";
+import { buildCreateReportInput } from "../utils/buildCreateReportInput";
 
 function buildCreator(overrides: Record<string, unknown> = {}) {
   return {
@@ -188,3 +192,81 @@ assert.equal(generatingCompanyDetail.generation_status, "generating");
 assert.equal(generatingCompanyDetail.result.completed_at, null);
 assert.equal(generatingCompanyDetail.status_last_checked_at, null);
 assert.equal(generatingCompanyDetail.company_id, "company-1");
+
+const titledSnapshotReport = reportSchema.parse(
+  buildReport({
+    generation_snapshot: {
+      ...buildReport().generation_snapshot,
+      custom_sections: ["GCC Reimbursement Landscape"],
+      selected_section_ids: ["disease", "clinical", "executive"],
+    },
+  }),
+);
+
+assert.deepEqual(titledSnapshotReport.generation_snapshot.custom_sections, [
+  "GCC Reimbursement Landscape",
+]);
+assert.deepEqual(titledSnapshotReport.generation_snapshot.selected_section_ids, [
+  "disease",
+  "clinical",
+  "executive",
+]);
+
+assert.equal(
+  reportSchema.safeParse(
+    buildReport({
+      generation_snapshot: {
+        ...buildReport().generation_snapshot,
+        custom_sections: [{ custom_id: "id-1", title: "Nope" }],
+      },
+    }),
+  ).success,
+  false,
+);
+
+assert.equal(
+  reportSchema.safeParse(
+    buildReport({
+      generation_snapshot: {
+        ...buildReport().generation_snapshot,
+        custom_section: "singular is forbidden",
+      },
+    }),
+  ).success,
+  false,
+);
+
+const platformSavePayload = buildCreateReportInput({
+  reportServiceId: "11111111-1111-4111-8111-111111111111",
+  generationJobId: "job-1",
+  drugName: "Nusinersen",
+  indications: "Spinal Muscular Atrophy",
+  filters: buildReport().generation_snapshot.filters,
+  selectedClinicalArticleIds: [],
+  selectedEconomicArticleIds: [],
+  selectedComparators: [],
+  customComparators: [],
+  selectedSectionIds: [
+    "disease",
+    "custom:532cc119-aaaa-4bbb-8ccc-ddddeeeeffff",
+    "executive",
+  ],
+  customSectionTitles: [
+    "  GCC Reimbursement Landscape  ",
+    "custom:532cc119-aaaa-4bbb-8ccc-ddddeeeeffff",
+    "",
+  ],
+  submittedAt: "2026-08-01T00:00:00.000Z",
+});
+
+assert.deepEqual(platformSavePayload.generation_snapshot.custom_sections, [
+  "GCC Reimbursement Landscape",
+]);
+assert.deepEqual(platformSavePayload.generation_snapshot.selected_section_ids, [
+  "disease",
+  "executive",
+]);
+assert.equal(
+  createReportInputSchema.safeParse(platformSavePayload).success,
+  true,
+);

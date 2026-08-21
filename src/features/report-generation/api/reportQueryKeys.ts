@@ -27,4 +27,11 @@ export const reportQueryKeys = {
     ] as const,
   pdfQueue: (reportServiceId: string) =>
     ["report", reportServiceId, "pdf-queue"] as const,
+  pptxExportMutation: ["report", "pptx-export-mutation"] as const,
+  pptxDownloadMutation: ["report", "pptx-download-mutation"] as const,
+  pptxStatus: (reportServiceId: string) =>
+    ["report", reportServiceId, "pptx-status"] as const,
+  customSectionMutation: ["report", "custom-section-mutation"] as const,
+  customSections: (reportServiceId: string) =>
+    ["report", reportServiceId, "custom-sections"] as const,
 };

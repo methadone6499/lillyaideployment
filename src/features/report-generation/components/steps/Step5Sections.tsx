@@ -4,12 +4,18 @@ import { useEffect } from "react";
 import { Card, Switch, TextLink } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { REPORT_SECTION_DEFINITIONS } from "../../constants/reportSections";
+import { useListCustomSections } from "../../hooks/useGenerateReport";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
-import { AddCustomSectionCard } from "./AddCustomSectionCard";
+import {
+  getCustomSectionErrorMessage,
+  mapCustomSpecsToWizard,
+} from "../../utils/customSections";
 import {
   getToggleableSectionIds,
   isSectionAvailable,
 } from "../../utils/sectionOrdering";
+import { AddCustomSectionCard } from "./AddCustomSectionCard";
+import { CustomSectionCard } from "./CustomSectionCard";
 
 export function Step5Sections() {
   const selectedSectionIds = useReportWizardStore(
@@ -32,6 +38,15 @@ export function Step5Sections() {
   const reconcileSectionsAtStep5 = useReportWizardStore(
     (s) => s.reconcileSectionsAtStep5,
   );
+  const reportServiceId = useReportWizardStore((s) => s.reportServiceId);
+  const customSections = useReportWizardStore((s) => s.customSections);
+  const setCustomSections = useReportWizardStore((s) => s.setCustomSections);
+
+  const {
+    data: listedCustomSections,
+    isError: isCustomSectionsError,
+    error: customSectionsError,
+  } = useListCustomSections(reportServiceId);
 
   const sectionInputs = {
     selectedClinicalArticleIds,
@@ -42,6 +57,13 @@ export function Step5Sections() {
   useEffect(() => {
     reconcileSectionsAtStep5();
   }, [reconcileSectionsAtStep5]);
+
+  useEffect(() => {
+    if (!listedCustomSections) {
+      return;
+    }
+    setCustomSections(mapCustomSpecsToWizard(listedCustomSections.sections));
+  }, [listedCustomSections, setCustomSections]);
 
   const toggleableSectionIds = getToggleableSectionIds(sectionInputs);
 
@@ -104,6 +126,19 @@ export function Step5Sections() {
             </Card>
           );
         })}
+        {isCustomSectionsError && (
+          <p className="text-helper text-amber-300" role="status">
+            {getCustomSectionErrorMessage(customSectionsError)}
+          </p>
+        )}
+        {customSections.map((section, index) => (
+          <CustomSectionCard
+            key={section.customId}
+            section={section}
+            index={index}
+            reportServiceId={reportServiceId}
+          />
+        ))}
         <AddCustomSectionCard />
       </div>
     </div>

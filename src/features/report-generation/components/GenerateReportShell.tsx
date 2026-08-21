@@ -16,7 +16,7 @@ import {
   type CreateReportInput,
 } from "@/features/reports";
 import { ApiRequestError } from "@/services/ApiRequestError";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ZodError } from "zod";
@@ -37,8 +37,9 @@ import {
   syncWizardWithAuthSession,
 } from "../store/reportWizardSession";
 import { useReportWizardStore } from "../store/useReportWizardStore";
+import { enabledCustomSectionTitles } from "../utils/customSections";
 import { mapFiltersToBackend } from "../utils/mapFiltersToBackend";
-import { filterApiSectionIds } from "../utils/sectionOrdering";
+import { buildApiSectionTypes } from "../utils/sectionOrdering";
 import { ReportResults } from "./results/ReportResults";
 import { Stepper } from "./Stepper";
 import { Step1DrugIntake } from "./steps/Step1DrugIntake";
@@ -132,6 +133,7 @@ export function GenerateReportShell() {
   const selectedSectionIds = useReportWizardStore(
     (s) => s.selectedSectionIds,
   );
+  const customSections = useReportWizardStore((s) => s.customSections);
   const nextStep = useReportWizardStore((s) => s.nextStep);
   const prevStep = useReportWizardStore((s) => s.prevStep);
   const resetReportPipeline = useReportWizardStore((s) => s.resetReportPipeline);
@@ -155,6 +157,9 @@ export function GenerateReportShell() {
   });
   const saveSelectionsMutation = useUpdateReportSelectionsMutation();
   const generateMutation = useGenerateReportMutation();
+  const customSectionMutating = useIsMutating({
+    mutationKey: reportQueryKeys.customSectionMutation,
+  });
 
   useEffect(() => {
     syncWizardWithAuthSession(queryClient);
@@ -255,7 +260,10 @@ export function GenerateReportShell() {
             custom_comparators: customComparators,
             clinical_pmcids: selectedClinicalArticleIds,
             economic_pmcids: selectedEconomicArticleIds,
-            section_types: filterApiSectionIds(selectedSectionIds),
+            section_types: buildApiSectionTypes(
+              selectedSectionIds,
+              customSections,
+            ),
           },
         });
       } catch (error) {
@@ -302,7 +310,9 @@ export function GenerateReportShell() {
             selectedComparators: wizard.selectedComparators,
             customComparators: wizard.customComparators,
             selectedSectionIds: [...wizard.selectedSectionIds],
-            customSections: [...wizard.customSections],
+            customSectionTitles: enabledCustomSectionTitles(
+              wizard.customSections,
+            ),
             submittedAt: new Date().toISOString(),
           });
           createInput = createReportInputSchema.parse(candidatePayload);
@@ -473,6 +483,7 @@ export function GenerateReportShell() {
               ) ||
               saveSelectionsMutation.isPending ||
               generateMutation.isPending ||
+              customSectionMutating > 0 ||
               isStep2Pending
             }
           />

@@ -17,6 +17,7 @@ import {
 } from "react";
 import {
   downloadPdfWhenReady,
+  downloadPptxWhenReady,
   ReportApiError,
 } from "../../api/reportApi";
 import {
@@ -24,17 +25,22 @@ import {
   useReportStatus,
 } from "../../hooks/useGenerateReport";
 import type {
+  PptxExportProgress,
   ReportSectionContent,
   ReportStatusSection,
-  WizardSectionId,
 } from "../../types";
-import { getReportSectionDefinition } from "../../utils/sectionOrdering";
+import {
+  getReportSectionDefinition,
+  isCustomSectionType,
+  isWizardSectionId,
+  mergeViewerSectionIds,
+} from "../../utils/sectionOrdering";
 import {
   getSectionAccordionKey,
   ReportSectionAccordion,
   type ReportSectionAccordionItem,
 } from "./ReportSectionAccordion";
-import { ExportReportModal } from "./ExportReportModal";
+import { ExportReportModal, type ExportReportFormat } from "./ExportReportModal";
 import { ReportEditorConfirmationDialog } from "./ReportEditorConfirmationDialog";
 import { SearchFiltersModal } from "./SearchFiltersModal";
 
@@ -43,6 +49,8 @@ export type ReportViewerProps = {
   title: string;
   filters: GenerationFilters;
   selectedSectionIds: string[];
+  /** Ordered fallback titles for `custom:<uuid>` rows (snapshot or wizard). */
+  customSectionTitles?: string[];
   onBack: () => void;
   onRegenerate?: () => Promise<void>;
 };
@@ -74,28 +82,44 @@ function getErrorMessage(error: unknown): string {
 function buildSectionItems(
   statusSections: ReportStatusSection[],
   selectedSectionIds: string[],
+  customSectionTitles: readonly string[] = [],
 ): ReportSectionAccordionItem[] {
-  const sectionsByType = new Map(
+  const sectionsByType = new Map<string, ReportStatusSection>(
     statusSections.map((section) => [section.section_type, section]),
   );
 
+  const outlineIds = mergeViewerSectionIds(selectedSectionIds, statusSections);
   const items: ReportSectionAccordionItem[] = [];
+  let customTitleIndex = 0;
 
-  selectedSectionIds.forEach((sectionId, index) => {
-    const wizardSectionId = sectionId as WizardSectionId;
-    const section = sectionsByType.get(wizardSectionId);
+  outlineIds.forEach((sectionId) => {
+    const isCustom = isCustomSectionType(sectionId);
+    const fallbackCustomTitle = isCustom
+      ? customSectionTitles[customTitleIndex]
+      : undefined;
+    if (isCustom) {
+      customTitleIndex += 1;
+    }
+
+    const section = sectionsByType.get(sectionId);
     if (!section) {
       return;
     }
 
-    const definition = getReportSectionDefinition(wizardSectionId);
+    const definition = isWizardSectionId(sectionId)
+      ? getReportSectionDefinition(sectionId)
+      : undefined;
 
     items.push({
       section,
-      order: index + 1,
-      title: section.display_name ?? definition?.title ?? sectionId,
-      description: definition?.description ?? "",
-      accordionKey: getSectionAccordionKey(section, wizardSectionId),
+      order: items.length + 1,
+      title:
+        section.display_name ??
+        fallbackCustomTitle ??
+        definition?.title ??
+        sectionId,
+      description: isCustom ? "" : (definition?.description ?? ""),
+      accordionKey: getSectionAccordionKey(section, section.section_type),
       pendingContext: section.pending_context,
     });
   });
@@ -103,11 +127,41 @@ function buildSectionItems(
   return items;
 }
 
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatPptxProgress(
+  progress: PptxExportProgress | undefined,
+): string | null {
+  if (!progress) {
+    return null;
+  }
+
+  const detail = progress.detail?.trim() ?? "";
+  const percent =
+    typeof progress.percent === "number"
+      ? `${Math.round(progress.percent)}%`
+      : "";
+
+  if (detail && percent) {
+    return `${detail} (${percent})`;
+  }
+
+  return detail || percent || null;
+}
+
 export function ReportViewer({
   reportServiceId,
   title,
   filters,
   selectedSectionIds,
+  customSectionTitles,
   onBack,
   onRegenerate,
 }: ReportViewerProps) {
@@ -121,6 +175,7 @@ export function ReportViewer({
   } | null>(null);
   const [retryError, setRetryError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportProgress, setExportProgress] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -141,18 +196,26 @@ export function ReportViewer({
   const sections = reportStatus?.sections;
 
   const sectionItems = useMemo(
-    () => buildSectionItems(sections ?? [], selectedSectionIds),
-    [sections, selectedSectionIds],
+    () =>
+      buildSectionItems(
+        sections ?? [],
+        selectedSectionIds,
+        customSectionTitles ?? [],
+      ),
+    [customSectionTitles, sections, selectedSectionIds],
   );
 
   const isCompleted = reportStatus?.report_status === "completed";
   const isPartiallyCompleted =
     reportStatus?.report_status === "partially_completed";
-  const isJobFailed = reportStatus?.job_status === "failed";
+  const isJobFailed =
+    reportStatus?.report_status === "failed" ||
+    reportStatus?.job_status === "failed";
   const isReportReady = isCompleted || isPartiallyCompleted;
   const isGenerating =
     !isJobFailed &&
-    (reportStatus?.report_status === "pending" ||
+    (reportStatus?.report_status === "queued" ||
+      reportStatus?.report_status === "pending" ||
       reportStatus?.report_status === "processing");
 
   const pdfQueueQuery = useQueuePdfExport(reportServiceId, isReportReady);
@@ -299,20 +362,30 @@ export function ReportViewer({
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: ExportReportFormat) => {
     setExportError(null);
+    setExportProgress(null);
     setIsExporting(true);
 
+    const safeTitle =
+      title.trim().replace(/[^\w]+/g, "_").replace(/^_|_$/g, "") || "report";
+
     try {
-      const blob = await downloadPdfWhenReady(reportServiceId);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      const safeTitle =
-        title.trim().replace(/[^\w]+/g, "_").replace(/^_|_$/g, "") || "report";
-      anchor.href = url;
-      anchor.download = `${safeTitle}_evidence_report.pdf`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      if (format === "pdf") {
+        const blob = await downloadPdfWhenReady(reportServiceId);
+        triggerBlobDownload(blob, `${safeTitle}_evidence_report.pdf`);
+        return;
+      }
+
+      setExportProgress("Preparing presentation…");
+      const blob = await downloadPptxWhenReady(reportServiceId, {
+        onProgress: (progress) => {
+          setExportProgress(
+            formatPptxProgress(progress) ?? "Preparing presentation…",
+          );
+        },
+      });
+      triggerBlobDownload(blob, `${safeTitle}_presentation.pptx`);
     } catch (exportFailure) {
       setExportError(getErrorMessage(exportFailure));
       throw exportFailure;
@@ -373,10 +446,14 @@ export function ReportViewer({
 
       <ExportReportModal
         open={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
+        onClose={() => {
+          setIsExportModalOpen(false);
+          setExportProgress(null);
+        }}
         onExport={handleExport}
         isExporting={isExporting}
         errorMessage={exportError ?? pdfQueueErrorMessage}
+        statusMessage={exportProgress}
       />
 
       {isJobFailed && (

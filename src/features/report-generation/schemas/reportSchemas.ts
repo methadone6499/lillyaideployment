@@ -1,21 +1,21 @@
 import { z } from "zod";
 
+// Live GET /status: queued | pending | processing | completed | partially_completed | failed.
 export const reportStatusSchema = z.enum([
+  "queued",
   "pending",
   "processing",
   "completed",
   "partially_completed",
+  "failed",
 ]);
 
-// Mutation responses can still expose pre-processing lifecycle states even
-// though the status polling endpoint uses the four canonical report statuses.
+// Mutation responses can still expose extra lifecycle states beyond GET /status.
 const reportMutationStatusSchema = z.enum([
   ...reportStatusSchema.options,
   "draft",
   "ready",
-  "queued",
   "generating",
-  "failed",
 ]);
 
 // Live Report Service contract: queued | processing | completed | failed.
@@ -37,7 +37,7 @@ export const sectionStatusSchema = z.enum([
   "failed",
 ]);
 
-export const sectionTypeSchema = z.enum([
+export const builtInSectionTypeSchema = z.enum([
   "disease",
   "clinical",
   "economic",
@@ -47,6 +47,17 @@ export const sectionTypeSchema = z.enum([
   "environmental",
   "compliance",
   "executive",
+]);
+
+/** `custom:<uuid>` tokens used in selections, status, and generated sections. */
+export const customSectionTypeSchema = z.templateLiteral([
+  "custom:",
+  z.uuid(),
+]);
+
+export const sectionTypeSchema = z.union([
+  builtInSectionTypeSchema,
+  customSectionTypeSchema,
 ]);
 
 export const textAvailabilitySchema = z.enum(["full_text", "abstract_only"]);
@@ -341,6 +352,104 @@ export const pdfExportResponseSchema = z.object({
   pdf_path: z.string().nullable().optional(),
   celery_task_id: z.string().nullable().optional(),
   message: z.string().optional(),
+});
+
+export const customSectionModeSchema = z.enum(["prompt", "file", "both"]);
+
+export const customSectionGuidelinesSchema = z.object({
+  objective: z.string().optional(),
+  outline: z.array(z.string()).optional(),
+  style_notes: z.string().optional(),
+  must_include: z.array(z.string()).optional(),
+  must_avoid: z.array(z.string()).optional(),
+});
+
+export const customSectionSpecSchema = z.object({
+  custom_id: z.string().uuid(),
+  title: z.string(),
+  source_mode: customSectionModeSchema,
+  guidelines_status: z.literal("ready"),
+  enabled: z.boolean(),
+  sort_order: z.number().optional(),
+  guidelines: customSectionGuidelinesSchema.optional(),
+});
+
+export const customSectionResponseSchema = z.object({
+  section: customSectionSpecSchema,
+});
+
+export const patchCustomSectionResponseSchema = z.union([
+  customSectionResponseSchema,
+  customSectionSpecSchema.transform((section) => ({ section })),
+]);
+
+export const listCustomSectionsResponseSchema = z
+  .object({
+    report_id: z.string().optional(),
+    sections: z.array(customSectionSpecSchema).optional(),
+    custom_sections: z.array(customSectionSpecSchema).optional(),
+  })
+  .transform((data) => ({
+    report_id: data.report_id,
+    sections: data.sections ?? data.custom_sections ?? [],
+  }));
+
+export const createCustomSectionPromptInputSchema = z.object({
+  title: z.string(),
+  prompt: z.string(),
+  custom_id: z.string().uuid().nullable().optional(),
+});
+
+export const patchCustomSectionInputSchema = z.object({
+  title: z.string().optional(),
+  enabled: z.boolean().optional(),
+  sort_order: z.number().optional(),
+});
+
+export const pptxExportPhaseSchema = z.enum([
+  "queued",
+  "pass1",
+  "pass2",
+  "render",
+  "done",
+]);
+
+export const pptxExportProgressSchema = z.object({
+  percent: z.number().optional(),
+  detail: z.string().optional(),
+});
+
+const pptxExportPollUrlsSchema = z.object({
+  status: z.string(),
+  download: z.string(),
+});
+
+export const queuePptxExportInputSchema = z.object({
+  force_regenerate: z.boolean(),
+  idempotency_key: z.string().nullable().optional(),
+});
+
+export const pptxExportQueueResponseSchema = z.object({
+  job_id: z.string(),
+  report_id: z.string(),
+  job_status: jobStatusSchema,
+  phase: pptxExportPhaseSchema.optional(),
+  celery_task_id: z.string().nullable().optional(),
+  poll_urls: pptxExportPollUrlsSchema.optional(),
+  message: z.string().optional(),
+  pptx_ready: z.boolean().optional(),
+});
+
+export const pptxExportStatusResponseSchema = z.object({
+  report_id: z.string(),
+  job_id: z.string().optional(),
+  job_status: jobStatusSchema,
+  phase: pptxExportPhaseSchema.optional(),
+  progress: pptxExportProgressSchema.optional(),
+  error: z.string().nullable().optional(),
+  slide_count: z.number().nullable().optional(),
+  pptx_ready: z.boolean(),
+  poll_urls: pptxExportPollUrlsSchema.optional(),
 });
 
 export const drugValidationResponseSchema = z.object({
