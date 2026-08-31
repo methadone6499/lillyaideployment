@@ -25,10 +25,10 @@ import {
   useReportStatus,
 } from "../../hooks/useGenerateReport";
 import type {
-  PptxExportProgress,
   ReportSectionContent,
   ReportStatusSection,
 } from "../../types";
+import { formatPptxExportProgress } from "../../utils/pptxExportProgress";
 import {
   getReportSectionDefinition,
   isCustomSectionType,
@@ -134,26 +134,6 @@ function triggerBlobDownload(blob: Blob, filename: string) {
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
-}
-
-function formatPptxProgress(
-  progress: PptxExportProgress | undefined,
-): string | null {
-  if (!progress) {
-    return null;
-  }
-
-  const detail = progress.detail?.trim() ?? "";
-  const percent =
-    typeof progress.percent === "number"
-      ? `${Math.round(progress.percent)}%`
-      : "";
-
-  if (detail && percent) {
-    return `${detail} (${percent})`;
-  }
-
-  return detail || percent || null;
 }
 
 export function ReportViewer({
@@ -377,11 +357,11 @@ export function ReportViewer({
         return;
       }
 
-      setExportProgress("Preparing presentation…");
+      setExportProgress(formatPptxExportProgress(undefined));
       const blob = await downloadPptxWhenReady(reportServiceId, {
-        onProgress: (progress) => {
+        onProgress: (progress, status) => {
           setExportProgress(
-            formatPptxProgress(progress) ?? "Preparing presentation…",
+            formatPptxExportProgress(progress, status.phase),
           );
         },
       });

@@ -11,6 +11,7 @@ import {
   reportSchema,
   type Report,
 } from "../schemas/platformReportSchemas";
+import { getAdminReport } from "./adminReportApi";
 import { getPlatformReport } from "./platformReportApi";
 
 const COMPANY_REPORTS_API_PREFIX = "/api/v1/companies/me/reports";
@@ -98,18 +99,34 @@ export function getCompanyReport(
 
 export async function getResolvedPlatformReport(
   platformReportId: string,
-  options: { companyFallback: boolean },
+  options: { companyFallback: boolean; adminFallback: boolean },
   signal?: AbortSignal,
 ): Promise<Report> {
   try {
     return await getPlatformReport(platformReportId, signal);
   } catch (error) {
-    if (
-      options.companyFallback &&
-      error instanceof ApiRequestError &&
-      error.status === 404
-    ) {
-      return getCompanyReport(platformReportId, signal);
+    if (!(error instanceof ApiRequestError) || error.status !== 404) {
+      throw error;
+    }
+
+    if (options.companyFallback) {
+      try {
+        return await getCompanyReport(platformReportId, signal);
+      } catch (companyError) {
+        if (
+          options.adminFallback &&
+          companyError instanceof ApiRequestError &&
+          companyError.status === 404
+        ) {
+          return getAdminReport(platformReportId, signal);
+        }
+
+        throw companyError;
+      }
+    }
+
+    if (options.adminFallback) {
+      return getAdminReport(platformReportId, signal);
     }
 
     throw error;

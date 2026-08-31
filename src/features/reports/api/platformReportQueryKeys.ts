@@ -17,6 +17,18 @@ export type CompanyReportListQueryParams = {
   creatorUserId?: string;
 };
 
+export type AdminReportListQueryParams = {
+  limit?: number;
+  search?: string;
+  generationStatus?: GenerationStatus;
+  reviewStatus?: ReviewStatus;
+  companyId?: string;
+  creatorUserId?: string;
+  reviewerUserId?: string;
+  createdFrom?: string;
+  createdTo?: string;
+};
+
 export const platformReportQueryKeys = {
   root: ["platform-reports"] as const,
   lists: () => [...platformReportQueryKeys.root, "list"] as const,
@@ -33,16 +45,25 @@ export const platformReportQueryKeys = {
     [...platformReportQueryKeys.root, "company-detail", userId] as const,
   companyDetail: (userId: string, platformReportId: string) =>
     [...platformReportQueryKeys.companyDetails(userId), platformReportId] as const,
+  adminLists: (userId: string) =>
+    [...platformReportQueryKeys.root, "admin-list", userId] as const,
+  adminList: (userId: string, params: AdminReportListQueryParams) =>
+    [...platformReportQueryKeys.adminLists(userId), params] as const,
+  adminDetails: (userId: string) =>
+    [...platformReportQueryKeys.root, "admin-detail", userId] as const,
+  adminDetail: (userId: string, platformReportId: string) =>
+    [...platformReportQueryKeys.adminDetails(userId), platformReportId] as const,
   resolvedDetail: (
     userId: string,
     platformReportId: string,
     companyFallback: boolean,
+    adminFallback: boolean,
   ) =>
     [
       ...platformReportQueryKeys.root,
       "resolved-detail",
       userId,
       platformReportId,
-      { companyFallback },
+      { companyFallback, adminFallback },
     ] as const,
 };

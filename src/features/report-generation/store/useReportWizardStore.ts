@@ -10,16 +10,19 @@ import type {
   WizardStep,
 } from "../types";
 import {
+  applyCriticalAppraisalSelectionRule,
   getDefaultSelectedSectionIds,
   isSectionAvailable,
+  migrateWizardSelectedSectionIdsToV12,
   normalizeWizardSectionIds,
-  orderWizardSectionIds,
   reconcileSelectedSectionIdsWithInputs,
   syncSelectedSectionIdsOnInputChange,
   type SectionSelectionInputs,
 } from "../utils/sectionOrdering";
 
 export { DEFAULT_SECTION_IDS };
+
+export const REPORT_WIZARD_PERSIST_VERSION = 12;
 
 export const DEFAULT_FILTERS: FilterState = {
   timeRange: "last-1-year",
@@ -495,6 +498,15 @@ function migratePersistedState(
     };
   }
 
+  if (version < 12) {
+    state = {
+      ...state,
+      selectedSectionIds: migrateWizardSelectedSectionIdsToV12(
+        state.selectedSectionIds ?? [],
+      ),
+    };
+  }
+
   return state;
 }
 
@@ -644,17 +656,27 @@ export const useReportWizardStore = create<ReportWizardState>()(
       toggleSectionId: (id) =>
         set((state) => {
           const inputs = getSectionSelectionInputs(state);
-          if (!isSectionAvailable(id, inputs)) {
+          if (!isSectionAvailable(id, inputs, state.selectedSectionIds)) {
             return {};
           }
           const selected = state.selectedSectionIds;
           const next = selected.includes(id)
             ? selected.filter((item) => item !== id)
             : [...selected, id];
-          return { selectedSectionIds: orderWizardSectionIds(next) };
+          return {
+            selectedSectionIds: applyCriticalAppraisalSelectionRule(
+              selected,
+              next,
+            ),
+          };
         }),
       selectAllSections: (ids) =>
-        set({ selectedSectionIds: orderWizardSectionIds(ids) }),
+        set((state) => ({
+          selectedSectionIds: applyCriticalAppraisalSelectionRule(
+            state.selectedSectionIds,
+            ids,
+          ),
+        })),
       deselectAllSections: () => set({ selectedSectionIds: [] }),
       reconcileSectionsAtStep5: () =>
         set((state) => withReconciledSectionIdsAtStep5(state)),
@@ -693,7 +715,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 11,
+      version: REPORT_WIZARD_PERSIST_VERSION,
       migrate: migratePersistedState,
       merge: (persistedState, currentState): ReportWizardState => {
         const persisted =

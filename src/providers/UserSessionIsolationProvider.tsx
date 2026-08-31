@@ -2,6 +2,7 @@
 
 import { clearCompanyInvitationSession } from "@/features/company-invitations";
 import { clearCompanyQuotaSession } from "@/features/company-quota";
+import { clearDosageCalculatorSession } from "@/features/dosage-calculator";
 import { clearEnterpriseActivationSession } from "@/features/enterprise-activation";
 import { clearReportGenerationSession } from "@/features/report-generation";
 import {
@@ -51,6 +52,7 @@ export function UserSessionIsolationProvider({
         void clearCompanySeatSession(queryClient);
         void clearCompanyInvitationSession(queryClient);
         void clearCompanyQuotaSession(queryClient);
+        void clearDosageCalculatorSession(queryClient);
       } else if (becameAuthenticated) {
         void syncPendingPlatformSavesWithAuthSession(queryClient);
       }

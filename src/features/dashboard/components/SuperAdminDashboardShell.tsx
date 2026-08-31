@@ -5,6 +5,7 @@ import { useAuthUser } from "@/features/auth";
 import { DashboardActionCard } from "./DashboardActionCard";
 import { DashboardGreeting } from "./DashboardGreeting";
 import { DashboardHeaderActions } from "./DashboardHeaderActions";
+import { SuperAdminReportsTable } from "./SuperAdminReportsTable";
 
 const SUPER_ADMIN_ACTION_CARDS = [
   {
@@ -69,6 +70,10 @@ export function SuperAdminDashboardShell() {
             />
           ))}
         </section>
+
+        <div className="mt-10 xl:mt-[60px]">
+          <SuperAdminReportsTable />
+        </div>
       </main>
     </div>
   );

@@ -2,74 +2,60 @@
 
 import { create } from "zustand";
 
-export type DosageCalculatorResultView = "hidden" | "preview";
-
 export type DosageCalculatorFormValues = {
   drug: string;
   indication: string;
-  age: string;
-  weight: string;
-  region: string;
   population: string;
-  renalFunction: string;
-  hepaticFunction: string;
+  frequency: string;
   treatmentDuration: string;
-  pregnantOrPlanning: boolean;
-  concomitantInsulin: boolean;
+  durationUnit: string;
+  currency: string;
+  customCurrency: string;
+  unitPrice: string;
+  patientVolume: string;
 };
 
-export type DosageCalculatorTextField = Exclude<
-  keyof DosageCalculatorFormValues,
-  "pregnantOrPlanning" | "concomitantInsulin"
->;
-
-export type DosageCalculatorRiskFlag =
-  | "pregnantOrPlanning"
-  | "concomitantInsulin";
+export type DosageCalculatorTextField = keyof DosageCalculatorFormValues;
 
 type DosageCalculatorStore = DosageCalculatorFormValues & {
-  resultView: DosageCalculatorResultView;
   setField: (field: DosageCalculatorTextField, value: string) => void;
-  setRiskFlag: (field: DosageCalculatorRiskFlag, checked: boolean) => void;
-  showResultPreview: () => void;
-  hideResultPreview: () => void;
   resetForm: () => void;
 };
 
 export const EMPTY_DOSAGE_CALCULATOR_FORM: DosageCalculatorFormValues = {
   drug: "",
   indication: "",
-  age: "",
-  weight: "",
-  region: "",
   population: "",
-  renalFunction: "",
-  hepaticFunction: "",
+  frequency: "",
   treatmentDuration: "",
-  pregnantOrPlanning: false,
-  concomitantInsulin: false,
+  durationUnit: "",
+  currency: "",
+  customCurrency: "",
+  unitPrice: "",
+  patientVolume: "",
 };
+
+export function selectDosageCalculatorFormValues(
+  state: DosageCalculatorFormValues,
+): DosageCalculatorFormValues {
+  return {
+    drug: state.drug,
+    indication: state.indication,
+    population: state.population,
+    frequency: state.frequency,
+    treatmentDuration: state.treatmentDuration,
+    durationUnit: state.durationUnit,
+    currency: state.currency,
+    customCurrency: state.customCurrency,
+    unitPrice: state.unitPrice,
+    patientVolume: state.patientVolume,
+  };
+}
 
 export const useDosageCalculatorStore = create<DosageCalculatorStore>()(
   (set) => ({
     ...EMPTY_DOSAGE_CALCULATOR_FORM,
-    resultView: "hidden",
-    setField: (field, value) =>
-      set({
-        [field]: value,
-        resultView: "hidden",
-      }),
-    setRiskFlag: (field, checked) =>
-      set({
-        [field]: checked,
-        resultView: "hidden",
-      }),
-    showResultPreview: () => set({ resultView: "preview" }),
-    hideResultPreview: () => set({ resultView: "hidden" }),
-    resetForm: () =>
-      set({
-        ...EMPTY_DOSAGE_CALCULATOR_FORM,
-        resultView: "hidden",
-      }),
+    setField: (field, value) => set({ [field]: value }),
+    resetForm: () => set({ ...EMPTY_DOSAGE_CALCULATOR_FORM }),
   }),
 );

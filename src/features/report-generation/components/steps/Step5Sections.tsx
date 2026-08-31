@@ -92,7 +92,11 @@ export function Step5Sections() {
         {REPORT_SECTION_DEFINITIONS.filter(
           (section) => section.id !== "compliance",
         ).map((section) => {
-          const available = isSectionAvailable(section.id, sectionInputs);
+          const available = isSectionAvailable(
+            section.id,
+            sectionInputs,
+            selectedSectionIds,
+          );
           const selected =
             available && selectedSectionIds.includes(section.id);
 
@@ -115,6 +119,7 @@ export function Step5Sections() {
               </div>
               <Switch
                 checked={selected}
+                disabled={!available}
                 onChange={() => {
                   if (available) {
                     toggleSectionId(section.id);

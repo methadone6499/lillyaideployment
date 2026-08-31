@@ -4,9 +4,12 @@ export type DashboardGenerationStatus = GenerationStatus;
 
 export type DashboardReviewStatus = ReviewStatus;
 
+export type DashboardAdminDisplayStatus = "reviewed" | "sent_for_review";
+
 export type DashboardStatusPillStatus =
   | DashboardGenerationStatus
-  | DashboardReviewStatus;
+  | DashboardReviewStatus
+  | DashboardAdminDisplayStatus;
 
 export type DashboardStatusFilterValue = DashboardGenerationStatus | "all";
 

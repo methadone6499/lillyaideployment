@@ -57,12 +57,19 @@ export {
   getAuthUserInstitutionName,
 } from "./utils/authUserDisplay";
 export type { AuthStatus } from "@/store/useAuthStore";
+export {
+  contextTypeSchema,
+  effectiveRoleSchema,
+  globalRoleSchema,
+  userStatusSchema,
+} from "./schemas/authSchemas";
 export type {
   AuthMeResponse,
   ContextResponse,
   ContextType,
   EffectiveRole,
   ForgotPasswordRequest,
+  GlobalRole,
   LoginRequest,
   MeResponse,
   MessageResponse,

@@ -20,6 +20,7 @@ export function usePlatformReport(platformReportId: string | null | undefined) {
   const userId = useConfirmedUserId();
   const { data: authMe } = useCurrentUserQuery();
   const canReadCompany = hasPermission(authMe, "report:read_company");
+  const canReadAdminReports = hasPermission(authMe, "admin:reports_read");
   const enabled =
     isAuthenticated &&
     Boolean(userId) &&
@@ -31,11 +32,15 @@ export function usePlatformReport(platformReportId: string | null | undefined) {
       userId ?? "",
       platformReportId ?? "",
       canReadCompany,
+      canReadAdminReports,
     ),
     queryFn: ({ signal }) =>
       getResolvedPlatformReport(
         platformReportId!,
-        { companyFallback: canReadCompany },
+        {
+          companyFallback: canReadCompany,
+          adminFallback: canReadAdminReports,
+        },
         signal,
       ),
     enabled,

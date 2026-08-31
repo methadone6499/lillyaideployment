@@ -129,6 +129,26 @@ const PLATFORM_PROXY_ALLOWLIST = [
   },
   {
     prefix: "admin",
+    pattern: ["report-analytics", "popular-drugs"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["report-analytics", "top-users"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["report-analytics", "top-companies"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["report-analytics", "totals"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
     pattern: ["users"],
     methods: ["GET"],
   },

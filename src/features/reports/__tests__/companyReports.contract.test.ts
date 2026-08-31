@@ -212,6 +212,57 @@ assert.deepEqual(titledSnapshotReport.generation_snapshot.selected_section_ids, 
   "executive",
 ]);
 
+const criticalAppraisalSnapshotReport = reportSchema.parse(
+  buildReport({
+    generation_snapshot: {
+      ...buildReport().generation_snapshot,
+      selected_section_ids: [
+        "disease",
+        "clinical",
+        "critical_appraisal",
+        "executive",
+      ],
+    },
+  }),
+);
+
+assert.deepEqual(
+  criticalAppraisalSnapshotReport.generation_snapshot.selected_section_ids,
+  ["disease", "clinical", "critical_appraisal", "executive"],
+);
+
+const economicOnlyCriticalAppraisalSnapshot = reportSchema.parse(
+  buildReport({
+    generation_snapshot: {
+      ...buildReport().generation_snapshot,
+      selected_economic_article_ids: ["PMC10742594"],
+      selected_section_ids: ["disease", "economic", "critical_appraisal"],
+    },
+  }),
+);
+
+assert.deepEqual(
+  economicOnlyCriticalAppraisalSnapshot.generation_snapshot.selected_section_ids,
+  ["disease", "economic", "critical_appraisal"],
+);
+assert.deepEqual(
+  economicOnlyCriticalAppraisalSnapshot.generation_snapshot
+    .selected_economic_article_ids,
+  ["PMC10742594"],
+);
+
+assert.equal(
+  reportSchema.safeParse(
+    buildReport({
+      generation_snapshot: {
+        ...buildReport().generation_snapshot,
+        selected_section_ids: ["critical_appraisal"],
+      },
+    }),
+  ).success,
+  true,
+);
+
 assert.equal(
   reportSchema.safeParse(
     buildReport({
@@ -248,6 +299,8 @@ const platformSavePayload = buildCreateReportInput({
   customComparators: [],
   selectedSectionIds: [
     "disease",
+    "clinical",
+    "critical_appraisal",
     "custom:532cc119-aaaa-4bbb-8ccc-ddddeeeeffff",
     "executive",
   ],
@@ -264,6 +317,8 @@ assert.deepEqual(platformSavePayload.generation_snapshot.custom_sections, [
 ]);
 assert.deepEqual(platformSavePayload.generation_snapshot.selected_section_ids, [
   "disease",
+  "clinical",
+  "critical_appraisal",
   "executive",
 ]);
 assert.equal(

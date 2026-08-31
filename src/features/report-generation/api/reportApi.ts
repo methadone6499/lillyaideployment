@@ -28,18 +28,21 @@ import type {
   UpdateReportSelectionsInput,
   UpdateReportSelectionsResponse,
 } from "../types";
+import { PPTX_POLL_TIMEOUT_MESSAGE } from "../constants/pptxExport";
 import {
   getCustomSectionMode,
   validateCustomSectionFile,
 } from "../utils/customSections";
+import {
+  getPptxPollDelayMs,
+  hasPptxPollBudgetElapsed,
+} from "../utils/pptxExportProgress";
 import { ReportApiError, reportFetch } from "./reportFetch";
 
 const CUSTOM_SECTION_MODE_HEADER = "X-Custom-Section-Mode";
 
 const PDF_POLL_INTERVAL_MS = 2_000;
 const PDF_MAX_ATTEMPTS = 30;
-const PPTX_POLL_INTERVAL_MS = 2_000;
-const PPTX_MAX_ATTEMPTS = 150;
 
 export type DownloadPptxWhenReadyOptions = {
   signal?: AbortSignal;
@@ -396,6 +399,7 @@ export async function downloadPptxWhenReady(
   options?: DownloadPptxWhenReadyOptions,
 ): Promise<Blob> {
   const signal = options?.signal;
+  const startedAtMs = Date.now();
 
   try {
     const queued = await queuePptxExport(
@@ -418,7 +422,7 @@ export async function downloadPptxWhenReady(
     }
   }
 
-  for (let attempt = 0; attempt < PPTX_MAX_ATTEMPTS; attempt++) {
+  while (!hasPptxPollBudgetElapsed(startedAtMs, Date.now())) {
     if (signal?.aborted) {
       throw signal.reason;
     }
@@ -427,9 +431,13 @@ export async function downloadPptxWhenReady(
     try {
       status = await fetchPptxExportStatus(reportServiceId, signal);
     } catch (error) {
-      if (isPptxRetryablePollError(error) && attempt < PPTX_MAX_ATTEMPTS - 1) {
-        await delay(PPTX_POLL_INTERVAL_MS, signal);
+      const delayMs = getPptxPollDelayMs(startedAtMs, Date.now());
+      if (isPptxRetryablePollError(error) && delayMs != null) {
+        await delay(delayMs, signal);
         continue;
+      }
+      if (isPptxRetryablePollError(error)) {
+        break;
       }
       throw error;
     }
@@ -447,24 +455,24 @@ export async function downloadPptxWhenReady(
       try {
         return await downloadPptx(reportServiceId, signal);
       } catch (error) {
-        if (
-          isPptxRetryablePollError(error) &&
-          attempt < PPTX_MAX_ATTEMPTS - 1
-        ) {
-          await delay(PPTX_POLL_INTERVAL_MS, signal);
+        const delayMs = getPptxPollDelayMs(startedAtMs, Date.now());
+        if (isPptxRetryablePollError(error) && delayMs != null) {
+          await delay(delayMs, signal);
           continue;
+        }
+        if (isPptxRetryablePollError(error)) {
+          break;
         }
         throw error;
       }
     }
 
-    if (attempt < PPTX_MAX_ATTEMPTS - 1) {
-      await delay(PPTX_POLL_INTERVAL_MS, signal);
+    const delayMs = getPptxPollDelayMs(startedAtMs, Date.now());
+    if (delayMs == null) {
+      break;
     }
+    await delay(delayMs, signal);
   }
 
-  throw new ReportApiError(
-    408,
-    "Presentation is still being prepared. Please try again.",
-  );
+  throw new ReportApiError(408, PPTX_POLL_TIMEOUT_MESSAGE);
 }

@@ -60,11 +60,60 @@ export function normalizeWizardSectionIds(
   return orderWizardSectionIds([...new Set(mapped)]);
 }
 
+export function hasCriticalAppraisalDependency(
+  ids: readonly WizardSectionId[],
+): boolean {
+  return ids.includes("clinical") || ids.includes("economic");
+}
+
+/**
+ * Default-on when Clinical and/or Economic Evidence first becomes selected.
+ * User-optional afterwards. Removed when both dependencies disappear.
+ */
+export function applyCriticalAppraisalSelectionRule(
+  previousSelectedIds: readonly WizardSectionId[],
+  nextSelectedIds: readonly WizardSectionId[],
+): WizardSectionId[] {
+  const next = new Set(nextSelectedIds);
+
+  if (!hasCriticalAppraisalDependency([...next])) {
+    next.delete("critical_appraisal");
+    return orderWizardSectionIds([...next]);
+  }
+
+  if (!hasCriticalAppraisalDependency(previousSelectedIds)) {
+    next.add("critical_appraisal");
+  }
+
+  return orderWizardSectionIds([...next]);
+}
+
+/** Pre-v12 persist: add Critical Appraisal only when clinical/economic is already selected. */
+export function migrateWizardSelectedSectionIdsToV12(
+  ids: readonly string[],
+): WizardSectionId[] {
+  const normalized = normalizeWizardSectionIds(ids);
+  if (hasCriticalAppraisalDependency(normalized)) {
+    return orderWizardSectionIds([...normalized, "critical_appraisal"]);
+  }
+
+  return orderWizardSectionIds(
+    normalized.filter((id) => id !== "critical_appraisal"),
+  );
+}
+
 /** Backend section types to send, preserving Step 5 definition order. */
 export function filterApiSectionIds(
   ids: readonly WizardSectionId[],
 ): SectionType[] {
-  return orderWizardSectionIds(ids).filter((id) => id !== "compliance");
+  const withoutCompliance = orderWizardSectionIds(ids).filter(
+    (id) => id !== "compliance",
+  );
+
+  return applyCriticalAppraisalSelectionRule(
+    withoutCompliance,
+    withoutCompliance,
+  );
 }
 
 function toCustomSectionToken(customId: string): CustomSectionType | null {
@@ -179,6 +228,7 @@ export function isInputDependentSectionId(
 export function isSectionAvailable(
   id: WizardSectionId,
   inputs: SectionSelectionInputs,
+  selectedSectionIds?: readonly WizardSectionId[],
 ): boolean {
   if (id === "compliance") {
     return false;
@@ -191,6 +241,16 @@ export function isSectionAvailable(
   }
   if (id === "comparator") {
     return inputs.selectedComparators.length > 0;
+  }
+  if (id === "critical_appraisal") {
+    if (selectedSectionIds) {
+      return hasCriticalAppraisalDependency(selectedSectionIds);
+    }
+
+    return (
+      inputs.selectedClinicalArticleIds.length > 0 ||
+      inputs.selectedEconomicArticleIds.length > 0
+    );
   }
   return true;
 }
@@ -230,7 +290,7 @@ export function syncSelectedSectionIdsOnInputChange(
     next.delete("comparator");
   }
 
-  return orderWizardSectionIds([...next]);
+  return applyCriticalAppraisalSelectionRule(selectedSectionIds, [...next]);
 }
 
 /** Align input-dependent sections with current evidence/comparator selections. */
@@ -259,5 +319,5 @@ export function reconcileSelectedSectionIdsWithInputs(
     next.add("comparator");
   }
 
-  return orderWizardSectionIds([...next]);
+  return applyCriticalAppraisalSelectionRule(selectedSectionIds, [...next]);
 }

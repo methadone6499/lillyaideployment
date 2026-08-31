@@ -42,6 +42,14 @@ const statusConfig: Record<
     label: "Approved",
     className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
   },
+  reviewed: {
+    label: "Reviewed",
+    className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
+  },
+  sent_for_review: {
+    label: "Sent for Review",
+    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
+  },
 };
 
 function StatusPill({

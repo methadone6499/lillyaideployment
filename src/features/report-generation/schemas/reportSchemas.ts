@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { PPTX_EXPORT_PHASES } from "../constants/pptxExport";
+
 // Live GET /status: queued | pending | processing | completed | partially_completed | failed.
 export const reportStatusSchema = z.enum([
   "queued",
@@ -41,6 +43,7 @@ export const builtInSectionTypeSchema = z.enum([
   "disease",
   "clinical",
   "economic",
+  "critical_appraisal",
   "drug",
   "hta",
   "comparator",
@@ -406,13 +409,8 @@ export const patchCustomSectionInputSchema = z.object({
   sort_order: z.number().optional(),
 });
 
-export const pptxExportPhaseSchema = z.enum([
-  "queued",
-  "pass1",
-  "pass2",
-  "render",
-  "done",
-]);
+// Documented PPTX job phases, including always-on Pass 3 narration.
+export const pptxExportPhaseSchema = z.enum(PPTX_EXPORT_PHASES);
 
 export const pptxExportProgressSchema = z.object({
   percent: z.number().optional(),
@@ -433,7 +431,7 @@ export const pptxExportQueueResponseSchema = z.object({
   job_id: z.string(),
   report_id: z.string(),
   job_status: jobStatusSchema,
-  phase: pptxExportPhaseSchema.optional(),
+  phase: pptxExportPhaseSchema.nullable().optional(),
   celery_task_id: z.string().nullable().optional(),
   poll_urls: pptxExportPollUrlsSchema.optional(),
   message: z.string().optional(),
@@ -444,7 +442,7 @@ export const pptxExportStatusResponseSchema = z.object({
   report_id: z.string(),
   job_id: z.string().optional(),
   job_status: jobStatusSchema,
-  phase: pptxExportPhaseSchema.optional(),
+  phase: pptxExportPhaseSchema.nullable().optional(),
   progress: pptxExportProgressSchema.optional(),
   error: z.string().nullable().optional(),
   slide_count: z.number().nullable().optional(),
