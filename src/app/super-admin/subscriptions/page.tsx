@@ -9,7 +9,6 @@ export default function SuperAdminSubscriptionsPage() {
   return (
     <SuperAdminManagementPageShell
       title="Subscription Management"
-      description="Create and manage custom subscriptions with report quotas, seats, billing, and status controls"
       action={
         <Button
           leadingIcon={<PlusIcon />}
