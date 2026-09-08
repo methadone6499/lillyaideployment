@@ -7,29 +7,42 @@ import type { DashboardStatusFilterValue } from "../types";
 
 export type { DashboardStatusFilterValue };
 
-const STATUS_FILTER_OPTIONS: {
-  value: DashboardStatusFilterValue;
+export type DashboardStatusFilterOption<T extends string> = {
+  value: T;
   label: string;
-}[] = [
+};
+
+const STATUS_FILTER_OPTIONS: readonly DashboardStatusFilterOption<DashboardStatusFilterValue>[] = [
   { value: "all", label: "All statuses" },
   { value: "completed", label: "Completed" },
   { value: "generating", label: "In Progress" },
   { value: "failed", label: "Failed" },
 ];
 
-type DashboardStatusFilterProps = {
-  value: DashboardStatusFilterValue;
-  onChange: (value: DashboardStatusFilterValue) => void;
+type DashboardStatusFilterProps<T extends string> = {
+  value: T;
+  onChange: (value: T) => void;
+  options?: readonly DashboardStatusFilterOption<T>[];
+  showSelectedLabel?: boolean;
 };
 
-export function DashboardStatusFilter({
+export function DashboardStatusFilter<
+  T extends string = DashboardStatusFilterValue,
+>({
   value,
   onChange,
-}: DashboardStatusFilterProps) {
+  options,
+  showSelectedLabel = false,
+}: DashboardStatusFilterProps<T>) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const id = useId();
   const listboxId = `${id}-listbox`;
+  const resolvedOptions = (options ??
+    STATUS_FILTER_OPTIONS) as readonly DashboardStatusFilterOption<T>[];
+  const selectedLabel = resolvedOptions.find(
+    (option) => option.value === value,
+  )?.label;
 
   useEffect(() => {
     if (!open) return;
@@ -55,7 +68,7 @@ export function DashboardStatusFilter({
     };
   }, [open]);
 
-  const handleSelect = (optionValue: DashboardStatusFilterValue) => {
+  const handleSelect = (optionValue: T) => {
     setOpen(false);
     onChange(optionValue);
   };
@@ -74,7 +87,7 @@ export function DashboardStatusFilter({
       >
         <span className="flex items-center gap-2">
           <FilterLinesIcon className="size-5 shrink-0" />
-          <span>Status</span>
+          <span>{showSelectedLabel ? selectedLabel ?? "Status" : "Status"}</span>
         </span>
         <ChevronDownIcon
           className={cn(
@@ -90,14 +103,14 @@ export function DashboardStatusFilter({
           aria-labelledby={id}
           className="absolute right-0 top-full z-50 mt-1 min-w-full overflow-hidden rounded-card border border-border-default bg-input-fill shadow-lg"
         >
-          {STATUS_FILTER_OPTIONS.map((option, index) => (
+          {resolvedOptions.map((option, index) => (
             <li
               key={option.value}
               role="option"
               aria-selected={value === option.value}
               className={cn(
                 "cursor-pointer whitespace-nowrap px-[17px] py-3 text-input font-medium text-white hover:bg-surface-elevated",
-                index < STATUS_FILTER_OPTIONS.length - 1 &&
+                index < resolvedOptions.length - 1 &&
                   "border-b border-border-default",
                 value === option.value && "bg-brand-badge",
               )}

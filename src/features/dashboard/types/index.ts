@@ -1,6 +1,15 @@
-import type { GenerationStatus } from "@/features/reports";
+import type { GenerationStatus, ReviewStatus } from "@/features/reports";
 
 export type DashboardGenerationStatus = GenerationStatus;
+
+export type DashboardReviewStatus = ReviewStatus;
+
+export type DashboardAdminDisplayStatus = "reviewed" | "sent_for_review";
+
+export type DashboardStatusPillStatus =
+  | DashboardGenerationStatus
+  | DashboardReviewStatus
+  | DashboardAdminDisplayStatus;
 
 export type DashboardStatusFilterValue = DashboardGenerationStatus | "all";
 
@@ -9,8 +18,8 @@ export type DashboardUser = {
 };
 
 export type DashboardQuota = {
-  used: number;
-  total: number;
+  used: number | null;
+  total: number | null;
   additionalReportPrice: string;
 };
 

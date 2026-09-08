@@ -32,6 +32,12 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
       "Cost-effectiveness, budget impact, and pharmacoeconomic findings from selected studies.",
   },
   {
+    id: "critical_appraisal",
+    title: "Critical Appraisal",
+    description:
+      "Source-level internal and external validity of selected clinical and economic evidence. Available when Clinical and/or Economic Evidence is included.",
+  },
+  {
     id: "comparator",
     title: "Competitor Analysis",
     description:
@@ -67,7 +73,8 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
 export const ALL_WIZARD_SECTION_IDS: WizardSectionId[] =
   REPORT_SECTION_DEFINITIONS.map((section) => section.id);
 
-/** Default section IDs — all sections except environmental and compliance (hidden/opt-in). */
+/** Default section IDs — all except environmental and compliance (hidden/opt-in).
+ * Critical Appraisal stays only when Clinical and/or Economic Evidence is selected. */
 export const DEFAULT_SECTION_IDS: SectionType[] = ALL_WIZARD_SECTION_IDS.filter(
   (id) => id !== "environmental" && id !== "compliance",
 );

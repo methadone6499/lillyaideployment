@@ -5,6 +5,49 @@ import {
 } from "./apiErrorSchemas";
 import { ApiRequestError, type FieldErrors } from "./ApiRequestError";
 
+function parseRetryAfterSeconds(header: string | null): number | null {
+  if (!header) {
+    return null;
+  }
+
+  const trimmed = header.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  if (/^\d+$/.test(trimmed)) {
+    return Number.parseInt(trimmed, 10);
+  }
+
+  const dateMs = Date.parse(trimmed);
+
+  if (Number.isNaN(dateMs)) {
+    return null;
+  }
+
+  return Math.max(0, Math.ceil((dateMs - Date.now()) / 1000));
+}
+
+function retryAfterFromDetails(details: unknown): number | null {
+  if (typeof details !== "object" || details === null) {
+    return null;
+  }
+
+  const record = details as Record<string, unknown>;
+  const raw = record.retry_after ?? record.retry_after_seconds;
+
+  if (typeof raw === "number" && Number.isFinite(raw) && raw >= 0) {
+    return Math.ceil(raw);
+  }
+
+  if (typeof raw === "string") {
+    return parseRetryAfterSeconds(raw);
+  }
+
+  return null;
+}
+
 function validationLocToFieldKey(loc: ValidationErrorItem["loc"]): string | null {
   const fieldParts = loc.filter(
     (part): part is string => part !== "body" && typeof part === "string",
@@ -44,6 +87,7 @@ function validationFallbackMessage(items: ValidationErrorItem[]): string {
 function buildApiRequestErrorFromBody(
   status: number,
   body: unknown,
+  retryAfterSeconds: number | null,
 ): ApiRequestError {
   const platformError = platformErrorSchema.safeParse(body);
 
@@ -57,6 +101,8 @@ function buildApiRequestErrorFromBody(
       details: parsed.details ?? null,
       requestId: parsed.request_id ?? null,
       rawCause: body,
+      retryAfterSeconds:
+        retryAfterSeconds ?? retryAfterFromDetails(parsed.details),
     });
   }
 
@@ -71,6 +117,7 @@ function buildApiRequestErrorFromBody(
       message: validationFallbackMessage(items),
       fieldErrors,
       rawCause: body,
+      retryAfterSeconds,
     });
   }
 
@@ -83,6 +130,7 @@ function buildApiRequestErrorFromBody(
           status,
           message: detail,
           rawCause: body,
+          retryAfterSeconds,
         });
       }
     }
@@ -92,6 +140,7 @@ function buildApiRequestErrorFromBody(
         status,
         message: body.message,
         rawCause: body,
+        retryAfterSeconds,
       });
     }
   }
@@ -100,6 +149,7 @@ function buildApiRequestErrorFromBody(
     status,
     message: `Request failed with status ${status}`,
     rawCause: body,
+    retryAfterSeconds,
   });
 }
 
@@ -107,6 +157,9 @@ export async function parseApiErrorResponse(
   response: Response,
 ): Promise<ApiRequestError> {
   const status = response.status;
+  const retryAfterSeconds = parseRetryAfterSeconds(
+    response.headers.get("retry-after"),
+  );
   let rawBody: unknown = undefined;
   let fallbackText: string | undefined;
 
@@ -124,16 +177,18 @@ export async function parseApiErrorResponse(
         response.statusText ||
         `Request failed with status ${status}`,
       rawCause: fallbackText ?? null,
+      retryAfterSeconds,
     });
   }
 
   if (rawBody !== undefined) {
-    return buildApiRequestErrorFromBody(status, rawBody);
+    return buildApiRequestErrorFromBody(status, rawBody, retryAfterSeconds);
   }
 
   return new ApiRequestError({
     status,
     message: response.statusText || `Request failed with status ${status}`,
     rawCause: null,
+    retryAfterSeconds,
   });
 }

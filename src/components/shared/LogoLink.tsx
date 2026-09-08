@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthUser } from "@/features/auth";
+import { getPostAuthHomePath, useAuthUser } from "@/features/auth";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -11,8 +11,8 @@ type LogoLinkProps = {
 };
 
 export function LogoLink({ width, height, className }: LogoLinkProps) {
-  const { isAuthenticated } = useAuthUser();
-  const href = isAuthenticated ? "/dashboard" : "/";
+  const { isAuthenticated, authMe } = useAuthUser();
+  const href = isAuthenticated ? getPostAuthHomePath(authMe) : "/";
 
   return (
     <Link

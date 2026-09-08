@@ -1,13 +1,13 @@
 import { cn } from "@/lib/cn";
-import type { DashboardGenerationStatus } from "../types";
+import type { DashboardStatusPillStatus } from "../types";
 
-type DashboardGenerationStatusPillProps = {
-  status: DashboardGenerationStatus;
+type DashboardStatusPillProps = {
+  status: DashboardStatusPillStatus;
   className?: string;
 };
 
-const generationStatusConfig: Record<
-  DashboardGenerationStatus,
+const statusConfig: Record<
+  DashboardStatusPillStatus,
   { label: string; className: string }
 > = {
   completed: {
@@ -21,6 +21,34 @@ const generationStatusConfig: Record<
   failed: {
     label: "Failed",
     className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+  },
+  unassigned: {
+    label: "Unassigned",
+    className: "bg-white/8 text-white/60",
+  },
+  pending: {
+    label: "Pending Review",
+    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
+  },
+  in_review: {
+    label: "In Review",
+    className: "bg-[rgba(255,200,92,0.12)] text-status-running",
+  },
+  changes_requested: {
+    label: "Changes Requested",
+    className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+  },
+  approved: {
+    label: "Approved",
+    className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
+  },
+  reviewed: {
+    label: "Reviewed",
+    className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
+  },
+  sent_for_review: {
+    label: "Sent for Review",
+    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
   },
 };
 
@@ -49,8 +77,8 @@ function StatusPill({
 export function DashboardStatusPill({
   status,
   className,
-}: DashboardGenerationStatusPillProps) {
-  const config = generationStatusConfig[status];
+}: DashboardStatusPillProps) {
+  const config = statusConfig[status];
 
   return (
     <StatusPill

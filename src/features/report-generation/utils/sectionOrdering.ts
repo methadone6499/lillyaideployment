@@ -2,7 +2,13 @@ import {
   ALL_WIZARD_SECTION_IDS,
   REPORT_SECTION_DEFINITIONS,
 } from "../constants/reportSections";
-import type { SectionType, WizardSectionId } from "../types";
+import type {
+  CustomSectionType,
+  ReportStatusSection,
+  SectionType,
+  WizardCustomSection,
+  WizardSectionId,
+} from "../types";
 
 const LEGACY_WIZARD_SECTION_ID_MAP: Record<string, WizardSectionId> = {
   "disease-overview": "disease",
@@ -30,6 +36,11 @@ export function isWizardSectionId(id: string): id is WizardSectionId {
   return wizardSectionIdSet.has(id);
 }
 
+/** `custom:<uuid>` tokens from selections, status, and generated sections. */
+export function isCustomSectionType(id: string): id is CustomSectionType {
+  return id.startsWith("custom:");
+}
+
 /** Reorder selected IDs to match Step 5 definition order. */
 export function orderWizardSectionIds(
   ids: readonly WizardSectionId[],
@@ -49,11 +60,150 @@ export function normalizeWizardSectionIds(
   return orderWizardSectionIds([...new Set(mapped)]);
 }
 
+export function hasCriticalAppraisalDependency(
+  ids: readonly WizardSectionId[],
+): boolean {
+  return ids.includes("clinical") || ids.includes("economic");
+}
+
+/**
+ * Default-on when Clinical and/or Economic Evidence first becomes selected.
+ * User-optional afterwards. Removed when both dependencies disappear.
+ */
+export function applyCriticalAppraisalSelectionRule(
+  previousSelectedIds: readonly WizardSectionId[],
+  nextSelectedIds: readonly WizardSectionId[],
+): WizardSectionId[] {
+  const next = new Set(nextSelectedIds);
+
+  if (!hasCriticalAppraisalDependency([...next])) {
+    next.delete("critical_appraisal");
+    return orderWizardSectionIds([...next]);
+  }
+
+  if (!hasCriticalAppraisalDependency(previousSelectedIds)) {
+    next.add("critical_appraisal");
+  }
+
+  return orderWizardSectionIds([...next]);
+}
+
+/** Pre-v12 persist: add Critical Appraisal only when clinical/economic is already selected. */
+export function migrateWizardSelectedSectionIdsToV12(
+  ids: readonly string[],
+): WizardSectionId[] {
+  const normalized = normalizeWizardSectionIds(ids);
+  if (hasCriticalAppraisalDependency(normalized)) {
+    return orderWizardSectionIds([...normalized, "critical_appraisal"]);
+  }
+
+  return orderWizardSectionIds(
+    normalized.filter((id) => id !== "critical_appraisal"),
+  );
+}
+
 /** Backend section types to send, preserving Step 5 definition order. */
 export function filterApiSectionIds(
   ids: readonly WizardSectionId[],
 ): SectionType[] {
-  return orderWizardSectionIds(ids).filter((id) => id !== "compliance");
+  const withoutCompliance = orderWizardSectionIds(ids).filter(
+    (id) => id !== "compliance",
+  );
+
+  return applyCriticalAppraisalSelectionRule(
+    withoutCompliance,
+    withoutCompliance,
+  );
+}
+
+function toCustomSectionToken(customId: string): CustomSectionType | null {
+  const trimmed = customId.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return `custom:${trimmed}` as CustomSectionType;
+}
+
+/**
+ * Built-in section types plus enabled `custom:<uuid>` tokens.
+ * Customs are inserted immediately before `executive` when it is selected;
+ * otherwise they are appended. Create order of enabled customs is preserved.
+ */
+export function buildApiSectionTypes(
+  selectedSectionIds: readonly WizardSectionId[],
+  customSections: readonly Pick<WizardCustomSection, "customId" | "enabled">[],
+): SectionType[] {
+  const builtIns = filterApiSectionIds(selectedSectionIds);
+  const customTokens = customSections.flatMap((section) => {
+    if (!section.enabled) {
+      return [];
+    }
+    const token = toCustomSectionToken(section.customId);
+    return token ? [token] : [];
+  });
+
+  const executiveIndex = builtIns.indexOf("executive");
+  if (executiveIndex === -1) {
+    return [...builtIns, ...customTokens];
+  }
+
+  return [
+    ...builtIns.slice(0, executiveIndex),
+    ...customTokens,
+    ...builtIns.slice(executiveIndex),
+  ];
+}
+
+/**
+ * Viewer outline: selected IDs (built-ins and any already-merged `custom:<id>`
+ * tokens) plus `custom:<uuid>` rows from GET /status that are not already listed.
+ * Customs are inserted immediately before `executive` when it is present.
+ */
+export function mergeViewerSectionIds(
+  selectedSectionIds: readonly string[],
+  statusSections: readonly Pick<
+    ReportStatusSection,
+    "section_type" | "sort_order"
+  >[],
+): string[] {
+  const selected: string[] = [];
+  const seen = new Set<string>();
+  for (const id of selectedSectionIds) {
+    if (seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    selected.push(id);
+  }
+
+  const customFromStatus = statusSections
+    .filter((section) => {
+      return (
+        isCustomSectionType(section.section_type) &&
+        !seen.has(section.section_type)
+      );
+    })
+    .sort((a, b) => {
+      const orderA = a.sort_order ?? Number.POSITIVE_INFINITY;
+      const orderB = b.sort_order ?? Number.POSITIVE_INFINITY;
+      return orderA - orderB;
+    })
+    .map((section) => section.section_type);
+
+  if (customFromStatus.length === 0) {
+    return selected;
+  }
+
+  const executiveIndex = selected.indexOf("executive");
+  if (executiveIndex === -1) {
+    return [...selected, ...customFromStatus];
+  }
+
+  return [
+    ...selected.slice(0, executiveIndex),
+    ...customFromStatus,
+    ...selected.slice(executiveIndex),
+  ];
 }
 
 export type SectionSelectionInputs = {
@@ -78,6 +228,7 @@ export function isInputDependentSectionId(
 export function isSectionAvailable(
   id: WizardSectionId,
   inputs: SectionSelectionInputs,
+  selectedSectionIds?: readonly WizardSectionId[],
 ): boolean {
   if (id === "compliance") {
     return false;
@@ -90,6 +241,16 @@ export function isSectionAvailable(
   }
   if (id === "comparator") {
     return inputs.selectedComparators.length > 0;
+  }
+  if (id === "critical_appraisal") {
+    if (selectedSectionIds) {
+      return hasCriticalAppraisalDependency(selectedSectionIds);
+    }
+
+    return (
+      inputs.selectedClinicalArticleIds.length > 0 ||
+      inputs.selectedEconomicArticleIds.length > 0
+    );
   }
   return true;
 }
@@ -129,7 +290,7 @@ export function syncSelectedSectionIdsOnInputChange(
     next.delete("comparator");
   }
 
-  return orderWizardSectionIds([...next]);
+  return applyCriticalAppraisalSelectionRule(selectedSectionIds, [...next]);
 }
 
 /** Align input-dependent sections with current evidence/comparator selections. */
@@ -158,5 +319,5 @@ export function reconcileSelectedSectionIdsWithInputs(
     next.add("comparator");
   }
 
-  return orderWizardSectionIds([...next]);
+  return applyCriticalAppraisalSelectionRule(selectedSectionIds, [...next]);
 }

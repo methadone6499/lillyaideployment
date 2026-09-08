@@ -4,10 +4,17 @@ import type {
   articleCandidateSchema,
   articleDiscoveryResponseSchema,
   blockSchema,
+  builtInSectionTypeSchema,
   calloutBlockSchema,
   comparatorDiscoveryResponseSchema,
+  createCustomSectionPromptInputSchema,
   createReportInputSchema,
   createReportResponseSchema,
+  customSectionGuidelinesSchema,
+  customSectionModeSchema,
+  customSectionResponseSchema,
+  customSectionSpecSchema,
+  customSectionTypeSchema,
   definitionBlockSchema,
   drugValidationResponseSchema,
   filterStateSchema,
@@ -17,9 +24,16 @@ import type {
   headingBlockSchema,
   jobStatusSchema,
   listBlockSchema,
+  listCustomSectionsResponseSchema,
   markdownBlockSchema,
   paragraphBlockSchema,
+  patchCustomSectionInputSchema,
   pdfExportResponseSchema,
+  pptxExportPhaseSchema,
+  pptxExportProgressSchema,
+  pptxExportQueueResponseSchema,
+  pptxExportStatusResponseSchema,
+  queuePptxExportInputSchema,
   reportArtifactsSchema,
   reportDiscoveryStateSchema,
   reportInputsSchema,
@@ -47,10 +61,12 @@ export type TextAvailabilityFilter = "all" | "full_text" | "abstract_only";
 export type ReportStatus = z.infer<typeof reportStatusSchema>;
 export type JobStatus = z.infer<typeof jobStatusSchema>;
 export type SectionStatus = z.infer<typeof sectionStatusSchema>;
+export type BuiltInSectionType = z.infer<typeof builtInSectionTypeSchema>;
+export type CustomSectionType = z.infer<typeof customSectionTypeSchema>;
 export type SectionType = z.infer<typeof sectionTypeSchema>;
 
-/** Step 5 / wizard section IDs — aligned with backend section types. */
-export type WizardSectionId = SectionType;
+/** Step 5 / wizard section IDs — built-in section types only. */
+export type WizardSectionId = BuiltInSectionType;
 
 export type ArticleCandidate = z.infer<typeof articleCandidateSchema>;
 export type ArticleDiscoveryResponse = z.infer<
@@ -96,6 +112,46 @@ export type ReportSectionContent = z.infer<typeof reportSectionContentSchema>;
 export type ReportSectionResponse = z.infer<typeof reportSectionResponseSchema>;
 
 export type PdfExportResponse = z.infer<typeof pdfExportResponseSchema>;
+
+export type CustomSectionMode = z.infer<typeof customSectionModeSchema>;
+export type CustomSectionGuidelines = z.infer<
+  typeof customSectionGuidelinesSchema
+>;
+export type CustomSectionSpec = z.infer<typeof customSectionSpecSchema>;
+export type CustomSectionResponse = z.infer<typeof customSectionResponseSchema>;
+export type ListCustomSectionsResponse = z.infer<
+  typeof listCustomSectionsResponseSchema
+>;
+export type CreateCustomSectionPromptInput = z.infer<
+  typeof createCustomSectionPromptInputSchema
+>;
+export type PatchCustomSectionInput = z.infer<
+  typeof patchCustomSectionInputSchema
+>;
+
+/** Ready custom section kept in the wizard outline (Step 5). */
+export type WizardCustomSection = {
+  customId: string;
+  title: string;
+  enabled: boolean;
+};
+
+export type CreateCustomSectionInput = {
+  title: string;
+  prompt?: string;
+  file?: File;
+  customId?: string | null;
+};
+
+export type QueuePptxExportInput = z.infer<typeof queuePptxExportInputSchema>;
+export type PptxExportPhase = z.infer<typeof pptxExportPhaseSchema>;
+export type PptxExportProgress = z.infer<typeof pptxExportProgressSchema>;
+export type PptxExportQueueResponse = z.infer<
+  typeof pptxExportQueueResponseSchema
+>;
+export type PptxExportStatusResponse = z.infer<
+  typeof pptxExportStatusResponseSchema
+>;
 
 export type DrugValidationResponse = z.infer<typeof drugValidationResponseSchema>;
 export type FilterState = z.infer<typeof filterStateSchema>;

@@ -3,18 +3,26 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DEFAULT_SECTION_IDS } from "../constants/reportSections";
-import type { FilterState, WizardSectionId, WizardStep } from "../types";
+import type {
+  FilterState,
+  WizardCustomSection,
+  WizardSectionId,
+  WizardStep,
+} from "../types";
 import {
+  applyCriticalAppraisalSelectionRule,
   getDefaultSelectedSectionIds,
   isSectionAvailable,
+  migrateWizardSelectedSectionIdsToV12,
   normalizeWizardSectionIds,
-  orderWizardSectionIds,
   reconcileSelectedSectionIdsWithInputs,
   syncSelectedSectionIdsOnInputChange,
   type SectionSelectionInputs,
 } from "../utils/sectionOrdering";
 
 export { DEFAULT_SECTION_IDS };
+
+export const REPORT_WIZARD_PERSIST_VERSION = 12;
 
 export const DEFAULT_FILTERS: FilterState = {
   timeRange: "last-1-year",
@@ -170,7 +178,7 @@ type PersistedWizardState = {
   selectedComparators?: string[];
   customComparators?: string[];
   selectedSectionIds?: string[];
-  customSections?: string[];
+  customSections?: unknown;
   generationJobId?: string | null;
   userId?: string | null;
   selectedEvidenceIds?: string[];
@@ -190,7 +198,7 @@ type ReportWizardState = {
   selectedComparators: string[];
   customComparators: string[];
   selectedSectionIds: WizardSectionId[];
-  customSections: string[];
+  customSections: WizardCustomSection[];
   generationJobId: string | null;
   userId: string | null;
   setStep: (step: WizardStep) => void;
@@ -218,6 +226,13 @@ type ReportWizardState = {
   selectAllSections: (ids: WizardSectionId[]) => void;
   deselectAllSections: () => void;
   reconcileSectionsAtStep5: () => void;
+  setCustomSections: (sections: WizardCustomSection[]) => void;
+  addCustomSection: (section: WizardCustomSection) => void;
+  updateCustomSection: (
+    customId: string,
+    patch: Partial<Pick<WizardCustomSection, "title" | "enabled">>,
+  ) => void;
+  removeCustomSection: (customId: string) => void;
   setGenerationJobId: (jobId: string | null) => void;
   setUserId: (userId: string | null) => void;
   resetReportPipeline: () => void;
@@ -244,7 +259,7 @@ const initialState = {
   selectedComparators: [] as string[],
   customComparators: [] as string[],
   selectedSectionIds: getDefaultSelectedSectionIds(emptySectionInputs),
-  customSections: [] as string[],
+  customSections: [] as WizardCustomSection[],
   generationJobId: null as string | null,
   userId: null as string | null,
 };
@@ -258,6 +273,7 @@ const reportPipelineState = {
   selectedEconomicArticleIds: [] as string[],
   selectedComparators: [] as string[],
   customComparators: [] as string[],
+  customSections: [] as WizardCustomSection[],
 };
 
 function getSectionSelectionInputs(
@@ -309,6 +325,28 @@ function withReconciledSectionIdsAtStep5<
       getSectionSelectionInputs(state),
     ),
   };
+}
+
+function isWizardCustomSection(value: unknown): value is WizardCustomSection {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.customId === "string" &&
+    item.customId.length > 0 &&
+    typeof item.title === "string" &&
+    typeof item.enabled === "boolean"
+  );
+}
+
+function migrateCustomSections(value: unknown): WizardCustomSection[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter(isWizardCustomSection);
 }
 
 function migrateSelectedComparators(
@@ -451,6 +489,22 @@ function migratePersistedState(
     };
     delete migrated.reportId;
     state = migrated;
+  }
+
+  if (version < 11) {
+    state = {
+      ...state,
+      customSections: migrateCustomSections(state.customSections),
+    };
+  }
+
+  if (version < 12) {
+    state = {
+      ...state,
+      selectedSectionIds: migrateWizardSelectedSectionIdsToV12(
+        state.selectedSectionIds ?? [],
+      ),
+    };
   }
 
   return state;
@@ -602,20 +656,50 @@ export const useReportWizardStore = create<ReportWizardState>()(
       toggleSectionId: (id) =>
         set((state) => {
           const inputs = getSectionSelectionInputs(state);
-          if (!isSectionAvailable(id, inputs)) {
+          if (!isSectionAvailable(id, inputs, state.selectedSectionIds)) {
             return {};
           }
           const selected = state.selectedSectionIds;
           const next = selected.includes(id)
             ? selected.filter((item) => item !== id)
             : [...selected, id];
-          return { selectedSectionIds: orderWizardSectionIds(next) };
+          return {
+            selectedSectionIds: applyCriticalAppraisalSelectionRule(
+              selected,
+              next,
+            ),
+          };
         }),
       selectAllSections: (ids) =>
-        set({ selectedSectionIds: orderWizardSectionIds(ids) }),
+        set((state) => ({
+          selectedSectionIds: applyCriticalAppraisalSelectionRule(
+            state.selectedSectionIds,
+            ids,
+          ),
+        })),
       deselectAllSections: () => set({ selectedSectionIds: [] }),
       reconcileSectionsAtStep5: () =>
         set((state) => withReconciledSectionIdsAtStep5(state)),
+      setCustomSections: (customSections) => set({ customSections }),
+      addCustomSection: (section) =>
+        set((state) => {
+          const without = state.customSections.filter(
+            (item) => item.customId !== section.customId,
+          );
+          return { customSections: [...without, section] };
+        }),
+      updateCustomSection: (customId, patch) =>
+        set((state) => ({
+          customSections: state.customSections.map((section) =>
+            section.customId === customId ? { ...section, ...patch } : section,
+          ),
+        })),
+      removeCustomSection: (customId) =>
+        set((state) => ({
+          customSections: state.customSections.filter(
+            (section) => section.customId !== customId,
+          ),
+        })),
       setGenerationJobId: (generationJobId) => set({ generationJobId }),
       setUserId: (userId) => set({ userId }),
       resetReportPipeline: () =>
@@ -631,8 +715,20 @@ export const useReportWizardStore = create<ReportWizardState>()(
     }),
     {
       name: "report-wizard-storage",
-      version: 10,
+      version: REPORT_WIZARD_PERSIST_VERSION,
       migrate: migratePersistedState,
+      merge: (persistedState, currentState): ReportWizardState => {
+        const persisted =
+          persistedState && typeof persistedState === "object"
+            ? (persistedState as Partial<PersistedWizardState>)
+            : {};
+
+        return {
+          ...currentState,
+          ...persisted,
+          customSections: migrateCustomSections(persisted.customSections),
+        } as ReportWizardState;
+      },
       partialize: (state) => ({
         currentStep: state.currentStep,
         drugName: state.drugName,

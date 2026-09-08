@@ -1,13 +1,6 @@
-import type {
-  DashboardNotification,
-  DashboardQuota,
-} from "../types";
+import type { DashboardNotification } from "../types";
 
-export const dashboardQuota: DashboardQuota = {
-  used: 20,
-  total: 30,
-  additionalReportPrice: "£95",
-};
+export const additionalReportPrice = "£95";
 
 export const dashboardNotifications: DashboardNotification[] = [
   {

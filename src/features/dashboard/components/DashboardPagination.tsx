@@ -7,6 +7,7 @@ type DashboardPaginationProps = {
   isPageChangePending?: boolean;
   onPageChange: (page: number) => void | Promise<void>;
   className?: string;
+  ariaLabel?: string;
 };
 
 export function DashboardPagination({
@@ -15,6 +16,7 @@ export function DashboardPagination({
   isPageChangePending = false,
   onPageChange,
   className,
+  ariaLabel = "Recent reports pagination",
 }: DashboardPaginationProps) {
   if (totalPages <= 1) {
     return null;
@@ -24,7 +26,7 @@ export function DashboardPagination({
 
   return (
     <nav
-      aria-label="Recent reports pagination"
+      aria-label={ariaLabel}
       className={cn("flex items-center justify-end gap-3", className)}
     >
       <button

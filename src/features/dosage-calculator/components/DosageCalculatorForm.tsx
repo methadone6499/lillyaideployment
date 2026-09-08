@@ -4,61 +4,72 @@ import { Button, Card, Select, TextField } from "@/components/ui";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import {
-  DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS,
-  DOSAGE_HEPATIC_FUNCTION_OPTIONS,
-  DOSAGE_RENAL_FUNCTION_OPTIONS,
-  DOSAGE_RISK_FLAG_OPTIONS,
-  TEMPORARY_FIGMA_INDICATION_OPTIONS,
-  TEMPORARY_FIGMA_POPULATION_OPTIONS,
-  TEMPORARY_FIGMA_REGION_OPTIONS,
-} from "../data/dosageCalculatorFixtures";
+  DOSAGE_CALCULATOR_CATEGORY_OPTIONS,
+  DOSAGE_CALCULATOR_CURRENCY_OPTIONS,
+  DOSAGE_CALCULATOR_DEFAULT_PATIENT_VOLUME,
+  DOSAGE_CALCULATOR_DURATION_UNIT_OPTIONS,
+  DOSAGE_CALCULATOR_FREQUENCY_OPTIONS,
+  DOSAGE_CALCULATOR_OTHER_CURRENCY_VALUE,
+} from "../constants/dosageCalculatorOptions";
+import { DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS } from "../data/dosageCalculatorFixtures";
 import { dosageCalculatorFormSchema } from "../schemas/dosageCalculatorSchemas";
 import {
+  selectDosageCalculatorFormValues,
   useDosageCalculatorStore,
   type DosageCalculatorTextField,
 } from "../store/useDosageCalculatorStore";
-import { FunctionSelector } from "./FunctionSelector";
-import { RiskFlagCheckbox } from "./RiskFlagCheckbox";
+import { getCategoryWeightHelper } from "../utils/dosageCalculatorDisplay";
+import {
+  mapDosageCalculatorSubmission,
+  type DosageCalculatorSubmission,
+} from "../utils/mapDosageCalculatorRequest";
 
 const FIELD_IDS = {
   drug: "dosage-drug",
   indication: "dosage-indication",
-  age: "dosage-age",
-  weight: "dosage-weight",
-  region: "dosage-region",
   population: "dosage-population",
-  renalFunction: "dosage-renal-function",
-  hepaticFunction: "dosage-hepatic-function",
+  frequency: "dosage-frequency",
   treatmentDuration: "dosage-treatment-duration",
+  durationUnit: "dosage-duration-unit",
+  currency: "dosage-currency",
+  customCurrency: "dosage-custom-currency",
+  unitPrice: "dosage-unit-price",
+  patientVolume: "dosage-patient-volume",
 } as const satisfies Record<DosageCalculatorTextField, string>;
 
-const FIELD_FOCUS_IDS = {
-  ...FIELD_IDS,
-  renalFunction: `${FIELD_IDS.renalFunction}-${DOSAGE_RENAL_FUNCTION_OPTIONS[0].value}`,
-  hepaticFunction: `${FIELD_IDS.hepaticFunction}-${DOSAGE_HEPATIC_FUNCTION_OPTIONS[0].value}`,
-} as const satisfies Record<DosageCalculatorTextField, string>;
+const FREQUENCY_SUGGESTIONS_ID = `${FIELD_IDS.frequency}-suggestions`;
 
 type FieldErrors = Partial<Record<DosageCalculatorTextField, string>>;
 
-export function DosageCalculatorForm() {
+type DosageCalculatorFormProps = {
+  isSubmitting?: boolean;
+  onSubmitCalculation: (
+    submission: DosageCalculatorSubmission,
+  ) => Promise<void>;
+};
+
+export function DosageCalculatorForm({
+  isSubmitting = false,
+  onSubmitCalculation,
+}: DosageCalculatorFormProps) {
   const {
     drug,
     indication,
-    age,
-    weight,
-    region,
     population,
-    renalFunction,
-    hepaticFunction,
+    frequency,
     treatmentDuration,
-    pregnantOrPlanning,
-    concomitantInsulin,
+    durationUnit,
+    currency,
+    customCurrency,
+    unitPrice,
+    patientVolume,
     setField,
-    setRiskFlag,
-    hideResultPreview,
-    showResultPreview,
   } = useDosageCalculatorStore();
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+
+  const busy = isSubmitting || isStarting;
 
   const clearFieldError = (field: DosageCalculatorTextField) => {
     setErrors((current) => {
@@ -73,25 +84,17 @@ export function DosageCalculatorForm() {
   const updateField = (field: DosageCalculatorTextField, value: string) => {
     setField(field, value);
     clearFieldError(field);
+    if (formError) setFormError(null);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    hideResultPreview();
+    if (busy) return;
 
-    const parsed = dosageCalculatorFormSchema.safeParse({
-      drug,
-      indication,
-      age,
-      weight,
-      region,
-      population,
-      renalFunction,
-      hepaticFunction,
-      treatmentDuration,
-      pregnantOrPlanning,
-      concomitantInsulin,
-    });
+    const formValues = selectDosageCalculatorFormValues(
+      useDosageCalculatorStore.getState(),
+    );
+    const parsed = dosageCalculatorFormSchema.safeParse(formValues);
 
     if (!parsed.success) {
       const nextErrors: FieldErrors = {};
@@ -114,9 +117,10 @@ export function DosageCalculatorForm() {
       }
 
       setErrors(nextErrors);
+      setFormError(null);
 
       if (firstInvalidField) {
-        const focusId = FIELD_FOCUS_IDS[firstInvalidField];
+        const focusId = FIELD_IDS[firstInvalidField];
         requestAnimationFrame(() => {
           document.getElementById(focusId)?.focus();
         });
@@ -125,17 +129,34 @@ export function DosageCalculatorForm() {
     }
 
     setErrors({});
-    showResultPreview();
+
+    let submission: DosageCalculatorSubmission;
+    try {
+      submission = mapDosageCalculatorSubmission(formValues);
+    } catch {
+      setFormError("Check the calculation inputs and try again.");
+      return;
+    }
+
+    setIsStarting(true);
+    try {
+      await onSubmitCalculation(submission);
+      setFormError(null);
+    } catch {
+      setFormError(null);
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   return (
     <Card className="w-full overflow-visible rounded-button">
       <div className="border-b border-border-default px-6 py-5">
         <h2 className="text-card-title font-medium text-white">
-          Patient &amp; drug inputs
+          Calculation inputs
         </h2>
         <p className="mt-2 text-helper text-text-muted">
-          All fields required for accurate calculation
+          These fields are sent to the calculator.
         </p>
       </div>
 
@@ -156,146 +177,167 @@ export function DosageCalculatorForm() {
           onChange={(event) => updateField("drug", event.target.value)}
         />
 
-        <Select
+        <TextField
           id={FIELD_IDS.indication}
           name="indication"
           label="Indication"
           required
           value={indication}
-          options={TEMPORARY_FIGMA_INDICATION_OPTIONS}
           placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.indication}
           error={errors.indication}
           containerClassName="gap-5"
           onChange={(event) => updateField("indication", event.target.value)}
         />
 
+        <Select
+          id={FIELD_IDS.population}
+          name="population"
+          label="Patient category"
+          required
+          value={population}
+          options={DOSAGE_CALCULATOR_CATEGORY_OPTIONS}
+          placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.population}
+          helper={getCategoryWeightHelper(population)}
+          error={errors.population}
+          containerClassName="gap-5"
+          onChange={(event) => updateField("population", event.target.value)}
+        />
+
+        <div>
+          <TextField
+            id={FIELD_IDS.frequency}
+            name="frequency"
+            label="Frequency"
+            required
+            value={frequency}
+            list={FREQUENCY_SUGGESTIONS_ID}
+            autoComplete="off"
+            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.frequency}
+            helper="Type any schedule. Suggestions come from the browser's native list."
+            error={errors.frequency}
+            containerClassName="gap-5"
+            onChange={(event) => updateField("frequency", event.target.value)}
+          />
+          <datalist id={FREQUENCY_SUGGESTIONS_ID}>
+            {DOSAGE_CALCULATOR_FREQUENCY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value} />
+            ))}
+          </datalist>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-4">
           <TextField
-            id={FIELD_IDS.age}
-            name="age"
-            label="Age (years)"
+            id={FIELD_IDS.treatmentDuration}
+            name="treatmentDuration"
+            label="Treatment duration"
             required
             type="number"
             inputMode="numeric"
-            value={age}
-            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.age}
-            error={errors.age}
+            value={treatmentDuration}
+            placeholder={
+              DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.treatmentDuration
+            }
+            error={errors.treatmentDuration}
             containerClassName="gap-5"
-            onChange={(event) => updateField("age", event.target.value)}
+            onChange={(event) =>
+              updateField("treatmentDuration", event.target.value)
+            }
           />
-          <TextField
-            id={FIELD_IDS.weight}
-            name="weight"
-            label="Weight (kg)"
+          <Select
+            id={FIELD_IDS.durationUnit}
+            name="durationUnit"
+            label="Duration unit"
             required
-            type="number"
-            inputMode="decimal"
-            value={weight}
-            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.weight}
-            error={errors.weight}
+            value={durationUnit}
+            options={DOSAGE_CALCULATOR_DURATION_UNIT_OPTIONS}
+            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.durationUnit}
+            error={errors.durationUnit}
             containerClassName="gap-5"
-            onChange={(event) => updateField("weight", event.target.value)}
+            onChange={(event) =>
+              updateField("durationUnit", event.target.value)
+            }
           />
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-4">
           <Select
-            id={FIELD_IDS.region}
-            name="region"
-            label="Region"
+            id={FIELD_IDS.currency}
+            name="currency"
+            label="Currency code"
             required
-            value={region}
-            options={TEMPORARY_FIGMA_REGION_OPTIONS}
-            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.region}
-            error={errors.region}
+            value={currency}
+            options={DOSAGE_CALCULATOR_CURRENCY_OPTIONS}
+            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.currency}
+            error={errors.currency}
             containerClassName="gap-5"
-            onChange={(event) => updateField("region", event.target.value)}
+            onChange={(event) => {
+              const nextCurrency = event.target.value;
+              updateField("currency", nextCurrency);
+              if (nextCurrency !== DOSAGE_CALCULATOR_OTHER_CURRENCY_VALUE) {
+                updateField("customCurrency", "");
+              }
+            }}
           />
-          <Select
-            id={FIELD_IDS.population}
-            name="population"
-            label="Population"
+          <TextField
+            id={FIELD_IDS.unitPrice}
+            name="unitPrice"
+            label="Unit price"
             required
-            value={population}
-            options={TEMPORARY_FIGMA_POPULATION_OPTIONS}
-            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.population}
-            error={errors.population}
+            type="number"
+            inputMode="decimal"
+            step="any"
+            value={unitPrice}
+            placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.unitPrice}
+            helper="Price per billed pack, vial, or tablet. Automated price lookup is not used."
+            error={errors.unitPrice}
             containerClassName="gap-5"
-            onChange={(event) => updateField("population", event.target.value)}
+            onChange={(event) => updateField("unitPrice", event.target.value)}
           />
+          {currency === DOSAGE_CALCULATOR_OTHER_CURRENCY_VALUE ? (
+            <TextField
+              id={FIELD_IDS.customCurrency}
+              name="customCurrency"
+              label="Custom currency code"
+              required
+              value={customCurrency}
+              placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.customCurrency}
+              helper="Enter a currency code that is not in the list."
+              error={errors.customCurrency}
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              containerClassName="gap-5"
+              onChange={(event) =>
+                updateField("customCurrency", event.target.value.toUpperCase())
+              }
+            />
+          ) : null}
         </div>
-
-        <FunctionSelector
-          id={FIELD_IDS.renalFunction}
-          label={
-            <>
-              Renal function{" "}
-              <span className="font-normal text-text-step">
-                (Cockcroft–Gault eGFR)
-              </span>
-            </>
-          }
-          required
-          value={renalFunction}
-          options={DOSAGE_RENAL_FUNCTION_OPTIONS}
-          error={errors.renalFunction}
-          onChange={(value) => updateField("renalFunction", value)}
-        />
-
-        <FunctionSelector
-          id={FIELD_IDS.hepaticFunction}
-          label="Hepatic function"
-          required
-          value={hepaticFunction}
-          options={DOSAGE_HEPATIC_FUNCTION_OPTIONS}
-          error={errors.hepaticFunction}
-          onChange={(value) => updateField("hepaticFunction", value)}
-        />
 
         <TextField
-          id={FIELD_IDS.treatmentDuration}
-          name="treatmentDuration"
-          label={
-            <>
-              Treatment duration{" "}
-              <span className="font-normal text-text-step">(weeks)</span>
-            </>
-          }
-          required
+          id={FIELD_IDS.patientVolume}
+          name="patientVolume"
+          label="Patient volume"
           type="number"
           inputMode="numeric"
-          value={treatmentDuration}
-          placeholder={
-            DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.treatmentDuration
-          }
-          error={errors.treatmentDuration}
+          value={patientVolume}
+          placeholder={DOSAGE_CALCULATOR_FIGMA_PLACEHOLDERS.patientVolume}
+          helper={`Optional. Cohort size for cohort cost. If omitted, the calculator uses ${DOSAGE_CALCULATOR_DEFAULT_PATIENT_VOLUME}.`}
+          error={errors.patientVolume}
           containerClassName="gap-5"
           onChange={(event) =>
-            updateField("treatmentDuration", event.target.value)
+            updateField("patientVolume", event.target.value)
           }
         />
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-6">
-          <RiskFlagCheckbox
-            id={`dosage-${DOSAGE_RISK_FLAG_OPTIONS[0].value}`}
-            name={DOSAGE_RISK_FLAG_OPTIONS[0].value}
-            label={DOSAGE_RISK_FLAG_OPTIONS[0].label}
-            checked={pregnantOrPlanning}
-            onChange={(checked) =>
-              setRiskFlag("pregnantOrPlanning", checked)
-            }
-          />
-          <RiskFlagCheckbox
-            id={`dosage-${DOSAGE_RISK_FLAG_OPTIONS[1].value}`}
-            name={DOSAGE_RISK_FLAG_OPTIONS[1].value}
-            label={DOSAGE_RISK_FLAG_OPTIONS[1].label}
-            checked={concomitantInsulin}
-            onChange={(checked) => setRiskFlag("concomitantInsulin", checked)}
-          />
-        </div>
+        {formError ? (
+          <p role="alert" className="text-helper text-status-running">
+            {formError}
+          </p>
+        ) : null}
 
-        <Button type="submit" className="h-14 w-full text-body-lg">
-          Calculate Dosage
+        <Button type="submit" disabled={busy} className="h-14 w-full text-body-lg">
+          {busy ? "Starting calculation…" : "Run calculation"}
         </Button>
       </form>
     </Card>

@@ -47,7 +47,9 @@ export const generationSnapshotSchema = z
     selected_economic_article_ids: z.array(z.string()),
     selected_comparators: z.array(z.string()),
     custom_comparators: z.array(z.string()),
+    /** Built-in wizard ids (and any other free-form ids the user selected). */
     selected_section_ids: z.array(z.string()),
+    /** Enabled custom section titles in outline order — not `custom:<id>` tokens. */
     custom_sections: z.array(z.string()),
     submitted_at: z.string().datetime({ offset: true }),
   })

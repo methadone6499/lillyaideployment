@@ -1,3 +1,5 @@
+"use client";
+
 import { LogoLink } from "@/components/shared/LogoLink";
 import type { ReactNode } from "react";
 

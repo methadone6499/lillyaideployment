@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type DashboardActionCardVariant = "default" | "highlight";
+type DashboardActionCardVariant = "default" | "highlight" | "admin";
 
 type DashboardActionCardProps = {
   variant?: DashboardActionCardVariant;
@@ -28,9 +28,11 @@ function ActionCardCta({
 }) {
   const className = cn(
     "mt-auto flex h-[52px] w-full items-center justify-between rounded-step-badge px-5 text-label font-medium transition-colors",
-    variant === "highlight"
-      ? "bg-brand text-white hover:bg-brand/90"
-      : "border border-dashed border-white/28 bg-surface-default text-text-heading hover:bg-surface-elevated",
+    variant === "highlight" && "bg-brand text-white hover:bg-brand/90",
+    variant === "admin" &&
+      "border border-dashed border-brand/28 bg-brand/9 text-white hover:bg-brand/16",
+    variant === "default" &&
+      "border border-dashed border-white/28 bg-surface-default text-text-heading hover:bg-surface-elevated",
   );
 
   const content = (
@@ -67,7 +69,7 @@ export function DashboardActionCard({
     <p
       className={cn(
         "text-[32px] font-medium leading-none tracking-[-0.02em]",
-        variant === "highlight" ? "text-text-heading" : "text-brand",
+        variant === "default" ? "text-brand" : "text-text-heading",
       )}
     >
       {title}

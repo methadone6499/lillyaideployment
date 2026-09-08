@@ -380,6 +380,1555 @@
         ]
       }
     },
+    "/api/v1/companies/me/seats": {
+      "get": {
+        "tags": [
+          "company seats"
+        ],
+        "summary": "List Company Seats",
+        "operationId": "list_company_seats_api_v1_companies_me_seats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MembershipStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CompanyRole"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/seats/{membership_id}/disable": {
+      "post": {
+        "tags": [
+          "company seats"
+        ],
+        "summary": "Disable Company Seat",
+        "operationId": "disable_company_seat_api_v1_companies_me_seats__membership_id__disable_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "membership_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Membership Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/seats/{membership_id}/enable": {
+      "post": {
+        "tags": [
+          "company seats"
+        ],
+        "summary": "Enable Company Seat",
+        "operationId": "enable_company_seat_api_v1_companies_me_seats__membership_id__enable_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "membership_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Membership Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/seats/{membership_id}": {
+      "delete": {
+        "tags": [
+          "company seats"
+        ],
+        "summary": "Remove Company Seat",
+        "operationId": "remove_company_seat_api_v1_companies_me_seats__membership_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "membership_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Membership Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/invitations": {
+      "post": {
+        "tags": [
+          "company invitations"
+        ],
+        "summary": "Create Invitation",
+        "operationId": "create_invitation_api_v1_companies_me_invitations_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvitationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "company invitations"
+        ],
+        "summary": "List Invitations",
+        "operationId": "list_invitations_api_v1_companies_me_invitations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InvitationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/invitations/{invitation_id}/resend": {
+      "post": {
+        "tags": [
+          "company invitations"
+        ],
+        "summary": "Resend Invitation",
+        "operationId": "resend_invitation_api_v1_companies_me_invitations__invitation_id__resend_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Invitation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/invitations/{invitation_id}/revoke": {
+      "post": {
+        "tags": [
+          "company invitations"
+        ],
+        "summary": "Revoke Invitation",
+        "operationId": "revoke_invitation_api_v1_companies_me_invitations__invitation_id__revoke_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "invitation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Invitation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/company-invitations/preview": {
+      "post": {
+        "tags": [
+          "company invitations"
+        ],
+        "summary": "Preview Invitation",
+        "operationId": "preview_invitation_api_v1_company_invitations_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/company-invitations/accept": {
+      "post": {
+        "tags": [
+          "company invitations"
+        ],
+        "summary": "Accept Invitation",
+        "operationId": "accept_invitation_api_v1_company_invitations_accept_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationAcceptanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/company-invitations/register": {
+      "post": {
+        "tags": [
+          "company invitations"
+        ],
+        "summary": "Register Invitation",
+        "operationId": "register_invitation_api_v1_company_invitations_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInvitationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationAcceptanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "tags": [
+          "platform admin"
+        ],
+        "summary": "List Admin Reports",
+        "operationId": "list_admin_reports_api_v1_admin_reports_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "creator_user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Creator User Id"
+            }
+          },
+          {
+            "name": "reviewer_user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reviewer User Id"
+            }
+          },
+          {
+            "name": "generation_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/GenerationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Status"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ReviewStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Review Status"
+            }
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created From"
+            }
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created To"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReportListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/{report_id}": {
+      "get": {
+        "tags": [
+          "platform admin"
+        ],
+        "summary": "Get Admin Report",
+        "operationId": "get_admin_report_api_v1_admin_reports__report_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "tags": [
+          "platform admin"
+        ],
+        "summary": "List Admin Users",
+        "operationId": "list_admin_users_api_v1_admin_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/UserStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "global_role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/GlobalRole"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Global Role"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "membership_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MembershipStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Membership Status"
+            }
+          },
+          {
+            "name": "email_verified",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Email Verified"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/users/{user_id}": {
+      "get": {
+        "tags": [
+          "platform admin"
+        ],
+        "summary": "Get Admin User",
+        "operationId": "get_admin_user_api_v1_admin_users__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/companies": {
+      "get": {
+        "tags": [
+          "platform admin"
+        ],
+        "summary": "List Admin Companies",
+        "operationId": "list_admin_companies_api_v1_admin_companies_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CompanyStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CompanyType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "name": "plan_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PlanType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Plan Type"
+            }
+          },
+          {
+            "name": "subscription_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SubscriptionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subscription Status"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCompanyListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/companies/{company_id}": {
+      "get": {
+        "tags": [
+          "platform admin"
+        ],
+        "summary": "Get Admin Company",
+        "operationId": "get_admin_company_api_v1_admin_companies__company_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCompanyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/quota": {
+      "get": {
+        "tags": [
+          "company quotas"
+        ],
+        "summary": "Get Company Quota",
+        "operationId": "get_company_quota_api_v1_companies_me_quota_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyQuotaSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/companies/me/quota/me": {
+      "get": {
+        "tags": [
+          "company quotas"
+        ],
+        "summary": "Get Own Company Quota",
+        "operationId": "get_own_company_quota_api_v1_companies_me_quota_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnQuotaResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/companies/me/seats/{membership_id}/quota": {
+      "put": {
+        "tags": [
+          "company quotas"
+        ],
+        "summary": "Set Company Member Quota",
+        "operationId": "set_company_member_quota_api_v1_companies_me_seats__membership_id__quota_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "membership_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Membership Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMemberQuotaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuotaAllocationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/reports": {
+      "get": {
+        "tags": [
+          "company reports"
+        ],
+        "summary": "List Company Reports",
+        "operationId": "list_company_reports_api_v1_companies_me_reports_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "generation_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/GenerationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Status"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ReviewStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Review Status"
+            }
+          },
+          {
+            "name": "creator_user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 256
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Creator User Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1024
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyReportListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/me/reports/{report_id}": {
+      "get": {
+        "tags": [
+          "company reports"
+        ],
+        "summary": "Get Company Report",
+        "operationId": "get_company_report_api_v1_companies_me_reports__report_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -449,10 +1998,861 @@
           }
         ]
       }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Create Report",
+        "operationId": "create_report_api_v1_reports_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "List Reports",
+        "operationId": "list_reports_api_v1_reports_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 6,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "generation_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/GenerationStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Generation Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/{report_id}": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Get Report",
+        "operationId": "get_report_api_v1_reports__report_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions/enterprise/activate": {
+      "post": {
+        "tags": [
+          "subscriptions"
+        ],
+        "summary": "Activate Enterprise",
+        "operationId": "activate_enterprise_api_v1_subscriptions_enterprise_activate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnterpriseActivationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnterpriseActivationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AdminAccessSubscriptionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "plan_type": {
+            "$ref": "#/components/schemas/PlanType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubscriptionStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "plan_type",
+          "status"
+        ],
+        "title": "AdminAccessSubscriptionResponse"
+      },
+      "AdminCompanyListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminCompanyResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AdminCompanyListResponse"
+      },
+      "AdminCompanyPrimaryAdminResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "full_name",
+          "email"
+        ],
+        "title": "AdminCompanyPrimaryAdminResponse"
+      },
+      "AdminCompanyQuotaResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "allocated": {
+            "type": "integer",
+            "title": "Allocated"
+          },
+          "unallocated": {
+            "type": "integer",
+            "title": "Unallocated"
+          },
+          "used": {
+            "type": "integer",
+            "title": "Used"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "allocated",
+          "unallocated",
+          "used",
+          "remaining"
+        ],
+        "title": "AdminCompanyQuotaResponse"
+      },
+      "AdminCompanyResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CompanyType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CompanyStatus"
+          },
+          "billing_email": {
+            "type": "string",
+            "title": "Billing Email"
+          },
+          "primary_admin": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminCompanyPrimaryAdminResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subscription": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminCompanySubscriptionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "seats": {
+            "$ref": "#/components/schemas/AdminCompanySeatSummaryResponse"
+          },
+          "quota": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminCompanyQuotaResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "status",
+          "billing_email",
+          "seats",
+          "created_at"
+        ],
+        "title": "AdminCompanyResponse"
+      },
+      "AdminCompanySeatSummaryResponse": {
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "occupied": {
+            "type": "integer",
+            "title": "Occupied"
+          },
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          },
+          "disabled": {
+            "type": "integer",
+            "title": "Disabled"
+          },
+          "pending_invitations": {
+            "type": "integer",
+            "title": "Pending Invitations"
+          },
+          "available": {
+            "type": "integer",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "limit",
+          "occupied",
+          "active",
+          "disabled",
+          "pending_invitations",
+          "available"
+        ],
+        "title": "AdminCompanySeatSummaryResponse"
+      },
+      "AdminCompanySubscriptionLimitsResponse": {
+        "properties": {
+          "seats": {
+            "type": "integer",
+            "title": "Seats"
+          },
+          "reports": {
+            "type": "integer",
+            "title": "Reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seats",
+          "reports"
+        ],
+        "title": "AdminCompanySubscriptionLimitsResponse"
+      },
+      "AdminCompanySubscriptionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "plan_type": {
+            "$ref": "#/components/schemas/PlanType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubscriptionStatus"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "billing_interval": {
+            "$ref": "#/components/schemas/BillingInterval"
+          },
+          "current_period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Current Period Start"
+          },
+          "current_period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Current Period End"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AdminCompanySubscriptionLimitsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "plan_type",
+          "status",
+          "amount_minor",
+          "currency",
+          "billing_interval",
+          "current_period_start",
+          "current_period_end",
+          "limits"
+        ],
+        "title": "AdminCompanySubscriptionResponse"
+      },
+      "AdminReportCompanyResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AdminReportCompanyResponse"
+      },
+      "AdminReportCreatorResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "full_name",
+          "email"
+        ],
+        "title": "AdminReportCreatorResponse"
+      },
+      "AdminReportListItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "drug_name": {
+            "type": "string",
+            "title": "Drug Name"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/AdminReportCreatorResponse"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminReportCompanyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviewer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminReportReviewerResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generation_status": {
+            "$ref": "#/components/schemas/GenerationStatus"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "quota_charged": {
+            "type": "boolean",
+            "title": "Quota Charged"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "drug_name",
+          "creator",
+          "generation_status",
+          "review_status",
+          "quota_charged",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AdminReportListItemResponse"
+      },
+      "AdminReportListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminReportListItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AdminReportListResponse"
+      },
+      "AdminReportReviewerResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "full_name",
+          "email"
+        ],
+        "title": "AdminReportReviewerResponse"
+      },
+      "AdminUserAccessResponse": {
+        "properties": {
+          "context_type": {
+            "$ref": "#/components/schemas/ContextType"
+          },
+          "effective_role": {
+            "$ref": "#/components/schemas/EffectiveRole"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "company_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Name"
+          },
+          "membership_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership Id"
+          },
+          "membership_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MembershipStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "context_type",
+          "effective_role"
+        ],
+        "title": "AdminUserAccessResponse"
+      },
+      "AdminUserListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AdminUserListResponse"
+      },
+      "AdminUserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "institution_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "email_verified": {
+            "type": "boolean",
+            "title": "Email Verified"
+          },
+          "global_role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GlobalRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "access": {
+            "$ref": "#/components/schemas/AdminUserAccessResponse"
+          },
+          "access_subscription": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminAccessSubscriptionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "status",
+          "email_verified",
+          "created_at",
+          "access"
+        ],
+        "title": "AdminUserResponse"
+      },
       "AuthMeResponse": {
         "properties": {
           "user": {
@@ -510,6 +2910,211 @@
         "title": "AuthMeResponse",
         "description": "Authenticated session summary for the Platform Backend."
       },
+      "BillingInterval": {
+        "type": "string",
+        "enum": [
+          "month"
+        ],
+        "title": "BillingInterval"
+      },
+      "CompanyQuotaSummaryResponse": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "subscription_id": {
+            "type": "string",
+            "title": "Subscription Id"
+          },
+          "quota_period_id": {
+            "type": "string",
+            "title": "Quota Period Id"
+          },
+          "feature": {
+            "$ref": "#/components/schemas/FeatureType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/QuotaPeriodStatus"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period End"
+          },
+          "quota_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Total"
+          },
+          "quota_allocated": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Allocated"
+          },
+          "quota_unallocated": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Unallocated"
+          },
+          "quota_used": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Used"
+          },
+          "quota_remaining": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id",
+          "subscription_id",
+          "quota_period_id",
+          "feature",
+          "status",
+          "period_start",
+          "period_end",
+          "quota_total",
+          "quota_allocated",
+          "quota_unallocated",
+          "quota_used",
+          "quota_remaining"
+        ],
+        "title": "CompanyQuotaSummaryResponse"
+      },
+      "CompanyReportCreatorResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "full_name",
+          "email"
+        ],
+        "title": "CompanyReportCreatorResponse",
+        "description": "Historical creator identity shown in company report management."
+      },
+      "CompanyReportListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompanyReportSummaryResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "CompanyReportListResponse",
+        "description": "Cursor-paginated Company Admin report page."
+      },
+      "CompanyReportSummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "drug_name": {
+            "type": "string",
+            "title": "Drug Name"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/CompanyReportCreatorResponse"
+          },
+          "generation_status": {
+            "$ref": "#/components/schemas/GenerationStatus"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "drug_name",
+          "creator",
+          "generation_status",
+          "review_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CompanyReportSummaryResponse",
+        "description": "Company Admin list row backed by the immutable creator snapshot."
+      },
+      "CompanyRole": {
+        "type": "string",
+        "enum": [
+          "company_admin",
+          "company_seat_user"
+        ],
+        "title": "CompanyRole"
+      },
+      "CompanyStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "suspended",
+          "disabled"
+        ],
+        "title": "CompanyStatus"
+      },
+      "CompanyType": {
+        "type": "string",
+        "enum": [
+          "enterprise",
+          "custom"
+        ],
+        "title": "CompanyType"
+      },
       "ContextResponse": {
         "properties": {
           "type": {
@@ -517,6 +3122,28 @@
           },
           "role": {
             "$ref": "#/components/schemas/EffectiveRole"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "membership_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Membership Id"
           }
         },
         "type": "object",
@@ -531,9 +3158,96 @@
         "type": "string",
         "enum": [
           "personal",
+          "company",
           "global"
         ],
         "title": "ContextType"
+      },
+      "CreateInvitationRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "CreateInvitationRequest"
+      },
+      "CreateReportRequest": {
+        "properties": {
+          "report_service_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Report Service Id"
+          },
+          "generation_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Job Id"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "drug_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Drug Name"
+          },
+          "indications": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Indications"
+          },
+          "generation_snapshot": {
+            "$ref": "#/components/schemas/GenerationSnapshot"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "report_service_id",
+          "title",
+          "drug_name",
+          "indications",
+          "generation_snapshot"
+        ],
+        "title": "CreateReportRequest",
+        "description": "Client payload after the Report Service accepts generation.\n\nOwnership, company, reviewer, status, and result fields are server-derived\nand rejected when supplied by the client."
+      },
+      "CreatorSnapshot": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Email"
+          },
+          "full_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Full Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "full_name"
+        ],
+        "title": "CreatorSnapshot",
+        "description": "Immutable creator identity captured at report creation."
       },
       "DatabaseStatus": {
         "properties": {
@@ -556,9 +3270,169 @@
         "type": "string",
         "enum": [
           "standard_user",
+          "company_admin",
+          "company_seat_user",
           "super_admin"
         ],
         "title": "EffectiveRole"
+      },
+      "EnterpriseActivationRequest": {
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Company Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name"
+        ],
+        "title": "EnterpriseActivationRequest",
+        "description": "Company identity details supplied by the subscribing user.",
+        "examples": [
+          {
+            "company_name": "Example Pharma"
+          }
+        ]
+      },
+      "EnterpriseActivationResponse": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "billing_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Billing Email"
+          },
+          "primary_admin_user_id": {
+            "type": "string",
+            "title": "Primary Admin User Id"
+          },
+          "membership_id": {
+            "type": "string",
+            "title": "Membership Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/CompanyRole"
+          },
+          "occupies_seat": {
+            "type": "boolean",
+            "title": "Occupies Seat"
+          },
+          "subscription_id": {
+            "type": "string",
+            "title": "Subscription Id"
+          },
+          "plan_type": {
+            "$ref": "#/components/schemas/PlanType"
+          },
+          "subscription_status": {
+            "$ref": "#/components/schemas/SubscriptionStatus"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SubscriptionSource"
+          },
+          "amount_minor": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency"
+          },
+          "billing_interval": {
+            "$ref": "#/components/schemas/BillingInterval"
+          },
+          "cancel_at_period_end": {
+            "type": "boolean",
+            "title": "Cancel At Period End"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SubscriptionLimitsSnapshot"
+          },
+          "features": {
+            "$ref": "#/components/schemas/SubscriptionFeaturesSnapshot"
+          },
+          "quota_period_id": {
+            "type": "string",
+            "title": "Quota Period Id"
+          },
+          "quota_allocation_id": {
+            "type": "string",
+            "title": "Quota Allocation Id"
+          },
+          "quota_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Total"
+          },
+          "quota_used": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Used"
+          },
+          "quota_remaining": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Remaining"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id",
+          "company_name",
+          "billing_email",
+          "primary_admin_user_id",
+          "membership_id",
+          "role",
+          "occupies_seat",
+          "subscription_id",
+          "plan_type",
+          "subscription_status",
+          "source",
+          "amount_minor",
+          "currency",
+          "billing_interval",
+          "cancel_at_period_end",
+          "limits",
+          "features",
+          "quota_period_id",
+          "quota_allocation_id",
+          "quota_total",
+          "quota_used",
+          "quota_remaining",
+          "period_start",
+          "period_end"
+        ],
+        "title": "EnterpriseActivationResponse"
+      },
+      "FeatureType": {
+        "type": "string",
+        "enum": [
+          "report_generation"
+        ],
+        "title": "FeatureType"
       },
       "ForgotPasswordRequest": {
         "properties": {
@@ -573,6 +3447,216 @@
           "email"
         ],
         "title": "ForgotPasswordRequest"
+      },
+      "GenerationFilters": {
+        "properties": {
+          "timeRange": {
+            "type": "string",
+            "title": "Timerange"
+          },
+          "clinicalStudyTypes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Clinicalstudytypes"
+          },
+          "evidenceSynthesis": {
+            "type": "string",
+            "title": "Evidencesynthesis"
+          },
+          "specializedTrialStructures": {
+            "type": "string",
+            "title": "Specializedtrialstructures"
+          },
+          "populationType": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Populationtype"
+          },
+          "studyDuration": {
+            "type": "string",
+            "title": "Studyduration"
+          },
+          "economicStudyTypes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Economicstudytypes"
+          },
+          "costPopulationType": {
+            "type": "string",
+            "title": "Costpopulationtype"
+          },
+          "patientRange": {
+            "type": "string",
+            "title": "Patientrange"
+          },
+          "costPopulationTypeSecondary": {
+            "type": "string",
+            "title": "Costpopulationtypesecondary"
+          },
+          "costStudyDuration": {
+            "type": "string",
+            "title": "Coststudyduration"
+          },
+          "outcomeEvidenceFocus": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Outcomeevidencefocus"
+          },
+          "evidenceQuality": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidencequality"
+          },
+          "comparatorType": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Comparatortype"
+          },
+          "customDateFrom": {
+            "type": "string",
+            "title": "Customdatefrom"
+          },
+          "customDateTo": {
+            "type": "string",
+            "title": "Customdateto"
+          },
+          "costPatientVolume": {
+            "type": "string",
+            "title": "Costpatientvolume"
+          },
+          "costTreatmentDurationDays": {
+            "type": "string",
+            "title": "Costtreatmentdurationdays"
+          },
+          "costUnitPrice": {
+            "type": "string",
+            "title": "Costunitprice"
+          },
+          "costDosageFrequency": {
+            "type": "string",
+            "title": "Costdosagefrequency"
+          },
+          "costRegion": {
+            "type": "string",
+            "title": "Costregion"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "timeRange",
+          "clinicalStudyTypes",
+          "evidenceSynthesis",
+          "specializedTrialStructures",
+          "populationType",
+          "studyDuration",
+          "economicStudyTypes",
+          "costPopulationType",
+          "patientRange",
+          "costPopulationTypeSecondary",
+          "costStudyDuration",
+          "outcomeEvidenceFocus",
+          "evidenceQuality",
+          "comparatorType",
+          "customDateFrom",
+          "customDateTo",
+          "costPatientVolume",
+          "costTreatmentDurationDays",
+          "costUnitPrice",
+          "costDosageFrequency",
+          "costRegion"
+        ],
+        "title": "GenerationFilters",
+        "description": "Normalized generation filter state stored on the report."
+      },
+      "GenerationSnapshot": {
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/GenerationFilters"
+          },
+          "selected_clinical_article_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Clinical Article Ids"
+          },
+          "selected_economic_article_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Economic Article Ids"
+          },
+          "selected_comparators": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Comparators"
+          },
+          "custom_comparators": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Custom Comparators"
+          },
+          "selected_section_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Selected Section Ids"
+          },
+          "custom_sections": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Custom Sections"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "filters",
+          "selected_clinical_article_ids",
+          "selected_economic_article_ids",
+          "selected_comparators",
+          "custom_comparators",
+          "selected_section_ids",
+          "custom_sections",
+          "submitted_at"
+        ],
+        "title": "GenerationSnapshot",
+        "description": "Immutable generation inputs captured when generation begins."
+      },
+      "GenerationStatus": {
+        "type": "string",
+        "enum": [
+          "generating",
+          "completed",
+          "failed"
+        ],
+        "title": "GenerationStatus"
       },
       "GlobalRole": {
         "type": "string",
@@ -625,6 +3709,232 @@
         ],
         "title": "HealthResponse"
       },
+      "InvitationAcceptanceResponse": {
+        "properties": {
+          "invitation_id": {
+            "type": "string",
+            "title": "Invitation Id"
+          },
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "membership_id": {
+            "type": "string",
+            "title": "Membership Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invitation_id",
+          "company_id",
+          "membership_id",
+          "user_id",
+          "message"
+        ],
+        "title": "InvitationAcceptanceResponse"
+      },
+      "InvitationListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "InvitationListResponse"
+      },
+      "InvitationPreviewResponse": {
+        "properties": {
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "email_masked": {
+            "type": "string",
+            "title": "Email Masked"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "acceptance_mode": {
+            "type": "string",
+            "enum": [
+              "login",
+              "create_account"
+            ],
+            "title": "Acceptance Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_name",
+          "email_masked",
+          "expires_at",
+          "acceptance_mode"
+        ],
+        "title": "InvitationPreviewResponse"
+      },
+      "InvitationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/CompanyRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InvitationStatus"
+          },
+          "invited_by_user_id": {
+            "type": "string",
+            "title": "Invited By User Id"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "last_sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Sent At"
+          },
+          "accepted_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By User Id"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "revoked_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked By User Id"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "email",
+          "role",
+          "status",
+          "invited_by_user_id",
+          "expires_at",
+          "last_sent_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InvitationResponse"
+      },
+      "InvitationStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "accepted",
+          "revoked",
+          "expired"
+        ],
+        "title": "InvitationStatus"
+      },
+      "InvitationTokenRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "InvitationTokenRequest"
+      },
       "LivenessResponse": {
         "properties": {
           "status": {
@@ -658,6 +3968,15 @@
         ],
         "title": "LoginRequest"
       },
+      "MembershipStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "disabled",
+          "removed"
+        ],
+        "title": "MembershipStatus"
+      },
       "MessageResponse": {
         "properties": {
           "message": {
@@ -671,17 +3990,96 @@
         ],
         "title": "MessageResponse"
       },
+      "OwnQuotaResponse": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "membership_id": {
+            "type": "string",
+            "title": "Membership Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "quota_period_id": {
+            "type": "string",
+            "title": "Quota Period Id"
+          },
+          "quota_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Total"
+          },
+          "quota_used": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Used"
+          },
+          "quota_remaining": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Remaining"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period End"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id",
+          "membership_id",
+          "user_id",
+          "quota_period_id",
+          "quota_total",
+          "quota_used",
+          "quota_remaining",
+          "period_start",
+          "period_end"
+        ],
+        "title": "OwnQuotaResponse"
+      },
       "Permission": {
         "type": "string",
         "enum": [
           "account:read",
           "account:update",
+          "admin:companies_read",
+          "admin:reports_read",
+          "admin:users_read",
+          "company:read",
+          "company:billing_read",
+          "company:members_read",
+          "company:members_manage",
+          "company:quota_read",
+          "company:quota_read_own",
+          "company:quota_manage",
+          "report:create",
+          "report:read_company",
           "report:read_own",
           "settings:read",
           "settings:update",
           "notification:read"
         ],
         "title": "Permission"
+      },
+      "PlanType": {
+        "type": "string",
+        "enum": [
+          "standard",
+          "enterprise",
+          "custom"
+        ],
+        "title": "PlanType"
       },
       "PublicUserResponse": {
         "properties": {
@@ -773,6 +4171,349 @@
         "title": "PublicUserResponse",
         "description": "Safe user profile returned by identity endpoints."
       },
+      "QuotaAllocationResponse": {
+        "properties": {
+          "allocation_id": {
+            "type": "string",
+            "title": "Allocation Id"
+          },
+          "company_id": {
+            "type": "string",
+            "title": "Company Id"
+          },
+          "quota_period_id": {
+            "type": "string",
+            "title": "Quota Period Id"
+          },
+          "membership_id": {
+            "type": "string",
+            "title": "Membership Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "quota_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Total"
+          },
+          "quota_used": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Used"
+          },
+          "quota_remaining": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Remaining"
+          },
+          "status": {
+            "$ref": "#/components/schemas/QuotaAllocationStatus"
+          },
+          "source": {
+            "$ref": "#/components/schemas/QuotaSource"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "allocation_id",
+          "company_id",
+          "quota_period_id",
+          "membership_id",
+          "user_id",
+          "quota_total",
+          "quota_used",
+          "quota_remaining",
+          "status",
+          "source",
+          "updated_at"
+        ],
+        "title": "QuotaAllocationResponse"
+      },
+      "QuotaAllocationStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "released"
+        ],
+        "title": "QuotaAllocationStatus"
+      },
+      "QuotaPeriodStatus": {
+        "type": "string",
+        "enum": [
+          "active"
+        ],
+        "title": "QuotaPeriodStatus"
+      },
+      "QuotaSource": {
+        "type": "string",
+        "enum": [
+          "enterprise_subscription",
+          "company_admin_assignment"
+        ],
+        "title": "QuotaSource"
+      },
+      "RegisterInvitationRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Token"
+          },
+          "full_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token",
+          "full_name",
+          "password"
+        ],
+        "title": "RegisterInvitationRequest"
+      },
+      "ReportListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSummaryResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ReportListResponse",
+        "description": "Cursor-paginated dashboard page."
+      },
+      "ReportResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "report_service_id": {
+            "type": "string",
+            "title": "Report Service Id"
+          },
+          "generation_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Job Id"
+          },
+          "created_by_user_id": {
+            "type": "string",
+            "title": "Created By User Id"
+          },
+          "creator_snapshot": {
+            "$ref": "#/components/schemas/CreatorSnapshot"
+          },
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "assigned_reviewer_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Reviewer User Id"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "drug_name": {
+            "type": "string",
+            "title": "Drug Name"
+          },
+          "indications": {
+            "type": "string",
+            "title": "Indications"
+          },
+          "generation_status": {
+            "$ref": "#/components/schemas/GenerationStatus"
+          },
+          "status_last_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Last Checked At"
+          },
+          "generation_snapshot": {
+            "$ref": "#/components/schemas/GenerationSnapshot"
+          },
+          "result": {
+            "$ref": "#/components/schemas/ReportResult"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "report_service_id",
+          "created_by_user_id",
+          "creator_snapshot",
+          "review_status",
+          "title",
+          "drug_name",
+          "indications",
+          "generation_status",
+          "generation_snapshot",
+          "result",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ReportResponse",
+        "description": "Full authorized report returned by create and detail endpoints."
+      },
+      "ReportResult": {
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "pdf_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ReportResult",
+        "description": "Terminal generation result metadata."
+      },
+      "ReportSummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "report_service_id": {
+            "type": "string",
+            "title": "Report Service Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "generation_status": {
+            "$ref": "#/components/schemas/GenerationStatus"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/ReviewStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "report_service_id",
+          "title",
+          "generation_status",
+          "review_status",
+          "created_at"
+        ],
+        "title": "ReportSummaryResponse",
+        "description": "Dashboard list item; excludes generation snapshot and ownership details."
+      },
       "ResendVerificationRequest": {
         "properties": {
           "email": {
@@ -813,6 +4554,267 @@
           "new_password"
         ],
         "title": "ResetPasswordRequest"
+      },
+      "ReviewStatus": {
+        "type": "string",
+        "enum": [
+          "unassigned",
+          "pending",
+          "in_review",
+          "changes_requested",
+          "approved"
+        ],
+        "title": "ReviewStatus"
+      },
+      "SeatListResponse": {
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/SeatSummaryResponse"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SeatResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "items"
+        ],
+        "title": "SeatListResponse"
+      },
+      "SeatResponse": {
+        "properties": {
+          "membership_id": {
+            "type": "string",
+            "title": "Membership Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "role": {
+            "$ref": "#/components/schemas/CompanyRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          },
+          "occupies_seat": {
+            "type": "boolean",
+            "title": "Occupies Seat"
+          },
+          "invited_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited By User Id"
+          },
+          "activated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Activated At"
+          },
+          "disabled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabled At"
+          },
+          "disabled_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabled By User Id"
+          },
+          "removed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed At"
+          },
+          "removed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed By User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "can_manage": {
+            "type": "boolean",
+            "title": "Can Manage"
+          },
+          "report_quota_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Report Quota Total"
+          },
+          "report_quota_used": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Report Quota Used"
+          },
+          "report_quota_remaining": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Report Quota Remaining"
+          },
+          "can_manage_status": {
+            "type": "boolean",
+            "title": "Can Manage Status"
+          },
+          "can_manage_quota": {
+            "type": "boolean",
+            "title": "Can Manage Quota"
+          }
+        },
+        "type": "object",
+        "required": [
+          "membership_id",
+          "user_id",
+          "full_name",
+          "email",
+          "role",
+          "status",
+          "occupies_seat",
+          "activated_at",
+          "created_at",
+          "updated_at",
+          "can_manage",
+          "report_quota_total",
+          "report_quota_used",
+          "report_quota_remaining",
+          "can_manage_status",
+          "can_manage_quota"
+        ],
+        "title": "SeatResponse"
+      },
+      "SeatSummaryResponse": {
+        "properties": {
+          "total_seats": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Total Seats"
+          },
+          "occupied_membership_seats": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Occupied Membership Seats"
+          },
+          "pending_invitation_seats": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pending Invitation Seats"
+          },
+          "occupied_seats": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Occupied Seats"
+          },
+          "available_seats": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Available Seats"
+          },
+          "active_seats": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Active Seats"
+          },
+          "disabled_seats": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Disabled Seats"
+          },
+          "subscription_status": {
+            "$ref": "#/components/schemas/SubscriptionStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_seats",
+          "occupied_membership_seats",
+          "pending_invitation_seats",
+          "occupied_seats",
+          "available_seats",
+          "active_seats",
+          "disabled_seats",
+          "subscription_status"
+        ],
+        "title": "SeatSummaryResponse"
+      },
+      "SetMemberQuotaRequest": {
+        "properties": {
+          "quota_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quota Total"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "quota_total"
+        ],
+        "title": "SetMemberQuotaRequest"
       },
       "SignupRequest": {
         "properties": {
@@ -912,6 +4914,91 @@
             "status": "pending_verification"
           }
         ]
+      },
+      "SubscriptionFeaturesSnapshot": {
+        "properties": {
+          "report_generation": {
+            "type": "boolean",
+            "title": "Report Generation"
+          },
+          "dosage_calculator": {
+            "type": "boolean",
+            "title": "Dosage Calculator"
+          },
+          "paid_sources": {
+            "type": "boolean",
+            "title": "Paid Sources"
+          },
+          "ai_presentation": {
+            "type": "boolean",
+            "title": "Ai Presentation"
+          },
+          "advanced_analytics": {
+            "type": "boolean",
+            "title": "Advanced Analytics"
+          },
+          "company_seats": {
+            "type": "boolean",
+            "title": "Company Seats"
+          },
+          "review_submission_enabled": {
+            "type": "boolean",
+            "title": "Review Submission Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_generation",
+          "dosage_calculator",
+          "paid_sources",
+          "ai_presentation",
+          "advanced_analytics",
+          "company_seats",
+          "review_submission_enabled"
+        ],
+        "title": "SubscriptionFeaturesSnapshot",
+        "description": "Immutable feature flags captured when a subscription is activated."
+      },
+      "SubscriptionLimitsSnapshot": {
+        "properties": {
+          "seats": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Seats"
+          },
+          "reports": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seats",
+          "reports"
+        ],
+        "title": "SubscriptionLimitsSnapshot",
+        "description": "Immutable plan limits captured when a subscription is activated."
+      },
+      "SubscriptionSource": {
+        "type": "string",
+        "enum": [
+          "mock_self_service"
+        ],
+        "title": "SubscriptionSource"
+      },
+      "SubscriptionStatus": {
+        "type": "string",
+        "enum": [
+          "trialing",
+          "active",
+          "past_due",
+          "cancelled",
+          "expired",
+          "suspended",
+          "inactive"
+        ],
+        "title": "SubscriptionStatus"
       },
       "TokenResponse": {
         "properties": {

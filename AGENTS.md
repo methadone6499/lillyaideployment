@@ -26,3 +26,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Do not refactor code outside the scope of the task
 - Do not change folder structure without being asked
 - Do not use useEffect for data fetching
+
+## Verification budget
+- Do not run browser tests or start development servers unless explicitly asked.
+- Do not run full builds unless explicitly asked.
+- Run only targeted lint/type checks on changed files.
+- After implementation and targeted verification, stop.

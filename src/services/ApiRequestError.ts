@@ -8,6 +8,7 @@ type ApiRequestErrorOptions = {
   requestId?: string | null;
   fieldErrors?: FieldErrors;
   rawCause?: unknown;
+  retryAfterSeconds?: number | null;
 };
 
 export class ApiRequestError extends Error {
@@ -17,6 +18,7 @@ export class ApiRequestError extends Error {
   readonly requestId: string | null;
   readonly fieldErrors: FieldErrors;
   readonly rawCause: unknown;
+  readonly retryAfterSeconds: number | null;
 
   constructor(options: ApiRequestErrorOptions) {
     super(options.message);
@@ -27,5 +29,6 @@ export class ApiRequestError extends Error {
     this.requestId = options.requestId ?? null;
     this.fieldErrors = options.fieldErrors ?? {};
     this.rawCause = options.rawCause ?? null;
+    this.retryAfterSeconds = options.retryAfterSeconds ?? null;
   }
 }

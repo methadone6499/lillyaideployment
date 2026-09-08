@@ -15,6 +15,7 @@ import {
   establishAuthenticatedSession,
 } from "../session/authSession";
 import { sanitizeReturnTo } from "../session/returnTo";
+import { getPostAuthHomePath } from "../utils/authAccess";
 import {
   classifyLoginError,
   type LoginErrorState,
@@ -63,7 +64,12 @@ export function LoginPage() {
         return;
       }
 
-      router.push(sanitizeReturnTo(searchParams.get("returnTo")));
+      router.push(
+        sanitizeReturnTo(
+          searchParams.get("returnTo"),
+          getPostAuthHomePath(me),
+        ),
+      );
     } catch (error) {
       setErrorState(classifyLoginError(error, email));
     }
