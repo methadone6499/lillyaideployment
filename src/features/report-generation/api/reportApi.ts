@@ -22,27 +22,26 @@ import type {
   ListCustomSectionsResponse,
   PatchCustomSectionInput,
   PptxExportProgress,
-  PptxExportQueueResponse,
   PptxExportStatusResponse,
   QueuePptxExportInput,
   UpdateReportSelectionsInput,
   UpdateReportSelectionsResponse,
 } from "../types";
-import { PPTX_POLL_TIMEOUT_MESSAGE } from "../constants/pptxExport";
 import {
   getCustomSectionMode,
   validateCustomSectionFile,
 } from "../utils/customSections";
 import {
-  getPptxPollDelayMs,
-  hasPptxPollBudgetElapsed,
-} from "../utils/pptxExportProgress";
-import { ReportApiError, reportFetch } from "./reportFetch";
+  createPptxRebuildInput,
+  getPdfExportPath,
+  getPptxExportPath,
+  getPptxExportStatusPath,
+  runPdfRebuildThenDownload,
+  runPptxRebuildThenDownload,
+} from "../utils/reportExport";
+import { reportFetch } from "./reportFetch";
 
 const CUSTOM_SECTION_MODE_HEADER = "X-Custom-Section-Mode";
-
-const PDF_POLL_INTERVAL_MS = 2_000;
-const PDF_MAX_ATTEMPTS = 30;
 
 export type DownloadPptxWhenReadyOptions = {
   signal?: AbortSignal;
@@ -52,7 +51,12 @@ export type DownloadPptxWhenReadyOptions = {
   ) => void;
 };
 
-export { ReportApiError } from "./reportFetch";
+export {
+  ReportApiError,
+  getEditingErrorCode,
+  isEditingErrorCode,
+  isReportApiError,
+} from "./reportFetch";
 
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -292,7 +296,7 @@ export async function queuePdfExport(
   reportServiceId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportServiceId}/export/pdf`, {
+  return reportFetch(getPdfExportPath(reportServiceId), {
     method: "POST",
     schema: pdfExportResponseSchema,
     signal,
@@ -303,7 +307,7 @@ export async function downloadPdf(
   reportServiceId: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  return reportFetch(`/reports/${reportServiceId}/export/pdf`, {
+  return reportFetch(getPdfExportPath(reportServiceId), {
     responseType: "blob",
     signal,
   });
@@ -313,50 +317,17 @@ export async function downloadPdfWhenReady(
   reportServiceId: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  for (let attempt = 0; attempt < PDF_MAX_ATTEMPTS; attempt++) {
-    if (signal?.aborted) {
-      throw signal.reason;
-    }
-
-    try {
-      return await downloadPdf(reportServiceId, signal);
-    } catch (error) {
-      if (
-        error instanceof ReportApiError &&
-        error.status === 404 &&
-        attempt < PDF_MAX_ATTEMPTS - 1
-      ) {
-        await delay(PDF_POLL_INTERVAL_MS, signal);
-        continue;
-      }
-      throw error;
-    }
-  }
-
-  throw new ReportApiError(
-    408,
-    "PDF is still being prepared. Please try again.",
-  );
-}
-
-function isPptxInFlightError(error: unknown): boolean {
-  return error instanceof ReportApiError && error.status === 409;
-}
-
-function isPptxRetryablePollError(error: unknown): boolean {
-  return (
-    error instanceof ReportApiError &&
-    (error.status === 409 || error.status === 404)
-  );
-}
-
-function isQueuedPptxReady(queued: PptxExportQueueResponse): boolean {
-  return queued.pptx_ready === true || queued.job_status === "completed";
+  return runPdfRebuildThenDownload({
+    queue: () => queuePdfExport(reportServiceId, signal),
+    download: () => downloadPdf(reportServiceId, signal),
+    delay: (ms) => delay(ms, signal),
+    signal,
+  });
 }
 
 export async function queuePptxExport(
   reportServiceId: string,
-  input: QueuePptxExportInput = { force_regenerate: false },
+  input: QueuePptxExportInput = createPptxRebuildInput(),
   signal?: AbortSignal,
 ) {
   const body: QueuePptxExportInput = {
@@ -366,7 +337,7 @@ export async function queuePptxExport(
     body.idempotency_key = input.idempotency_key;
   }
 
-  return reportFetch(`/reports/${reportServiceId}/export/pptx`, {
+  return reportFetch(getPptxExportPath(reportServiceId), {
     method: "POST",
     body,
     schema: pptxExportQueueResponseSchema,
@@ -378,7 +349,7 @@ export async function fetchPptxExportStatus(
   reportServiceId: string,
   signal?: AbortSignal,
 ) {
-  return reportFetch(`/reports/${reportServiceId}/export/pptx/status`, {
+  return reportFetch(getPptxExportStatusPath(reportServiceId), {
     schema: pptxExportStatusResponseSchema,
     signal,
   });
@@ -388,7 +359,7 @@ export async function downloadPptx(
   reportServiceId: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  return reportFetch(`/reports/${reportServiceId}/export/pptx`, {
+  return reportFetch(getPptxExportPath(reportServiceId), {
     responseType: "blob",
     signal,
   });
@@ -399,80 +370,14 @@ export async function downloadPptxWhenReady(
   options?: DownloadPptxWhenReadyOptions,
 ): Promise<Blob> {
   const signal = options?.signal;
-  const startedAtMs = Date.now();
 
-  try {
-    const queued = await queuePptxExport(
-      reportServiceId,
-      { force_regenerate: false },
-      signal,
-    );
-    if (isQueuedPptxReady(queued)) {
-      try {
-        return await downloadPptx(reportServiceId, signal);
-      } catch (error) {
-        if (!isPptxInFlightError(error)) {
-          throw error;
-        }
-      }
-    }
-  } catch (error) {
-    if (!isPptxInFlightError(error)) {
-      throw error;
-    }
-  }
-
-  while (!hasPptxPollBudgetElapsed(startedAtMs, Date.now())) {
-    if (signal?.aborted) {
-      throw signal.reason;
-    }
-
-    let status: PptxExportStatusResponse;
-    try {
-      status = await fetchPptxExportStatus(reportServiceId, signal);
-    } catch (error) {
-      const delayMs = getPptxPollDelayMs(startedAtMs, Date.now());
-      if (isPptxRetryablePollError(error) && delayMs != null) {
-        await delay(delayMs, signal);
-        continue;
-      }
-      if (isPptxRetryablePollError(error)) {
-        break;
-      }
-      throw error;
-    }
-
-    options?.onProgress?.(status.progress, status);
-
-    if (status.job_status === "failed") {
-      throw new ReportApiError(
-        500,
-        status.error?.trim() || "Presentation export failed.",
-      );
-    }
-
-    if (status.pptx_ready) {
-      try {
-        return await downloadPptx(reportServiceId, signal);
-      } catch (error) {
-        const delayMs = getPptxPollDelayMs(startedAtMs, Date.now());
-        if (isPptxRetryablePollError(error) && delayMs != null) {
-          await delay(delayMs, signal);
-          continue;
-        }
-        if (isPptxRetryablePollError(error)) {
-          break;
-        }
-        throw error;
-      }
-    }
-
-    const delayMs = getPptxPollDelayMs(startedAtMs, Date.now());
-    if (delayMs == null) {
-      break;
-    }
-    await delay(delayMs, signal);
-  }
-
-  throw new ReportApiError(408, PPTX_POLL_TIMEOUT_MESSAGE);
+  return runPptxRebuildThenDownload({
+    queue: () =>
+      queuePptxExport(reportServiceId, createPptxRebuildInput(), signal),
+    fetchStatus: () => fetchPptxExportStatus(reportServiceId, signal),
+    download: () => downloadPptx(reportServiceId, signal),
+    delay: (ms) => delay(ms, signal),
+    signal,
+    onProgress: options?.onProgress,
+  });
 }

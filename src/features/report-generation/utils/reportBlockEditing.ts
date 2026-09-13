@@ -1,20 +1,33 @@
-import type { Block, ReportSectionContent } from "../types";
+import type {
+  Block,
+  EditableBlock,
+  EditableDocumentResponse,
+  ReplacementBlock,
+  ReportSectionContent,
+  TextSelection,
+} from "../types";
+
+/**
+ * List-item offsets for rewrite selections are measured against items joined
+ * with this separator so a single-block `anchor`/`focus` pair can address one
+ * item without changing list length.
+ */
+export const LIST_ITEM_TEXT_SEPARATOR = "\n";
 
 export type EditableTextTarget =
   | {
-      blockPath: number[];
-      field: "paragraphText" | "definitionValue" | "calloutText" | "markdownText";
+      blockId: string;
+      field:
+        | "headingText"
+        | "paragraphText"
+        | "definitionValue"
+        | "calloutText"
+        | "markdownText";
     }
   | {
-      blockPath: number[];
+      blockId: string;
       field: "listItem";
       itemIndex: number;
-    }
-  | {
-      blockPath: number[];
-      field: "tableCell";
-      rowIndex: number;
-      cellIndex: number;
     };
 
 export type EditableTextSelection = {
@@ -32,7 +45,7 @@ export type EditableTextSelection = {
   };
 };
 
-function cloneBlock(block: Block): Block {
+function cloneEditableBlock(block: EditableBlock): EditableBlock {
   switch (block.type) {
     case "heading":
     case "paragraph":
@@ -49,66 +62,158 @@ function cloneBlock(block: Block): Block {
     case "list":
       return { ...block, items: [...block.items] };
     case "section":
-      return { ...block, blocks: block.blocks.map(cloneBlock) };
+      return { ...block, blocks: block.blocks.map(cloneEditableBlock) };
   }
 }
 
-export function cloneReportSectionContent(
-  content: ReportSectionContent,
-): ReportSectionContent {
+export function cloneEditableDocument(
+  document: EditableDocumentResponse,
+): EditableDocumentResponse {
   return {
-    ...content,
-    // raw remains the immutable agent output; only blocks are editable.
-    raw: content.raw,
-    blocks: content.blocks.map(cloneBlock),
+    ...document,
+    blocks: document.blocks.map(cloneEditableBlock),
+    updated_by: document.updated_by
+      ? { ...document.updated_by }
+      : document.updated_by,
   };
 }
 
-export function editableTargetKey(target: EditableTextTarget): string {
-  const path = target.blockPath.join(".");
-
-  if (target.field === "listItem") {
-    return `${path}:listItem:${target.itemIndex}`;
-  }
-
-  if (target.field === "tableCell") {
-    return `${path}:tableCell:${target.rowIndex}:${target.cellIndex}`;
-  }
-
-  return `${path}:${target.field}`;
+export function withEditableDocumentBlocks(
+  document: EditableDocumentResponse,
+  blocks: EditableBlock[],
+): EditableDocumentResponse {
+  return {
+    ...document,
+    blocks,
+  };
 }
 
-function getBlockAtPath(blocks: Block[], blockPath: number[]): Block | null {
-  let currentBlocks = blocks;
-  let currentBlock: Block | undefined;
+export function editableDocumentsMatch(
+  left: EditableDocumentResponse | null,
+  right: EditableDocumentResponse | null,
+): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (!left || !right) {
+    return false;
+  }
+  return JSON.stringify(left.blocks) === JSON.stringify(right.blocks);
+}
 
-  for (let pathIndex = 0; pathIndex < blockPath.length; pathIndex += 1) {
-    currentBlock = currentBlocks[blockPath[pathIndex]];
-    if (!currentBlock) {
-      return null;
+export function editableTargetKey(target: EditableTextTarget): string {
+  if (target.field === "listItem") {
+    return `${target.blockId}:listItem:${target.itemIndex}`;
+  }
+
+  return `${target.blockId}:${target.field}`;
+}
+
+export function isReadOnlyEditableBlock(block: EditableBlock): boolean {
+  return block.type === "table";
+}
+
+export function canEditEditableBlock(block: EditableBlock): boolean {
+  return (
+    block.type === "heading" ||
+    block.type === "paragraph" ||
+    block.type === "definition" ||
+    block.type === "list" ||
+    block.type === "callout" ||
+    block.type === "markdown"
+  );
+}
+
+export function findEditableBlockById(
+  blocks: EditableBlock[],
+  blockId: string,
+): EditableBlock | null {
+  for (const block of blocks) {
+    if (block.block_id === blockId) {
+      return block;
     }
 
-    if (pathIndex < blockPath.length - 1) {
-      if (currentBlock.type !== "section") {
-        return null;
+    if (block.type === "section") {
+      const nested = findEditableBlockById(block.blocks, blockId);
+      if (nested) {
+        return nested;
       }
-      currentBlocks = currentBlock.blocks;
     }
   }
 
-  return currentBlock ?? null;
+  return null;
+}
+
+export function updateEditableBlockById(
+  blocks: EditableBlock[],
+  blockId: string,
+  update: (block: EditableBlock) => EditableBlock,
+): EditableBlock[] {
+  let changed = false;
+
+  const nextBlocks = blocks.map((block) => {
+    if (block.block_id === blockId) {
+      const updated = update(block);
+      if (updated !== block) {
+        changed = true;
+      }
+      return updated;
+    }
+
+    if (block.type === "section") {
+      const nested = updateEditableBlockById(block.blocks, blockId, update);
+      if (nested !== block.blocks) {
+        changed = true;
+        return { ...block, blocks: nested };
+      }
+    }
+
+    return block;
+  });
+
+  return changed ? nextBlocks : blocks;
+}
+
+export function isSafeEditableTarget(
+  block: EditableBlock,
+  target: EditableTextTarget,
+): boolean {
+  if (block.block_id !== target.blockId || isReadOnlyEditableBlock(block)) {
+    return false;
+  }
+
+  switch (target.field) {
+    case "headingText":
+      return block.type === "heading";
+    case "paragraphText":
+      return block.type === "paragraph";
+    case "definitionValue":
+      return block.type === "definition";
+    case "calloutText":
+      return block.type === "callout";
+    case "markdownText":
+      return block.type === "markdown";
+    case "listItem":
+      return (
+        block.type === "list" &&
+        target.itemIndex >= 0 &&
+        target.itemIndex < block.items.length
+      );
+  }
 }
 
 export function getEditableText(
-  blocks: Block[],
+  blocks: EditableBlock[],
   target: EditableTextTarget,
 ): string | null {
-  const block = getBlockAtPath(blocks, target.blockPath);
-  if (!block) {
+  const block = findEditableBlockById(blocks, target.blockId);
+  if (!block || !isSafeEditableTarget(block, target)) {
     return null;
   }
 
   switch (target.field) {
+    case "headingText":
+      return block.type === "heading" ? block.text : null;
     case "paragraphText":
       return block.type === "paragraph" ? block.text : null;
     case "definitionValue":
@@ -118,58 +223,25 @@ export function getEditableText(
     case "markdownText":
       return block.type === "markdown" ? block.text : null;
     case "listItem":
-      return block.type === "list" ? (block.items[target.itemIndex] ?? null) : null;
-    case "tableCell":
-      return block.type === "table"
-        ? (block.rows[target.rowIndex]?.[target.cellIndex] ?? null)
+      return block.type === "list"
+        ? (block.items[target.itemIndex] ?? null)
         : null;
   }
 }
 
-function updateBlockAtPath(
-  blocks: Block[],
-  blockPath: number[],
-  update: (block: Block) => Block,
-): Block[] {
-  const [blockIndex, ...remainingPath] = blockPath;
-  const block = blocks[blockIndex];
-
-  if (!block) {
-    return blocks;
-  }
-
-  const nextBlocks = [...blocks];
-
-  if (remainingPath.length === 0) {
-    nextBlocks[blockIndex] = update(block);
-    return nextBlocks;
-  }
-
-  if (block.type !== "section") {
-    return blocks;
-  }
-
-  const nestedBlocks = updateBlockAtPath(
-    block.blocks,
-    remainingPath,
-    update,
-  );
-
-  if (nestedBlocks === block.blocks) {
-    return blocks;
-  }
-
-  nextBlocks[blockIndex] = { ...block, blocks: nestedBlocks };
-  return nextBlocks;
-}
-
 export function updateEditableText(
-  content: ReportSectionContent,
+  blocks: EditableBlock[],
   target: EditableTextTarget,
   value: string,
-): ReportSectionContent {
-  const blocks = updateBlockAtPath(content.blocks, target.blockPath, (block) => {
+): EditableBlock[] {
+  return updateEditableBlockById(blocks, target.blockId, (block) => {
+    if (!isSafeEditableTarget(block, target)) {
+      return block;
+    }
+
     switch (target.field) {
+      case "headingText":
+        return block.type === "heading" ? { ...block, text: value } : block;
       case "paragraphText":
         return block.type === "paragraph" ? { ...block, text: value } : block;
       case "definitionValue":
@@ -184,31 +256,32 @@ export function updateEditableText(
         }
         const items = [...block.items];
         items[target.itemIndex] = value;
-        return { ...block, items };
-      }
-      case "tableCell": {
-        if (
-          block.type !== "table" ||
-          block.rows[target.rowIndex]?.[target.cellIndex] === undefined
-        ) {
+        if (items.length !== block.items.length) {
           return block;
         }
-        const rows = block.rows.map((row) => [...row]);
-        rows[target.rowIndex][target.cellIndex] = value;
-        return { ...block, rows };
+        return { ...block, items };
       }
     }
   });
+}
 
-  return blocks === content.blocks ? content : { ...content, blocks };
+export function replaceListItems(
+  block: Extract<EditableBlock, { type: "list" }>,
+  items: string[],
+): Extract<EditableBlock, { type: "list" }> | null {
+  if (items.length !== block.items.length) {
+    return null;
+  }
+
+  return { ...block, items };
 }
 
 export function replaceEditableTextSelection(
-  content: ReportSectionContent,
+  blocks: EditableBlock[],
   selection: EditableTextSelection,
   replacement: string,
-): ReportSectionContent | null {
-  const currentText = getEditableText(content.blocks, selection.target);
+): EditableBlock[] | null {
+  const currentText = getEditableText(blocks, selection.target);
   if (
     currentText === null ||
     selection.start < 0 ||
@@ -224,18 +297,160 @@ export function replaceEditableTextSelection(
     replacement +
     currentText.slice(selection.end);
 
-  return updateEditableText(content, selection.target, nextText);
+  return updateEditableText(blocks, selection.target, nextText);
 }
 
-export function reportSectionContentMatches(
-  left: ReportSectionContent | null,
-  right: ReportSectionContent | null,
-): boolean {
-  if (left === right) {
-    return true;
+function toBlockOffset(
+  block: EditableBlock,
+  target: EditableTextTarget,
+  offset: number,
+): number | null {
+  if (target.field !== "listItem") {
+    return offset;
   }
-  if (!left || !right) {
-    return false;
+
+  if (block.type !== "list" || !isSafeEditableTarget(block, target)) {
+    return null;
   }
-  return JSON.stringify(left.blocks) === JSON.stringify(right.blocks);
+
+  let prefixLength = 0;
+  for (let index = 0; index < target.itemIndex; index += 1) {
+    prefixLength += block.items[index].length + LIST_ITEM_TEXT_SEPARATOR.length;
+  }
+
+  return prefixLength + offset;
+}
+
+export function toApiTextSelection(
+  blocks: EditableBlock[],
+  selection: Pick<
+    EditableTextSelection,
+    "target" | "start" | "end" | "selectedText"
+  >,
+): TextSelection | null {
+  const block = findEditableBlockById(blocks, selection.target.blockId);
+  if (!block || !isSafeEditableTarget(block, selection.target)) {
+    return null;
+  }
+
+  const currentText = getEditableText(blocks, selection.target);
+  if (
+    currentText === null ||
+    selection.start < 0 ||
+    selection.end < selection.start ||
+    selection.end > currentText.length ||
+    currentText.slice(selection.start, selection.end) !== selection.selectedText
+  ) {
+    return null;
+  }
+
+  const startOffset = toBlockOffset(block, selection.target, selection.start);
+  const endOffset = toBlockOffset(block, selection.target, selection.end);
+  if (startOffset === null || endOffset === null) {
+    return null;
+  }
+
+  return {
+    anchor: { block_id: selection.target.blockId, offset: startOffset },
+    focus: { block_id: selection.target.blockId, offset: endOffset },
+    selected_text: selection.selectedText,
+  };
+}
+
+function applyReplacementText(
+  block: EditableBlock,
+  text: string,
+): EditableBlock {
+  switch (block.type) {
+    case "heading":
+    case "paragraph":
+    case "callout":
+    case "markdown":
+      return { ...block, text };
+    case "definition":
+      return { ...block, value: text };
+    case "list": {
+      const items = text.split(LIST_ITEM_TEXT_SEPARATOR);
+      return replaceListItems(block, items) ?? block;
+    }
+    case "table":
+    case "section":
+      return block;
+  }
+}
+
+export function applyReplacementBlocks(
+  blocks: EditableBlock[],
+  replacements: readonly ReplacementBlock[],
+): EditableBlock[] | null {
+  let next = blocks;
+
+  for (const replacement of replacements) {
+    const block = findEditableBlockById(next, replacement.block_id);
+    if (!block || !canEditEditableBlock(block)) {
+      return null;
+    }
+
+    const updated = updateEditableBlockById(
+      next,
+      replacement.block_id,
+      (current) => applyReplacementText(current, replacement.text),
+    );
+    if (updated === next) {
+      return null;
+    }
+
+    next = updated;
+  }
+
+  return next;
+}
+
+function toGeneratedBlock(block: EditableBlock): Block {
+  switch (block.type) {
+    case "heading":
+      return { type: "heading", level: block.level, text: block.text };
+    case "paragraph":
+      return {
+        type: "paragraph",
+        text: block.text,
+        ...(block.label !== undefined ? { label: block.label } : {}),
+        ...(block.label_bold !== undefined
+          ? { label_bold: block.label_bold }
+          : {}),
+      };
+    case "table":
+      return {
+        type: "table",
+        columns: [...block.columns],
+        rows: block.rows.map((row) => [...row]),
+      };
+    case "definition":
+      return { type: "definition", label: block.label, value: block.value };
+    case "list":
+      return {
+        type: "list",
+        items: [...block.items],
+        ...(block.label !== undefined ? { label: block.label } : {}),
+      };
+    case "callout":
+      return { type: "callout", level: block.level, text: block.text };
+    case "markdown":
+      return { type: "markdown", text: block.text };
+    case "section":
+      return {
+        type: "section",
+        heading: block.heading,
+        level: block.level,
+        blocks: block.blocks.map(toGeneratedBlock),
+      };
+  }
+}
+
+export function toReportSectionContent(
+  blocks: EditableBlock[],
+): ReportSectionContent {
+  return {
+    blocks: blocks.map(toGeneratedBlock),
+  };
 }

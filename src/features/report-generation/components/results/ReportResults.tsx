@@ -60,9 +60,6 @@ export function ReportResults() {
     await queryClient.invalidateQueries({
       queryKey: reportQueryKeys.status(reportServiceId),
     });
-    await queryClient.removeQueries({
-      queryKey: reportQueryKeys.pdfQueue(reportServiceId),
-    });
   };
 
   return (

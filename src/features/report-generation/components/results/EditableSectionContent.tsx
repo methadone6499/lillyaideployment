@@ -1,27 +1,57 @@
 "use client";
 
-import { createElement, useLayoutEffect, useRef, useState } from "react";
+import {
+  createElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
-import type { Block, ReportSectionContent } from "../../types";
+import {
+  useCreateRewritePreviewMutation,
+  useRewritePresets,
+} from "../../hooks/useReportEditing";
+import type { EditableBlock, EditingActor } from "../../types";
 import {
   editableTargetKey,
-  replaceEditableTextSelection,
+  updateEditableText,
   type EditableTextSelection,
   type EditableTextTarget,
-  updateEditableText,
 } from "../../utils/reportBlockEditing";
 import {
-  previewReportRewrite,
-  type ReportRewritePreset,
-} from "../../api/reportRewritePreview";
+  applyReadyRewritePreview,
+  createRewritePreviewInputFromEditor,
+  filterRewritePresets,
+  getRewritePreviewFailureMessage,
+  getRewritePreviewStatusMessage,
+  REWRITE_PREVIEW_APPLY_FAILED_MESSAGE,
+} from "../../utils/rewritePreview";
 import { RewriteWithAiPopover } from "./RewriteWithAiPopover";
+
+type SelectionHighlightRect = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+};
+
+type EditableSelectionChange = (
+  selection: EditableTextSelection | null,
+  highlightRects?: readonly SelectionHighlightRect[],
+) => void;
 
 type EditableSectionContentProps = {
   reportServiceId: string;
   sectionId: string;
-  content: ReportSectionContent;
+  sectionType: string;
+  revision: number;
+  actor: EditingActor | null;
+  blocks: EditableBlock[];
   skipFirstHeading?: boolean;
-  onChange: (content: ReportSectionContent) => void;
+  onChange: (blocks: EditableBlock[]) => void;
+  onRewriteAccepted: (rewriteId: string) => void;
 };
 
 type EditableTextProps = {
@@ -29,8 +59,9 @@ type EditableTextProps = {
   value: string;
   className?: string;
   placeholder?: string;
+  readOnly?: boolean;
   onChange: (target: EditableTextTarget, value: string) => void;
-  onSelection: (selection: EditableTextSelection | null) => void;
+  onSelection: EditableSelectionChange;
 };
 
 function normalizeEditableText(element: HTMLElement): string {
@@ -38,15 +69,38 @@ function normalizeEditableText(element: HTMLElement): string {
   return value === "\n" ? "" : value;
 }
 
+function getSelectionHighlightRects(range: Range): SelectionHighlightRect[] {
+  return Array.from(range.getClientRects())
+    .filter((rect) => rect.width > 0 && rect.height > 0)
+    .map((rect) => ({
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+    }));
+}
+
 function EditableText({
   target,
   value,
   className,
   placeholder = "Enter text",
+  readOnly = false,
   onChange,
   onSelection,
 }: EditableTextProps) {
   const elementRef = useRef<HTMLDivElement>(null);
+  const pointerSelectionAbortRef = useRef<AbortController | null>(null);
+  const selectionCaptureFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      pointerSelectionAbortRef.current?.abort();
+      if (selectionCaptureFrameRef.current !== null) {
+        window.cancelAnimationFrame(selectionCaptureFrameRef.current);
+      }
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const element = elementRef.current;
@@ -92,39 +146,93 @@ function EditableText({
     const fallbackRect = element.getBoundingClientRect();
     const anchorRect = rect.width || rect.height ? rect : fallbackRect;
 
-    onSelection({
-      target,
-      start,
-      end: start + selectedText.length,
-      selectedText,
-      anchorRect: {
-        top: anchorRect.top,
-        right: anchorRect.right,
-        bottom: anchorRect.bottom,
-        left: anchorRect.left,
-        width: anchorRect.width,
-        height: anchorRect.height,
+    onSelection(
+      {
+        target,
+        start,
+        end: start + selectedText.length,
+        selectedText,
+        anchorRect: {
+          top: anchorRect.top,
+          right: anchorRect.right,
+          bottom: anchorRect.bottom,
+          left: anchorRect.left,
+          width: anchorRect.width,
+          height: anchorRect.height,
+        },
       },
-    });
+      getSelectionHighlightRects(range),
+    );
+    browserSelection.removeAllRanges();
   };
 
   return (
     <div
       ref={elementRef}
-      contentEditable
+      contentEditable={!readOnly}
       suppressContentEditableWarning
       role="textbox"
       aria-multiline="true"
+      aria-readonly={readOnly}
       aria-label={placeholder}
       data-editable-target={editableTargetKey(target)}
       data-placeholder={placeholder}
       onInput={(event) => {
         onChange(target, normalizeEditableText(event.currentTarget));
       }}
-      onMouseDown={() => onSelection(null)}
-      onMouseUp={captureSelection}
-      onKeyUp={captureSelection}
+      onPointerDown={(event) => {
+        if (readOnly || event.button !== 0) {
+          return;
+        }
+
+        onSelection(null);
+        pointerSelectionAbortRef.current?.abort();
+        if (selectionCaptureFrameRef.current !== null) {
+          window.cancelAnimationFrame(selectionCaptureFrameRef.current);
+          selectionCaptureFrameRef.current = null;
+        }
+
+        const controller = new AbortController();
+        pointerSelectionAbortRef.current = controller;
+
+        const cancelPointerSelection = () => {
+          controller.abort();
+          if (pointerSelectionAbortRef.current === controller) {
+            pointerSelectionAbortRef.current = null;
+          }
+        };
+
+        const finishPointerSelection = () => {
+          cancelPointerSelection();
+          selectionCaptureFrameRef.current = window.requestAnimationFrame(() => {
+            selectionCaptureFrameRef.current = null;
+            captureSelection();
+          });
+        };
+
+        document.addEventListener("pointerup", finishPointerSelection, {
+          once: true,
+          signal: controller.signal,
+        });
+        document.addEventListener("pointercancel", cancelPointerSelection, {
+          once: true,
+          signal: controller.signal,
+        });
+        window.addEventListener("blur", cancelPointerSelection, {
+          once: true,
+          signal: controller.signal,
+        });
+      }}
+      onKeyUp={() => {
+        if (!readOnly) {
+          captureSelection();
+        }
+      }}
       onPaste={(event) => {
+        if (readOnly) {
+          event.preventDefault();
+          return;
+        }
         event.preventDefault();
         const plainText = event.clipboardData.getData("text/plain");
         const browserSelection = window.getSelection();
@@ -167,43 +275,42 @@ function renderHeading(level: number, text: string) {
   );
 }
 
-function isLockedDefinition(block: Extract<Block, { type: "definition" }>) {
-  return block.label.trim().toLowerCase() === "disease code";
-}
-
-function isLockedList(block: Extract<Block, { type: "list" }>) {
-  return block.label?.trim().toLowerCase() === "sources used";
-}
-
 type RenderEditableBlocksProps = {
-  blocks: Block[];
-  pathPrefix?: number[];
-  indexOffset?: number;
+  blocks: EditableBlock[];
   depth?: number;
+  readOnly?: boolean;
   onTextChange: (target: EditableTextTarget, value: string) => void;
-  onSelection: (selection: EditableTextSelection | null) => void;
+  onSelection: EditableSelectionChange;
 };
 
 function RenderEditableBlocks({
   blocks,
-  pathPrefix = [],
-  indexOffset = 0,
   depth = 0,
+  readOnly = false,
   onTextChange,
   onSelection,
 }: RenderEditableBlocksProps) {
   return (
     <div className={depth > 0 ? "flex flex-col gap-4" : "flex flex-col gap-8"}>
-      {blocks.map((block, blockIndex) => {
-        const blockPath = [...pathPrefix, blockIndex + indexOffset];
-        const key = blockPath.join(".");
-
+      {blocks.map((block) => {
         switch (block.type) {
           case "heading":
-            return <div key={key}>{renderHeading(block.level, block.text)}</div>;
+            return (
+              <div key={block.block_id} className={headingClassName(block.level)}>
+                <EditableText
+                  target={{ blockId: block.block_id, field: "headingText" }}
+                  value={block.text}
+                  placeholder="Heading"
+                  className={headingClassName(block.level)}
+                  readOnly={readOnly}
+                  onChange={onTextChange}
+                  onSelection={onSelection}
+                />
+              </div>
+            );
           case "paragraph":
             return (
-              <div key={key} className="flex flex-col gap-4">
+              <div key={block.block_id} className="flex flex-col gap-4">
                 {block.label && (
                   <p
                     className={cn(
@@ -215,9 +322,10 @@ function RenderEditableBlocks({
                   </p>
                 )}
                 <EditableText
-                  target={{ blockPath, field: "paragraphText" }}
+                  target={{ blockId: block.block_id, field: "paragraphText" }}
                   value={block.text}
                   placeholder={block.label ?? "Paragraph text"}
+                  readOnly={readOnly}
                   onChange={onTextChange}
                   onSelection={onSelection}
                 />
@@ -225,41 +333,39 @@ function RenderEditableBlocks({
             );
           case "definition":
             return (
-              <div key={key} className="flex flex-col gap-2">
+              <div key={block.block_id} className="flex flex-col gap-2">
                 <p className="font-medium text-text-heading">{block.label}</p>
-                {isLockedDefinition(block) ? (
-                  <p className="leading-report text-text-body">{block.value}</p>
-                ) : (
-                  <EditableText
-                    target={{ blockPath, field: "definitionValue" }}
-                    value={block.value}
-                    placeholder={`${block.label} text`}
-                    onChange={onTextChange}
-                    onSelection={onSelection}
-                  />
-                )}
+                <EditableText
+                  target={{ blockId: block.block_id, field: "definitionValue" }}
+                  value={block.value}
+                  placeholder={`${block.label} text`}
+                  readOnly={readOnly}
+                  onChange={onTextChange}
+                  onSelection={onSelection}
+                />
               </div>
             );
           case "list":
             return (
-              <div key={key} className="flex flex-col gap-4">
+              <div key={block.block_id} className="flex flex-col gap-4">
                 {block.label && (
                   <p className="font-medium text-text-heading">{block.label}</p>
                 )}
                 <ul className="list-disc pl-7 text-text-body">
                   {block.items.map((item, itemIndex) => (
-                    <li key={itemIndex} className="mt-2 first:mt-0">
-                      {isLockedList(block) ? (
-                        item
-                      ) : (
-                        <EditableText
-                          target={{ blockPath, field: "listItem", itemIndex }}
-                          value={item}
-                          placeholder="List item"
-                          onChange={onTextChange}
-                          onSelection={onSelection}
-                        />
-                      )}
+                    <li key={`${block.block_id}:${itemIndex}`} className="mt-2 first:mt-0">
+                      <EditableText
+                        target={{
+                          blockId: block.block_id,
+                          field: "listItem",
+                          itemIndex,
+                        }}
+                        value={item}
+                        placeholder="List item"
+                        readOnly={readOnly}
+                        onChange={onTextChange}
+                        onSelection={onSelection}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -267,13 +373,13 @@ function RenderEditableBlocks({
             );
           case "table":
             return (
-              <div key={key} className="w-full overflow-x-auto">
+              <div key={block.block_id} className="w-full overflow-x-auto">
                 <table className="w-full table-fixed border-collapse border border-border-default text-left text-text-body">
                   <thead>
                     <tr className="border-b border-border-default bg-surface-subtle">
                       {block.columns.map((column, columnIndex) => (
                         <th
-                          key={columnIndex}
+                          key={`${block.block_id}:column:${columnIndex}`}
                           className="wrap-break-word whitespace-pre-wrap align-top border-r border-border-default px-4 py-3 text-body-lg font-semibold text-text-heading last:border-r-0 first:w-[35%]"
                         >
                           {column}
@@ -284,29 +390,18 @@ function RenderEditableBlocks({
                   <tbody>
                     {block.rows.map((row, rowIndex) => (
                       <tr
-                        key={rowIndex}
+                        key={`${block.block_id}:row:${rowIndex}`}
                         className="border-b border-border-default last:border-0"
                       >
                         {row.map((cell, cellIndex) => (
                           <td
-                            key={cellIndex}
-                            className="wrap-break-word whitespace-pre-wrap align-top border-r border-border-default px-4 py-3 last:border-r-0 first:w-[35%]"
+                            key={`${block.block_id}:cell:${rowIndex}:${cellIndex}`}
+                            className={cn(
+                              "wrap-break-word whitespace-pre-wrap align-top border-r border-border-default px-4 py-3 last:border-r-0 first:w-[35%]",
+                              cellIndex === 0 && "font-medium text-text-heading",
+                            )}
                           >
-                            <EditableText
-                              target={{
-                                blockPath,
-                                field: "tableCell",
-                                rowIndex,
-                                cellIndex,
-                              }}
-                              value={cell}
-                              placeholder="Table cell"
-                              className={cn(
-                                cellIndex === 0 && "font-medium text-text-heading",
-                              )}
-                              onChange={onTextChange}
-                              onSelection={onSelection}
-                            />
+                            {cell}
                           </td>
                         ))}
                       </tr>
@@ -318,14 +413,14 @@ function RenderEditableBlocks({
           case "section":
             return (
               <div
-                key={key}
+                key={block.block_id}
                 className={cn("flex flex-col gap-4", depth > 0 && "pl-6")}
               >
                 {renderHeading(block.level, block.heading)}
                 <RenderEditableBlocks
                   blocks={block.blocks}
-                  pathPrefix={blockPath}
                   depth={depth + 1}
+                  readOnly={readOnly}
                   onTextChange={onTextChange}
                   onSelection={onSelection}
                 />
@@ -334,7 +429,7 @@ function RenderEditableBlocks({
           case "callout":
             return (
               <div
-                key={key}
+                key={block.block_id}
                 className={cn(
                   "rounded-card border px-6 py-4 text-body-lg",
                   block.level === "info"
@@ -343,12 +438,13 @@ function RenderEditableBlocks({
                 )}
               >
                 <EditableText
-                  target={{ blockPath, field: "calloutText" }}
+                  target={{ blockId: block.block_id, field: "calloutText" }}
                   value={block.text}
                   placeholder="Callout text"
                   className={
                     block.level === "warning" ? "text-amber-300" : undefined
                   }
+                  readOnly={readOnly}
                   onChange={onTextChange}
                   onSelection={onSelection}
                 />
@@ -356,14 +452,15 @@ function RenderEditableBlocks({
             );
           case "markdown":
             return (
-              <div key={key} className="flex flex-col gap-2">
+              <div key={block.block_id} className="flex flex-col gap-2">
                 <p className="text-helper font-medium uppercase tracking-wide text-text-muted">
                   Markdown
                 </p>
                 <EditableText
-                  target={{ blockPath, field: "markdownText" }}
+                  target={{ blockId: block.block_id, field: "markdownText" }}
                   value={block.text}
                   placeholder="Markdown text"
+                  readOnly={readOnly}
                   onChange={onTextChange}
                   onSelection={onSelection}
                 />
@@ -378,97 +475,153 @@ function RenderEditableBlocks({
 export function EditableSectionContent({
   reportServiceId,
   sectionId,
-  content,
+  sectionType,
+  revision,
+  actor,
+  blocks,
   skipFirstHeading = false,
   onChange,
+  onRewriteAccepted,
 }: EditableSectionContentProps) {
-  const [selection, setSelection] = useState<EditableTextSelection | null>(null);
-  const [isRewriting, setIsRewriting] = useState(false);
+  const [selection, setSelection] = useState<EditableTextSelection | null>(
+    null,
+  );
+  const [selectionHighlightRects, setSelectionHighlightRects] = useState<
+    readonly SelectionHighlightRect[]
+  >([]);
   const [rewriteError, setRewriteError] = useState<string | null>(null);
+  const presetsQuery = useRewritePresets(sectionType, Boolean(selection));
+  const createRewritePreview = useCreateRewritePreviewMutation();
+  const isRewriting = createRewritePreview.isPending;
+  const presets = filterRewritePresets(
+    presetsQuery.data?.items ?? [],
+    sectionType,
+  );
 
-  const firstBlock = content.blocks[0];
-  const blocks =
+  const firstBlock = blocks[0];
+  const visibleBlocks =
     skipFirstHeading &&
     firstBlock?.type === "heading" &&
     firstBlock.level <= 2
-      ? content.blocks.slice(1)
-      : content.blocks;
-  const indexOffset = blocks === content.blocks ? 0 : 1;
+      ? blocks.slice(1)
+      : blocks;
 
   const handleTextChange = (target: EditableTextTarget, value: string) => {
     setSelection(null);
+    setSelectionHighlightRects([]);
     setRewriteError(null);
-    onChange(updateEditableText(content, target, value));
+    onChange(updateEditableText(blocks, target, value));
   };
 
-  const handleSelection = (nextSelection: EditableTextSelection | null) => {
+  const handleSelection: EditableSelectionChange = (
+    nextSelection,
+    highlightRects,
+  ) => {
+    setSelectionHighlightRects(nextSelection ? (highlightRects ?? []) : []);
     setRewriteError(null);
     setSelection(nextSelection);
   };
 
   const handleRewrite = async (
     instruction: string,
-    preset: ReportRewritePreset | null,
+    presetId: string | null,
   ) => {
     if (!selection || isRewriting) {
       return;
     }
 
-    setIsRewriting(true);
+    const request = createRewritePreviewInputFromEditor({
+      baseRevision: revision,
+      blocks,
+      selection,
+      actor,
+      instruction,
+      presetId,
+    });
+    if (!request.ok) {
+      setRewriteError(request.error);
+      return;
+    }
+
     setRewriteError(null);
 
     try {
-      const replacement = await previewReportRewrite({
+      const preview = await createRewritePreview.mutateAsync({
         reportServiceId,
         sectionId,
-        target: selection.target,
-        selectedText: selection.selectedText,
-        start: selection.start,
-        end: selection.end,
-        instruction,
-        preset,
+        input: request.input,
       });
-      const nextContent = replaceEditableTextSelection(
-        content,
-        selection,
-        replacement,
-      );
-
-      if (!nextContent) {
-        throw new Error("The selected text changed. Highlight it again to rewrite it.");
+      const statusMessage = getRewritePreviewStatusMessage(preview);
+      if (statusMessage) {
+        setRewriteError(statusMessage);
+        return;
       }
 
-      onChange(nextContent);
+      const applied = applyReadyRewritePreview(blocks, preview);
+      if (!applied) {
+        setRewriteError(REWRITE_PREVIEW_APPLY_FAILED_MESSAGE);
+        return;
+      }
+
+      onChange(applied.blocks);
+      onRewriteAccepted(applied.rewriteId);
       setSelection(null);
+      setSelectionHighlightRects([]);
     } catch (error) {
-      setRewriteError(
-        error instanceof Error ? error.message : "Unable to preview this rewrite.",
-      );
-    } finally {
-      setIsRewriting(false);
+      setRewriteError(getRewritePreviewFailureMessage(error));
     }
   };
 
-  if (blocks.length === 0) {
+  if (visibleBlocks.length === 0) {
     return null;
   }
 
   return (
     <>
       <RenderEditableBlocks
-        blocks={blocks}
-        indexOffset={indexOffset}
+        blocks={visibleBlocks}
+        readOnly={isRewriting}
         onTextChange={handleTextChange}
         onSelection={handleSelection}
       />
+      {selection &&
+        selectionHighlightRects.length > 0 &&
+        createPortal(
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 z-[55]"
+          >
+            {selectionHighlightRects.map((rect, index) => (
+              <span
+                key={`${rect.top}:${rect.left}:${index}`}
+                className="absolute rounded-sm bg-brand-highlight"
+                style={{
+                  top: rect.top,
+                  left: rect.left,
+                  width: rect.width,
+                  height: rect.height,
+                }}
+              />
+            ))}
+          </div>,
+          document.body,
+        )}
       {selection && (
         <RewriteWithAiPopover
           selection={selection}
+          presets={presets}
+          isLoadingPresets={presetsQuery.isLoading}
+          presetsError={
+            presetsQuery.isError
+              ? "Unable to load rewrite presets. You can still enter an instruction."
+              : null
+          }
           isRewriting={isRewriting}
           errorMessage={rewriteError}
           onClose={() => {
             if (!isRewriting) {
               setSelection(null);
+              setSelectionHighlightRects([]);
               setRewriteError(null);
             }
           }}

@@ -15,6 +15,7 @@ type ReportEditorConfirmationDialogProps = {
   description: string;
   confirmLabel: string;
   cancelLabel?: string;
+  isConfirming?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -25,6 +26,7 @@ export function ReportEditorConfirmationDialog({
   description,
   confirmLabel,
   cancelLabel = "Continue editing",
+  isConfirming = false,
   onConfirm,
   onCancel,
 }: ReportEditorConfirmationDialogProps) {
@@ -49,7 +51,9 @@ export function ReportEditorConfirmationDialog({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onCancel();
+        if (!isConfirming) {
+          onCancel();
+        }
         return;
       }
 
@@ -83,7 +87,7 @@ export function ReportEditorConfirmationDialog({
         previouslyFocused.focus();
       }
     };
-  }, [open, onCancel]);
+  }, [isConfirming, open, onCancel]);
 
   if (!open) {
     return null;
@@ -94,7 +98,7 @@ export function ReportEditorConfirmationDialog({
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (event.target === event.currentTarget && !isConfirming) {
           onCancel();
         }
       }}
@@ -118,7 +122,8 @@ export function ReportEditorConfirmationDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex size-6 items-center justify-center transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            disabled={isConfirming}
+            className="inline-flex size-6 items-center justify-center transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Close confirmation"
           >
             <CloseIcon className="size-5" />
@@ -137,14 +142,16 @@ export function ReportEditorConfirmationDialog({
               ref={cancelRef}
               type="button"
               onClick={onCancel}
-              className="inline-flex h-[42px] items-center text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              disabled={isConfirming}
+              className="inline-flex h-[42px] items-center text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
             >
               {cancelLabel}
             </button>
             <button
               type="button"
               onClick={onConfirm}
-              className="inline-flex h-[42px] items-center rounded-button bg-brand px-[18px] text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              disabled={isConfirming}
+              className="inline-flex h-[42px] items-center rounded-button bg-brand px-[18px] text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
             >
               {confirmLabel}
             </button>
