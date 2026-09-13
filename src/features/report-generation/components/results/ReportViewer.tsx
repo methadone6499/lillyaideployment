@@ -7,39 +7,20 @@ import {
   PlusIcon,
 } from "@/components/ui";
 import type { GenerationFilters } from "@/features/reports";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   downloadPdfWhenReady,
   downloadPptxWhenReady,
   ReportApiError,
 } from "../../api/reportApi";
-import {
-  useQueuePdfExport,
-  useReportStatus,
-} from "../../hooks/useGenerateReport";
-import type {
-  ReportSectionContent,
-  ReportStatusSection,
-} from "../../types";
+import { PDF_EXPORT_DEFAULT_PROGRESS_LABEL } from "../../constants/pdfExport";
+import { useReportStatus } from "../../hooks/useGenerateReport";
+import { useSingleExpandedSection } from "../../hooks/useSingleExpandedSection";
+import type { EditableDocumentResponse } from "../../types";
+import { buildReportSectionItems } from "../../utils/buildReportSectionItems";
 import { formatPptxExportProgress } from "../../utils/pptxExportProgress";
-import {
-  getReportSectionDefinition,
-  isCustomSectionType,
-  isWizardSectionId,
-  mergeViewerSectionIds,
-} from "../../utils/sectionOrdering";
-import {
-  getSectionAccordionKey,
-  ReportSectionAccordion,
-  type ReportSectionAccordionItem,
-} from "./ReportSectionAccordion";
+import { ReportSectionAccordion } from "./ReportSectionAccordion";
+import { ReportSectionPresentation } from "./ReportSectionPresentation";
 import { ExportReportModal, type ExportReportFormat } from "./ExportReportModal";
 import { ReportEditorConfirmationDialog } from "./ReportEditorConfirmationDialog";
 import { SearchFiltersModal } from "./SearchFiltersModal";
@@ -79,54 +60,6 @@ function getErrorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-function buildSectionItems(
-  statusSections: ReportStatusSection[],
-  selectedSectionIds: string[],
-  customSectionTitles: readonly string[] = [],
-): ReportSectionAccordionItem[] {
-  const sectionsByType = new Map<string, ReportStatusSection>(
-    statusSections.map((section) => [section.section_type, section]),
-  );
-
-  const outlineIds = mergeViewerSectionIds(selectedSectionIds, statusSections);
-  const items: ReportSectionAccordionItem[] = [];
-  let customTitleIndex = 0;
-
-  outlineIds.forEach((sectionId) => {
-    const isCustom = isCustomSectionType(sectionId);
-    const fallbackCustomTitle = isCustom
-      ? customSectionTitles[customTitleIndex]
-      : undefined;
-    if (isCustom) {
-      customTitleIndex += 1;
-    }
-
-    const section = sectionsByType.get(sectionId);
-    if (!section) {
-      return;
-    }
-
-    const definition = isWizardSectionId(sectionId)
-      ? getReportSectionDefinition(sectionId)
-      : undefined;
-
-    items.push({
-      section,
-      order: items.length + 1,
-      title:
-        section.display_name ??
-        fallbackCustomTitle ??
-        definition?.title ??
-        sectionId,
-      description: isCustom ? "" : (definition?.description ?? ""),
-      accordionKey: getSectionAccordionKey(section, section.section_type),
-      pendingContext: section.pending_context,
-    });
-  });
-
-  return items;
-}
-
 function triggerBlobDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -148,11 +81,8 @@ export function ReportViewer({
   const { data: reportStatus, isLoading, isError, error } =
     useReportStatus(reportServiceId);
 
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const scrollCompensationRef = useRef<{
-    element: HTMLDivElement;
-    topBefore: number;
-  } | null>(null);
+  const { expandedId, toggleSection, expandSection } =
+    useSingleExpandedSection();
   const [retryError, setRetryError] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
@@ -164,8 +94,8 @@ export function ReportViewer({
   const [dirtySectionKeys, setDirtySectionKeys] = useState<Set<string>>(
     () => new Set(),
   );
-  const [sessionContentByKey, setSessionContentByKey] = useState<
-    Record<string, ReportSectionContent>
+  const [sessionDocumentByKey, setSessionDocumentByKey] = useState<
+    Record<string, EditableDocumentResponse>
   >({});
   const [discardVersionByKey, setDiscardVersionByKey] = useState<
     Record<string, number>
@@ -177,7 +107,7 @@ export function ReportViewer({
 
   const sectionItems = useMemo(
     () =>
-      buildSectionItems(
+      buildReportSectionItems(
         sections ?? [],
         selectedSectionIds,
         customSectionTitles ?? [],
@@ -198,28 +128,6 @@ export function ReportViewer({
       reportStatus?.report_status === "pending" ||
       reportStatus?.report_status === "processing");
 
-  const pdfQueueQuery = useQueuePdfExport(reportServiceId, isReportReady);
-  const pdfQueueErrorMessage = pdfQueueQuery.isError
-    ? getErrorMessage(pdfQueueQuery.error)
-    : null;
-
-  useLayoutEffect(() => {
-    const pending = scrollCompensationRef.current;
-    if (!pending) {
-      return;
-    }
-
-    const { element, topBefore } = pending;
-    const topAfter = element.getBoundingClientRect().top;
-    const delta = topAfter - topBefore;
-
-    if (Math.abs(delta) > 0.5) {
-      window.scrollBy({ top: delta, behavior: "instant" });
-    }
-
-    scrollCompensationRef.current = null;
-  }, [expandedKey]);
-
   const performViewerAction = useCallback(
     (action: ViewerAction) => {
       if (action.kind === "back") {
@@ -233,30 +141,21 @@ export function ReportViewer({
         return;
       }
 
-      const isSwitching =
-        expandedKey !== null && expandedKey !== action.accordionKey;
-
-      if (isSwitching && action.element.isConnected) {
-        scrollCompensationRef.current = {
-          element: action.element,
-          topBefore: action.element.getBoundingClientRect().top,
-        };
-      }
-
       if (action.kind === "edit") {
-        setExpandedKey(action.accordionKey);
+        expandSection(action.accordionKey, action.element);
         setEditingKey(action.accordionKey);
         return;
       }
 
-      const nextExpandedKey =
-        expandedKey === action.accordionKey ? null : action.accordionKey;
-      setExpandedKey(nextExpandedKey);
-      if (editingKey && editingKey !== nextExpandedKey) {
+      const nextExpandedId = toggleSection(
+        action.accordionKey,
+        action.element,
+      );
+      if (editingKey && editingKey !== nextExpandedId) {
         setEditingKey(null);
       }
     },
-    [editingKey, expandedKey, onBack],
+    [editingKey, expandSection, onBack, toggleSection],
   );
 
   const requestViewerAction = useCallback(
@@ -293,11 +192,11 @@ export function ReportViewer({
     [],
   );
 
-  const handleSessionSave = useCallback(
-    (accordionKey: string, content: ReportSectionContent) => {
-      setSessionContentByKey((current) => ({
+  const handleDocumentSaved = useCallback(
+    (accordionKey: string, document: EditableDocumentResponse) => {
+      setSessionDocumentByKey((current) => ({
         ...current,
-        [accordionKey]: content,
+        [accordionKey]: document,
       }));
       handleDirtyChange(accordionKey, false);
     },
@@ -352,6 +251,7 @@ export function ReportViewer({
 
     try {
       if (format === "pdf") {
+        setExportProgress(PDF_EXPORT_DEFAULT_PROGRESS_LABEL);
         const blob = await downloadPdfWhenReady(reportServiceId);
         triggerBlobDownload(blob, `${safeTitle}_evidence_report.pdf`);
         return;
@@ -432,7 +332,7 @@ export function ReportViewer({
         }}
         onExport={handleExport}
         isExporting={isExporting}
-        errorMessage={exportError ?? pdfQueueErrorMessage}
+        errorMessage={exportError}
         statusMessage={exportProgress}
       />
 
@@ -498,59 +398,55 @@ export function ReportViewer({
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
-        {sectionItems.length === 0 ? (
+      <ReportSectionPresentation
+        items={sectionItems}
+        expandedId={expandedId}
+        onToggle={(id, element) =>
+          requestViewerAction({
+            kind: "toggle",
+            accordionKey: id,
+            element,
+          })
+        }
+        emptyMessage={
           <p className="text-body-lg text-text-muted">
             {isJobFailed
               ? "No sections are available for this report."
               : "Waiting for section status…"}
           </p>
-        ) : (
-          sectionItems.map((item) => (
-            <ReportSectionAccordion
-              key={`${item.accordionKey}:${discardVersionByKey[item.accordionKey] ?? 0}`}
-              reportServiceId={reportServiceId}
-              reportStatus={reportStatus.report_status}
-              item={item}
-              expanded={expandedKey === item.accordionKey}
-              isEditing={editingKey === item.accordionKey}
-              sessionContent={sessionContentByKey[item.accordionKey]}
-              onToggle={(element) =>
-                requestViewerAction({
-                  kind: "toggle",
-                  accordionKey: item.accordionKey,
-                  element,
-                })
-              }
-              onRequestEdit={(element) =>
-                requestViewerAction({
-                  kind: "edit",
-                  accordionKey: item.accordionKey,
-                  element,
-                })
-              }
-              onStopEditing={() =>
-                setEditingKey((current) =>
-                  current === item.accordionKey ? null : current,
-                )
-              }
-              onDirtyChange={handleDirtyChange}
-              onSessionSave={handleSessionSave}
-            />
-          ))
+        }
+        renderSection={(item, { expanded, onToggle }) => (
+          <ReportSectionAccordion
+            key={`${item.accordionKey}:${discardVersionByKey[item.accordionKey] ?? 0}`}
+            reportServiceId={reportServiceId}
+            reportStatus={reportStatus.report_status}
+            item={item}
+            expanded={expanded}
+            isEditing={editingKey === item.accordionKey}
+            sessionDocument={sessionDocumentByKey[item.accordionKey]}
+            onToggle={onToggle}
+            onRequestEdit={(element) =>
+              requestViewerAction({
+                kind: "edit",
+                accordionKey: item.accordionKey,
+                element,
+              })
+            }
+            onStopEditing={() =>
+              setEditingKey((current) =>
+                current === item.accordionKey ? null : current,
+              )
+            }
+            onDirtyChange={handleDirtyChange}
+            onDocumentSaved={handleDocumentSaved}
+          />
         )}
-      </div>
+      />
 
       <footer className="mt-auto border-t border-border-default pt-7">
-        {Object.keys(sessionContentByKey).length > 0 && (
-          <p className="mb-4 text-helper text-status-running" role="status">
-            Session-only edits are not included in exports until the editing API
-            is connected. Exporting now uses the original generated content.
-          </p>
-        )}
-        {!isExportModalOpen && (exportError || pdfQueueErrorMessage) && (
+        {!isExportModalOpen && exportError && (
           <p className="mb-4 text-body-lg text-red-400" role="alert">
-            {exportError ?? pdfQueueErrorMessage}
+            {exportError}
           </p>
         )}
         <div className="flex items-center justify-between">

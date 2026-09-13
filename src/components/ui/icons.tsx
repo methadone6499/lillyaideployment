@@ -192,3 +192,22 @@ export function CloseIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function HistoryIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={cn("size-5", className)}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M3.5 3V6.5H7M3.8 6.25C5.1 3.9 7.55 2.5 10.25 2.6C14.3 2.75 17.5 6.05 17.5 10.1C17.5 14.2 14.15 17.5 10 17.5C6.7 17.5 3.9 15.4 2.9 12.45M10 6V10L12.75 11.75"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

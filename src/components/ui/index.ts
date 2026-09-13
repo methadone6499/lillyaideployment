@@ -21,5 +21,6 @@ export {
   ChevronUpIcon,
   CloseIcon,
   FilterLinesIcon,
+  HistoryIcon,
   PlusIcon,
 } from "./icons";

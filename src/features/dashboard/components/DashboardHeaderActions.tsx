@@ -24,6 +24,10 @@ export type AccountMenuVariant =
   | "seat"
   | "super-admin";
 
+export type DashboardHeaderActionsProps = {
+  notifications?: readonly DashboardNotification[];
+};
+
 function getAccountMenuVariant(
   contextType: ContextType | undefined,
   contextRole: EffectiveRole | undefined,
@@ -78,7 +82,9 @@ function NotificationItem({ notification }: { notification: DashboardNotificatio
   );
 }
 
-export function DashboardHeaderActions() {
+export function DashboardHeaderActions({
+  notifications = dashboardNotifications,
+}: DashboardHeaderActionsProps) {
   const router = useRouter();
   const { authMe } = useAuthUser();
   const activeContext = getActiveContext(authMe);
@@ -89,7 +95,7 @@ export function DashboardHeaderActions() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(
-    dashboardNotifications.length > 0,
+    notifications.length > 0,
   );
   const logoutMutation = useLogoutMutation();
   const contextMenuItem =
@@ -197,7 +203,7 @@ export function DashboardHeaderActions() {
               </button>
             </div>
             <ul className="max-h-80 overflow-y-auto">
-              {dashboardNotifications.map((notification) => (
+              {notifications.map((notification) => (
                 <NotificationItem key={notification.id} notification={notification} />
               ))}
             </ul>

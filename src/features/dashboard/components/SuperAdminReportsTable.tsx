@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRightIcon, SearchIcon } from "@/components/ui/icons";
+import { ChevronRightIcon } from "@/components/ui/icons";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import {
   generationStatusSchema,
@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import type { DashboardStatusPillStatus } from "../types";
 import { formatReportDateTime } from "../utils/formatReportDateTime";
 import { DashboardPagination } from "./DashboardPagination";
+import { DashboardSearchInput } from "./DashboardSearchInput";
 import {
   DashboardStatusFilter,
   type DashboardStatusFilterOption,
@@ -208,20 +209,13 @@ export function SuperAdminReportsTable() {
           <h2 className="text-card-title font-medium text-white">Reports</h2>
 
           <div className="flex w-full flex-col gap-3 sm:max-w-[664px] sm:flex-1 sm:flex-row sm:items-center sm:gap-4">
-            <label className="relative block w-full sm:flex-1">
-              <span className="sr-only">Search report name or users</span>
-              <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-white/28">
-                <SearchIcon />
-              </span>
-              <input
-                type="search"
-                value={searchQuery}
-                maxLength={MAX_SEARCH_LENGTH}
-                placeholder="Search report name, users"
-                onChange={(event) => handleSearchChange(event.target.value)}
-                className="h-14 w-full rounded-button bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none placeholder:text-white/28 focus:ring-1 focus:ring-border-default"
-              />
-            </label>
+            <DashboardSearchInput
+              value={searchQuery}
+              label="Search report name or users"
+              placeholder="Search report name, users"
+              maxLength={MAX_SEARCH_LENGTH}
+              onChange={handleSearchChange}
+            />
 
             <DashboardStatusFilter
               value={statusFilter}

@@ -1,53 +1,27 @@
 import type { z } from "zod";
 import { ensureAuthenticatedSession } from "@/features/auth";
 import { getReportApiBaseUrl } from "@/lib/reportApiBaseUrl";
+import { createReportApiError } from "./reportApiError";
 
-export class ReportApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = "ReportApiError";
-  }
-}
+export {
+  ReportApiError,
+  createReportApiError,
+  getEditingErrorCode,
+  isEditingErrorCode,
+  isReportApiError,
+} from "./reportApiError";
 
 function buildUrl(path: string): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${getReportApiBaseUrl()}${normalizedPath}`;
 }
 
-async function parseErrorMessage(response: Response): Promise<string> {
+async function readErrorBody(response: Response): Promise<unknown> {
   try {
-    const body: unknown = await response.json();
-    if (typeof body === "object" && body !== null) {
-      if ("detail" in body) {
-        const { detail } = body as { detail: unknown };
-        if (typeof detail === "string") {
-          return detail;
-        }
-        if (Array.isArray(detail)) {
-          return detail
-            .map((item) =>
-              typeof item === "object" &&
-              item !== null &&
-              "msg" in item &&
-              typeof item.msg === "string"
-                ? item.msg
-                : JSON.stringify(item),
-            )
-            .join("; ");
-        }
-      }
-      if ("message" in body && typeof body.message === "string") {
-        return body.message;
-      }
-    }
+    return await response.json();
   } catch {
-    // Response body is not JSON — fall back to status text.
+    return undefined;
   }
-
-  return response.statusText || `Request failed with status ${response.status}`;
 }
 
 type ReportFetchBaseOptions = {
@@ -114,7 +88,11 @@ export async function reportFetch<TSchema extends z.ZodType>(
   });
 
   if (!response.ok) {
-    throw new ReportApiError(response.status, await parseErrorMessage(response));
+    throw createReportApiError(
+      response.status,
+      await readErrorBody(response),
+      response.statusText || `Request failed with status ${response.status}`,
+    );
   }
 
   if ("responseType" in options) {

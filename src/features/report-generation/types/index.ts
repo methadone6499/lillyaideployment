@@ -155,3 +155,36 @@ export type PptxExportStatusResponse = z.infer<
 
 export type DrugValidationResponse = z.infer<typeof drugValidationResponseSchema>;
 export type FilterState = z.infer<typeof filterStateSchema>;
+
+export type {
+  BlockPosition,
+  CreateRewritePreviewInput,
+  CreateRewritePreviewRequest,
+  EditableBlock,
+  EditableCalloutBlock,
+  EditableDefinitionBlock,
+  EditableDocumentPayload,
+  EditableDocumentResponse,
+  EditableHeadingBlock,
+  EditableListBlock,
+  EditableMarkdownBlock,
+  EditableParagraphBlock,
+  EditableTableBlock,
+  EditingActor,
+  EditingErrorCode,
+  ReplacementBlock,
+  RestoreRevisionInput,
+  RewriteClaim,
+  RewritePreset,
+  RewritePresetListResponse,
+  RewritePresetMode,
+  RewritePreviewResponse,
+  RewritePreviewStatus,
+  RewriteSource,
+  SaveEditableDocumentInput,
+  SaveEditableDocumentRequest,
+  SectionChangeOperation,
+  SectionChangeSummary,
+  SectionRevisionListResponse,
+  TextSelection,
+} from "../schemas/editingSchemas";

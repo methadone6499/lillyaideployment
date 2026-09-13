@@ -11,7 +11,6 @@ import {
   generateReport,
   listCustomSections,
   patchCustomSection,
-  queuePdfExport,
   queuePptxExport,
   updateReportSelections,
   type DownloadPptxWhenReadyOptions,
@@ -25,6 +24,7 @@ import type {
   QueuePptxExportInput,
   UpdateReportSelectionsInput,
 } from "../types";
+import { createPptxRebuildInput } from "../utils/reportExport";
 import { useReportQueriesEnabled } from "./useReportQueriesEnabled";
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
@@ -124,33 +124,12 @@ export function useReportSection(
   });
 }
 
-export function useQueuePdfExport(
-  reportServiceId: string | null,
-  isReportReady: boolean,
-) {
-  const queriesEnabled = useReportQueriesEnabled(
-    Boolean(reportServiceId) && isReportReady,
-  );
-
-  return useQuery({
-    queryKey: reportQueryKeys.pdfQueue(reportServiceId ?? ""),
-    queryFn: ({ signal }) => queuePdfExport(reportServiceId!, signal),
-    enabled: queriesEnabled,
-    retry: false,
-    staleTime: Number.POSITIVE_INFINITY,
-    gcTime: Number.POSITIVE_INFINITY,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-}
-
 export function useQueuePptxExportMutation() {
   return useMutation({
     mutationKey: reportQueryKeys.pptxExportMutation,
     mutationFn: ({
       reportServiceId,
-      input = { force_regenerate: false },
+      input = createPptxRebuildInput(),
       signal,
     }: {
       reportServiceId: string;
