@@ -3,7 +3,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useConfirmedUserId, useIsAuthenticated } from "@/features/auth";
-import type { SubscriptionStatus } from "@/features/enterprise-activation";
+import type { SubscriptionStatus } from "@/features/billing";
 import { ApiRequestError } from "@/services/ApiRequestError";
 
 import { listAdminCompanies } from "../api/adminCompanyApi";

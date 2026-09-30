@@ -1,5 +1,10 @@
-import { SuperAdminPlaceholderPage } from "../_components/SuperAdminPlaceholderPage";
+import { AdminReviewerManagement } from "@/features/reviewer";
+import { SuperAdminManagementPageShell } from "../_components/SuperAdminManagementPageShell";
 
 export default function SuperAdminReviewersPage() {
-  return <SuperAdminPlaceholderPage title="Reviewer Management" />;
+  return (
+    <SuperAdminManagementPageShell title="Reviewer Management">
+      <AdminReviewerManagement />
+    </SuperAdminManagementPageShell>
+  );
 }

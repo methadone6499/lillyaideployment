@@ -13,12 +13,14 @@ import {
   patchCustomSection,
   queuePptxExport,
   updateReportSelections,
+  uploadReportArticle,
   type DownloadPptxWhenReadyOptions,
 } from "../api/reportApi";
 import { ReportApiError } from "../api/reportFetch";
 import { reportQueryKeys } from "../api/reportQueryKeys";
 import type {
   CreateCustomSectionInput,
+  EvidenceBucket,
   GenerateReportInput,
   PatchCustomSectionInput,
   QueuePptxExportInput,
@@ -28,6 +30,32 @@ import { createPptxRebuildInput } from "../utils/reportExport";
 import { useReportQueriesEnabled } from "./useReportQueriesEnabled";
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
+
+export function useUploadReportArticleMutation() {
+  return useMutation({
+    mutationKey: reportQueryKeys.articleUploadMutation,
+    mutationFn: ({
+      reportServiceId,
+      file,
+      bucket,
+      pmid,
+      pmcid,
+      signal,
+    }: {
+      reportServiceId: string;
+      file: File;
+      bucket: EvidenceBucket;
+      pmid?: string;
+      pmcid?: string;
+      signal?: AbortSignal;
+    }) =>
+      uploadReportArticle(
+        reportServiceId,
+        { file, bucket, pmid, pmcid },
+        signal,
+      ),
+  });
+}
 
 export function useUpdateReportSelectionsMutation() {
   return useMutation({

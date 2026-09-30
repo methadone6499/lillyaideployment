@@ -1,7 +1,8 @@
 "use client";
 
+import type { PlanIntent } from "@/features/billing";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ApiRequestError } from "@/services/ApiRequestError";
 
@@ -16,7 +17,22 @@ import { DuplicateEmailRecovery } from "./DuplicateEmailRecovery";
 import { AuthPageShell } from "./AuthPageShell";
 import { SignupForm } from "./SignupForm";
 
-export function SignupPage() {
+type SignupPageProps = {
+  planIntent?: PlanIntent | null;
+};
+
+async function persistSignupPlanIntent(
+  planIntent: PlanIntent | null,
+): Promise<void> {
+  if (!planIntent) {
+    return;
+  }
+
+  const { storePlanIntent } = await import("@/features/billing");
+  storePlanIntent(planIntent);
+}
+
+export function SignupPage({ planIntent = null }: SignupPageProps) {
   const router = useRouter();
   const signupMutation = useSignupMutation();
   const resendMutation = useResendVerificationMutation();
@@ -28,6 +44,10 @@ export function SignupPage() {
   const [duplicateEmail, setDuplicateEmail] = useState<string | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [resendError, setResendError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void persistSignupPlanIntent(planIntent);
+  }, [planIntent]);
 
   const handleSubmit = async (values: {
     full_name: string;
@@ -44,11 +64,13 @@ export function SignupPage() {
     try {
       await signupMutation.mutateAsync(values);
       storePendingSignupEmail(values.email);
+      await persistSignupPlanIntent(planIntent);
       router.push("/check-email");
     } catch (error) {
       if (error instanceof ApiRequestError) {
         if (error.code === "duplicate_email" || error.status === 409) {
           storePendingSignupEmail(values.email);
+          await persistSignupPlanIntent(planIntent);
           setDuplicateEmail(values.email);
           return;
         }

@@ -7,6 +7,13 @@ import {
   useAuthUser,
 } from "@/features/auth";
 import {
+  formatLocalDate,
+  hasScheduledEnterpriseDowngrade,
+  isOperationLockError,
+  OperationLockBanner,
+  useOperationLock,
+} from "@/features/billing";
+import {
   classifyInvitationError,
   useCompanyInvitations,
   useCreateInvitationMutation,
@@ -17,6 +24,7 @@ import {
 import {
   classifyQuotaMutationError,
   classifyQuotaQueryError,
+  QuotaRedistributionPrompt,
   useCompanyQuota,
   useSetMemberQuotaMutation,
 } from "@/features/company-quota";
@@ -90,6 +98,16 @@ export function SeatManagementContent() {
   const { authMe } = useAuthUser();
   const canManageMembers = hasPermission(authMe, "company:members_manage");
   const canReadCompanyQuota = hasPermission(authMe, "company:quota_read");
+  const operationLock = useOperationLock();
+  const seatChangesLocked = operationLock.isBlocked("seat_changes");
+  const quotaChangesLocked = operationLock.isBlocked("quota_changes");
+  const invitationCreateLocked = operationLock.isBlocked("invitation_create");
+  const invitationResendLocked = operationLock.isBlocked("invitation_resend");
+  const scheduledDowngrade =
+    operationLock.overview &&
+    hasScheduledEnterpriseDowngrade(operationLock.overview)
+      ? operationLock.overview.plan_change
+      : null;
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<SeatStatusFilterValue>("all");
@@ -258,12 +276,21 @@ export function SeatManagementContent() {
     pendingInvitationId === revokingInvitation?.id;
   const hasAvailableSeats =
     summary == null || summary.available_seats > 0;
-  const createSeatDisabled = !canManageMembers || !hasAvailableSeats;
+  const createSeatDisabled =
+    !canManageMembers || !hasAvailableSeats || invitationCreateLocked;
   const createSeatTitle = !canManageMembers
     ? "You do not have permission to invite users."
-    : summary != null && summary.available_seats <= 0
-      ? "No available seats. Revoke a pending invitation or remove a seat."
-      : "Invite a user by email";
+    : invitationCreateLocked
+      ? "Invitations are paused while a Custom plan payment is in progress."
+      : summary != null && summary.available_seats <= 0
+        ? "No available seats. Revoke a pending invitation or remove a seat."
+        : "Invite a user by email";
+
+  const refreshLockAfterError = (error: unknown) => {
+    if (isOperationLockError(error)) {
+      void operationLock.refetch();
+    }
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -348,6 +375,7 @@ export function SeatManagementContent() {
 
       return null;
     } catch (error) {
+      refreshLockAfterError(error);
       const message = classifySeatMutationError(error);
       setActionError(message);
       return message;
@@ -386,6 +414,7 @@ export function SeatManagementContent() {
             : current,
         );
       } catch (error) {
+        refreshLockAfterError(error);
         const message = classifyQuotaMutationError(error);
         setActionError(message);
         return message;
@@ -417,6 +446,7 @@ export function SeatManagementContent() {
         current?.membership_id === seat.membership_id ? null : current,
       );
     } catch (error) {
+      refreshLockAfterError(error);
       setActionError(classifySeatMutationError(error));
     }
   };
@@ -431,6 +461,7 @@ export function SeatManagementContent() {
       setInvitationPage(1);
       return null;
     } catch (error) {
+      refreshLockAfterError(error);
       return classifyInvitationError(error);
     }
   };
@@ -452,6 +483,7 @@ export function SeatManagementContent() {
         return next;
       });
     } catch (error) {
+      refreshLockAfterError(error);
       const classified = classifyInvitationError(error);
       setActionError(classified.message);
       const retryAfterSeconds = classified.retryAfterSeconds;
@@ -516,6 +548,20 @@ export function SeatManagementContent() {
         ) : null}
       </div>
 
+      <OperationLockBanner className="mt-6" />
+      <QuotaRedistributionPrompt className="mt-6" />
+
+      {scheduledDowngrade ? (
+        <p className="mt-6 text-label text-text-body" role="status">
+          Your company switches to Enterprise
+          {scheduledDowngrade.effective_at
+            ? ` on ${formatLocalDate(scheduledDowngrade.effective_at)}`
+            : " at the next renewal"}
+          . Until then, new invitations cannot take occupied and pending seats
+          above 10, and quota allocations cannot exceed 100 reports.
+        </p>
+      ) : null}
+
       {showTopActionError ? (
         <p role="alert" className="mt-6 text-label text-status-running">
           {actionError}
@@ -572,6 +618,7 @@ export function SeatManagementContent() {
             : null
         }
         pendingMembershipId={pendingMembershipId}
+        seatChangesLocked={seatChangesLocked}
         emptyMessage={
           hasActiveFilters
             ? "No seats match your search or status filter."
@@ -621,6 +668,7 @@ export function SeatManagementContent() {
         }
         pendingInvitationId={pendingInvitationId}
         resendCooldownSecondsById={resendCooldownSecondsById}
+        resendLocked={invitationResendLocked}
         onPageChange={handleInvitationPageChange}
         onRetry={() => {
           void invitationsQuery.refetch();
@@ -655,6 +703,8 @@ export function SeatManagementContent() {
           quotaUnallocated={
             companyQuotaQuery.data?.quota_unallocated ?? null
           }
+          seatChangesLocked={seatChangesLocked}
+          quotaChangesLocked={quotaChangesLocked}
           onClose={() => setEditingSeat(null)}
           onConfirm={handleEditConfirm}
           onRequestRemove={(seat) => {

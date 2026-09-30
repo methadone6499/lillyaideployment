@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 
+import { ApiRequestError } from "@/services/ApiRequestError";
+
 import {
   createInvitationRequestSchema,
   invitationAcceptanceSchema,
@@ -9,6 +11,8 @@ import {
   invitationTokenRequestSchema,
   registerInvitationRequestSchema,
 } from "../schemas/companyInvitationSchemas";
+import { classifyInvitationError } from "../utils/classifyInvitationError";
+import { classifyInvitationRecipientError } from "../utils/classifyInvitationRecipientError";
 import { parseInvitationTokenFromHash } from "../utils/invitationToken";
 
 function buildInvitation(overrides: Record<string, unknown> = {}) {
@@ -249,4 +253,26 @@ assert.equal(parseInvitationTokenFromHash(`#token=${"a".repeat(513)}`), null);
 assert.equal(
   parseInvitationTokenFromHash("#token=abc&unused=1"),
   "abc",
+);
+
+// --- Custom plan payment freeze ---
+
+const paymentFreezeError = new ApiRequestError({
+  status: 409,
+  code: "custom_subscription_payment_in_progress",
+  message: "",
+});
+
+// The public register flow maps unknown 4xx to "invalid invitation" and clears
+// the token; a payment freeze must keep the invitation usable for a retry.
+for (const publicToken of [true, false]) {
+  const classified = classifyInvitationRecipientError(paymentFreezeError, {
+    publicToken,
+  });
+  assert.equal(classified.code, "company_plan_updating");
+  assert.match(classified.message, /still valid/);
+}
+assert.match(
+  classifyInvitationError(paymentFreezeError).message,
+  /Custom plan payment is in progress/,
 );

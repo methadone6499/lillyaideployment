@@ -1,64 +1,32 @@
-"use client";
-
-import { useAuthUser } from "@/features/auth";
-import {
-  ActivateEnterpriseDialog,
-  canActivateEnterprise,
-} from "@/features/enterprise-activation";
-import { useState } from "react";
-import type { BillingPlan } from "../schemas/billingSchemas";
+import type { PlanType } from "../schemas/billingSchemas";
+import type {
+  BillingPlanCardAction,
+  BillingPlanCardModel,
+} from "../utils/selectBillingPlanCards";
 import { BillingPlanCard } from "./BillingPlanCard";
 
 type BillingPlansSectionProps = {
-  plans: BillingPlan[];
+  plans: BillingPlanCardModel[];
+  onAction: (action: BillingPlanCardAction, plan: PlanType) => void;
 };
 
-function plansForActivation(
-  plans: BillingPlan[],
-  canActivate: boolean,
-): BillingPlan[] {
-  if (!canActivate) {
-    return plans;
-  }
-
-  return plans.map((plan) =>
-    plan.id === "enterprise"
-      ? {
-          ...plan,
-          current: false,
-          ctaLabel: "Activate Enterprise",
-        }
-      : plan,
-  );
-}
-
-export function BillingPlansSection({ plans }: BillingPlansSectionProps) {
-  const { authMe } = useAuthUser();
-  const canActivate = canActivateEnterprise(authMe);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const resolvedPlans = plansForActivation(plans, canActivate);
-
+export function BillingPlansSection({ plans, onAction }: BillingPlansSectionProps) {
   return (
-    <>
+    <section
+      aria-labelledby="change-plan-heading"
+      className="mt-12 max-w-[1488px]"
+    >
+      <h2
+        id="change-plan-heading"
+        className="text-card-title font-medium text-white"
+      >
+        Change plan
+      </h2>
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {resolvedPlans.map((plan) => (
-          <BillingPlanCard
-            key={plan.id}
-            plan={plan}
-            onCtaClick={
-              canActivate && plan.id === "enterprise"
-                ? () => setDialogOpen(true)
-                : undefined
-            }
-          />
+        {plans.map((plan) => (
+          <BillingPlanCard key={plan.id} plan={plan} onAction={onAction} />
         ))}
       </div>
-      {canActivate && dialogOpen ? (
-        <ActivateEnterpriseDialog
-          open
-          onClose={() => setDialogOpen(false)}
-        />
-      ) : null}
-    </>
+    </section>
   );
 }

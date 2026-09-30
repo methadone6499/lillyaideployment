@@ -7,7 +7,7 @@ export function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-landing-background/95 backdrop-blur-sm">
       <div className="mx-auto flex h-landing-header w-full max-w-layout-max items-center justify-between gap-3 px-[var(--layout-landing-header-padding-x)] sm:gap-6">
-        <LogoLink width={69} height={24} className="inline-flex shrink-0" />
+        <LogoLink className="inline-flex shrink-0 [&_img]:h-auto [&_img]:w-[160px]" />
 
         <div className="flex min-w-0 items-center gap-3 sm:gap-6 md:gap-12">
           <nav

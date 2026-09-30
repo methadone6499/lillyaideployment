@@ -22,13 +22,20 @@ export const companyReportSummarySchema = z.object({
   creator: companyReportCreatorSchema,
   generation_status: generationStatusSchema,
   review_status: reviewStatusSchema,
+  review_cycle: z.number().int().nonnegative(),
+  review_submitted_at: isoDateTimeSchema.nullable(),
+  review_locked_at: isoDateTimeSchema.nullable(),
+  review_assigned_at: isoDateTimeSchema.nullable(),
+  review_due_at: isoDateTimeSchema.nullable(),
+  is_editable: z.boolean(),
+  is_overdue: z.boolean(),
   created_at: isoDateTimeSchema,
   updated_at: isoDateTimeSchema,
 });
 
 export const companyReportListResponseSchema = z.object({
   items: z.array(companyReportSummarySchema),
-  next_cursor: z.string().nullish(),
+  next_cursor: z.string().nullable(),
 });
 
 export type CompanyReportCreator = z.infer<typeof companyReportCreatorSchema>;

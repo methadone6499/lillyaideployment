@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
 
+import { ApiRequestError } from "@/services/ApiRequestError";
+
+import { companyQuotaQueryKeys } from "../api/companyQuotaQueryKeys";
 import {
   companyQuotaSummarySchema,
+  dismissQuotaRedistributionRequestSchema,
+  quotaRedistributionStateSchema,
   ownQuotaSchema,
   quotaAllocationSchema,
   setMemberQuotaRequestSchema,
 } from "../schemas/companyQuotaSchemas";
+import {
+  classifyQuotaMutationError,
+  classifyQuotaRedistributionError,
+} from "../utils/classifyQuotaError";
 
 function buildCompanyQuota(overrides: Record<string, unknown> = {}) {
   return {
@@ -184,4 +193,91 @@ assert.equal(
     }),
   }).success,
   true,
+);
+
+// --- Post-plan-change quota redistribution ---
+
+const REDISTRIBUTION = {
+  required: true,
+  trigger_type: "custom_offer",
+  trigger_id: "custom_subscription_offer_6ed2f443",
+  created_at: "2026-09-29T12:00:00Z",
+  dismissed_at: null,
+  dismissed_by_user_id: null,
+};
+
+assert.equal(companyQuotaSummarySchema.parse(buildCompanyQuota()).redistribution, null);
+assert.deepEqual(
+  companyQuotaSummarySchema.parse(buildCompanyQuota({ redistribution: REDISTRIBUTION }))
+    .redistribution,
+  REDISTRIBUTION,
+);
+assert.equal(
+  companyQuotaSummarySchema.parse(buildCompanyQuota({ redistribution: null }))
+    .redistribution,
+  null,
+);
+assert.equal(
+  quotaRedistributionStateSchema.safeParse({
+    ...REDISTRIBUTION,
+    required: false,
+    trigger_type: "subscription_plan_change",
+    dismissed_at: "2026-09-30T08:00:00Z",
+    dismissed_by_user_id: "user-1",
+  }).success,
+  true,
+);
+assert.equal(
+  quotaRedistributionStateSchema.safeParse({
+    ...REDISTRIBUTION,
+    trigger_type: "manual",
+  }).success,
+  false,
+);
+assert.deepEqual(
+  dismissQuotaRedistributionRequestSchema.parse({
+    quota_period_id: "quota-period-1",
+  }),
+  { quota_period_id: "quota-period-1" },
+);
+assert.equal(
+  dismissQuotaRedistributionRequestSchema.safeParse({ quota_period_id: "" }).success,
+  false,
+);
+assert.equal(
+  dismissQuotaRedistributionRequestSchema.safeParse({
+    quota_period_id: "quota-period-1",
+    force: true,
+  }).success,
+  false,
+);
+assert.deepEqual(companyQuotaQueryKeys.dismissRedistribution(), [
+  "company-quota",
+  "mutation",
+  "dismiss-redistribution",
+]);
+
+function quotaError(status: number, code: string) {
+  return new ApiRequestError({ status, code, message: `server ${code}` });
+}
+
+assert.deepEqual(
+  classifyQuotaRedistributionError(quotaError(409, "quota_redistribution_conflict")),
+  { message: "The quota period changed. Showing the latest quota.", refetch: true },
+);
+assert.equal(
+  classifyQuotaRedistributionError(
+    quotaError(409, "quota_redistribution_not_required"),
+  ).refetch,
+  true,
+);
+assert.equal(
+  classifyQuotaRedistributionError(quotaError(500, "server_error")).refetch,
+  false,
+);
+assert.equal(
+  classifyQuotaMutationError(
+    quotaError(409, "custom_subscription_payment_in_progress"),
+  ),
+  "server custom_subscription_payment_in_progress",
 );

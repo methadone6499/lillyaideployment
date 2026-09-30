@@ -1,13 +1,13 @@
 import { cn } from "@/lib/cn";
-import type { ReviewerReportStatus } from "../types";
+import type { ReviewAssignmentStatus } from "../schemas/reviewerSchemas";
 
 type ReviewerStatusPillProps = {
-  status: ReviewerReportStatus;
+  status: ReviewAssignmentStatus | "overdue";
   className?: string;
 };
 
 const statusConfig: Record<
-  ReviewerReportStatus,
+  ReviewAssignmentStatus | "overdue",
   { label: string; className: string }
 > = {
   completed: {
@@ -22,9 +22,13 @@ const statusConfig: Record<
     label: "Overdue",
     className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
   },
-  in_queue: {
-    label: "In Queue",
+  pending: {
+    label: "Pending",
     className: "bg-white/8 text-status-in-queue",
+  },
+  superseded: {
+    label: "Superseded",
+    className: "bg-white/8 text-text-muted",
   },
 };
 

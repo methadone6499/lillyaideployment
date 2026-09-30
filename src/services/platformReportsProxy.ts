@@ -10,6 +10,13 @@ import {
 
 const LIST_ALLOWED_METHODS = ["GET", "POST"] as const;
 const DETAIL_ALLOWED_METHODS = ["GET"] as const;
+const REVIEW_ACTION_METHODS = {
+  "submit-for-review": ["POST"],
+  "review-notes": ["GET"],
+  "review-history": ["GET"],
+} as const;
+
+export type PlatformReportReviewAction = keyof typeof REVIEW_ACTION_METHODS;
 
 function buildUpstreamReportsBaseUrl(): string | null {
   const platformApiBaseUrl = getPlatformUpstreamBaseUrl();
@@ -71,6 +78,33 @@ export async function proxyPlatformReportDetailRequest(
   }
 
   const upstreamUrl = `${reportsBaseUrl}/${encodeURIComponent(id)}`;
+
+  return forwardToUpstream(request, upstreamUrl, method);
+}
+
+export async function proxyPlatformReportReviewRequest(
+  request: Request,
+  id: string,
+  action: PlatformReportReviewAction,
+): Promise<Response> {
+  const method = request.method.toUpperCase();
+  const allowedMethods = REVIEW_ACTION_METHODS[action] as readonly string[];
+
+  if (!allowedMethods.includes(method)) {
+    return methodNotAllowedResponse();
+  }
+
+  if (STATE_CHANGING_METHODS.has(method) && !hasValidOrigin(request)) {
+    return forbiddenResponse();
+  }
+
+  const reportsBaseUrl = buildUpstreamReportsBaseUrl();
+
+  if (!reportsBaseUrl) {
+    return missingConfigResponse();
+  }
+
+  const upstreamUrl = `${reportsBaseUrl}/${encodeURIComponent(id)}/${action}`;
 
   return forwardToUpstream(request, upstreamUrl, method);
 }

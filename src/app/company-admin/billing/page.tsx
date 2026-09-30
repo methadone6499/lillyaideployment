@@ -1,5 +1,8 @@
-import { BillingShell } from "@/features/billing";
+import { BILLING_PATHS } from "@/features/billing";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default function CompanyAdminBillingPage() {
-  return <BillingShell />;
+  redirect(BILLING_PATHS.settings);
 }

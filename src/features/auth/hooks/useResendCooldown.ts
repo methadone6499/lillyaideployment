@@ -9,7 +9,7 @@ export function useResendCooldown(
 ): {
   secondsRemaining: number;
   isCoolingDown: boolean;
-  startCooldown: () => void;
+  startCooldown: (seconds?: number) => void;
 } {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
 
@@ -27,9 +27,12 @@ export function useResendCooldown(
     };
   }, [secondsRemaining]);
 
-  const startCooldown = useCallback(() => {
-    setSecondsRemaining(cooldownSeconds);
-  }, [cooldownSeconds]);
+  const startCooldown = useCallback(
+    (seconds?: number) => {
+      setSecondsRemaining(Math.max(0, Math.ceil(seconds ?? cooldownSeconds)));
+    },
+    [cooldownSeconds],
+  );
 
   return {
     secondsRemaining,

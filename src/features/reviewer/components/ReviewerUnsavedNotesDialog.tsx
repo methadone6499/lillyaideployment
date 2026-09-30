@@ -105,7 +105,7 @@ export function ReviewerUnsavedNotesDialog({
             id="reviewer-unsaved-notes-title"
             className="text-card-title font-medium"
           >
-            Discard unsaved notes?
+            Discard unsaved changes?
           </h2>
           <button
             type="button"
@@ -122,7 +122,7 @@ export function ReviewerUnsavedNotesDialog({
             id="reviewer-unsaved-notes-description"
             className="text-label leading-6 text-text-body"
           >
-            You have unsaved reviewer notes. Discard them before leaving this
+            You have unsaved report edits or reviewer notes. Discard them before leaving this
             report?
           </p>
           <footer className="mt-8 flex flex-wrap items-center justify-end gap-7">

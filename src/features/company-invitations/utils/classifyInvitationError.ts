@@ -31,6 +31,8 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Company seats are not enabled for this workspace.",
   company_subscription_not_found:
     "No company subscription was found for this workspace.",
+  custom_subscription_payment_in_progress:
+    "A Custom plan payment is in progress. Seats, invitations, quota changes and report generation are paused until it completes or is cancelled.",
 };
 
 const EMAIL_FIELD_CODES = new Set([

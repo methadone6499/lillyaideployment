@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronRightIcon } from "@/components/ui/icons";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import {
   generationStatusSchema,
@@ -11,6 +10,7 @@ import {
   type ReviewStatus,
 } from "@/features/reports";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { AdminReportCommentsDialog } from "@/features/reviewer";
 import { cn } from "@/lib/cn";
 import { ApiRequestError } from "@/services/ApiRequestError";
 import Link from "next/link";
@@ -37,14 +37,14 @@ const SUPER_ADMIN_STATUS_FILTER_OPTIONS = [
   { value: "generating", label: "In Progress" },
   { value: "failed", label: "Failed" },
   { value: "unassigned", label: "Unassigned" },
+  { value: "awaiting_assignment", label: "Awaiting Assignment" },
   { value: "pending", label: "Pending Review" },
   { value: "in_review", label: "In Review" },
-  { value: "changes_requested", label: "Changes Requested" },
-  { value: "approved", label: "Reviewed" },
+  { value: "reviewed", label: "Reviewed" },
 ] as const satisfies readonly DashboardStatusFilterOption<SuperAdminStatusFilterValue>[];
 
 const superAdminReportRowClass =
-  "grid min-w-[1280px] grid-cols-[minmax(200px,1.4fr)_minmax(140px,1fr)_minmax(140px,1fr)_minmax(180px,1.2fr)_minmax(140px,1fr)_minmax(148px,180px)_minmax(140px,180px)_24px] items-center gap-x-6 px-6";
+  "grid min-w-[1280px] grid-cols-[minmax(200px,1.4fr)_minmax(140px,1fr)_minmax(140px,1fr)_minmax(180px,1.2fr)_minmax(140px,1fr)_minmax(148px,180px)_minmax(140px,180px)_110px] items-center gap-x-6 px-6";
 
 function getListErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -82,20 +82,7 @@ function getSuperAdminReportDisplayStatus(
   }
 
   if (report.generation_status === "completed") {
-    if (report.review_status === "approved") {
-      return "reviewed";
-    }
-
-    if (
-      report.review_status === "pending" ||
-      report.review_status === "in_review"
-    ) {
-      return "sent_for_review";
-    }
-
-    if (report.review_status === "changes_requested") {
-      return "changes_requested";
-    }
+    return report.review_status === "unassigned" ? "completed" : report.review_status;
   }
 
   return "completed";
@@ -104,10 +91,15 @@ function getSuperAdminReportDisplayStatus(
 export function SuperAdminReportsTable() {
   const { authMe } = useAuthUser();
   const canReadAdminReports = hasPermission(authMe, "admin:reports_read");
+  const canManageReportComments = hasPermission(
+    authMe,
+    "admin:report_comments_manage",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<SuperAdminStatusFilterValue>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [commentsReport, setCommentsReport] = useState<AdminReportSummary | null>(null);
   const debouncedSearch = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
 
   const search =
@@ -240,7 +232,7 @@ export function SuperAdminReportsTable() {
             <span>Reviewer</span>
             <span>Last Updated</span>
             <span>Status</span>
-            <span className="sr-only">Open</span>
+            <span>Comments</span>
           </div>
 
           <div className="flex flex-col">
@@ -276,14 +268,14 @@ export function SuperAdminReportsTable() {
               </p>
             ) : (
               reports.map((report, index) => (
-                <Link
+                <div
                   key={report.id}
-                  href={`/reports/${report.id}`}
                   className={cn(
                     superAdminReportRowClass,
-                    "min-h-[86px] border-b border-border-subtle py-3 text-left transition-colors last:border-b-0 hover:bg-brand-bg",
+                    "relative min-h-[86px] border-b border-border-subtle py-3 text-left transition-colors last:border-b-0 hover:bg-brand-bg",
                   )}
                 >
+                  <Link href={`/reports/${report.id}`} aria-label={`Open ${report.title}`} className="absolute inset-0 z-0" />
                   <span className="flex min-w-0 items-center gap-4">
                     <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-toggle-knob bg-surface-elevated text-input font-medium text-white">
                       {(safeCurrentPage - 1) * ROWS_PER_PAGE + index + 1}
@@ -319,8 +311,15 @@ export function SuperAdminReportsTable() {
                     />
                   </span>
 
-                  <ChevronRightIcon className="justify-self-end text-white" />
-                </Link>
+                  {canManageReportComments ? <button
+                    type="button"
+                    className="relative z-10 justify-self-start rounded-button border border-border-default px-3 py-2 text-label font-medium text-white hover:bg-surface-elevated"
+                    onClick={() => setCommentsReport(report)}
+                    aria-label={`Comments for ${report.title}`}
+                  >
+                    Comments
+                  </button> : null}
+                </div>
               ))
             )}
           </div>
@@ -360,6 +359,13 @@ export function SuperAdminReportsTable() {
             onPageChange={handlePageChange}
           />
         </div>
+      ) : null}
+      {canManageReportComments && commentsReport ? (
+        <AdminReportCommentsDialog
+          reportId={commentsReport.id}
+          reportTitle={commentsReport.title}
+          onClose={() => setCommentsReport(null)}
+        />
       ) : null}
     </section>
   );

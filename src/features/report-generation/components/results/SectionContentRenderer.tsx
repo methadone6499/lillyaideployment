@@ -1,12 +1,15 @@
 import { createElement, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { Block, ReportSectionContent } from "../../types";
+import { stripTrailingSourceBlocks } from "../../utils/viewerSectionContent";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 
 type SectionContentRendererProps = {
   content: ReportSectionContent;
   /** When true, omits the first block if it is a level-1 or level-2 heading (duplicate of accordion title). */
   skipFirstHeading?: boolean;
+  /** Viewer-only presentation option; canonical content remains unchanged. */
+  hideTrailingSources?: boolean;
 };
 
 function renderWithFootnotes(text: string): ReactNode {
@@ -207,18 +210,22 @@ function renderBlocks(blocks: Block[], depth: number): ReactNode {
 export function SectionContentRenderer({
   content,
   skipFirstHeading = false,
+  hideTrailingSources = false,
 }: SectionContentRendererProps) {
   if (content.blocks.length === 0) {
     return null;
   }
 
-  const firstBlock = content.blocks[0];
+  const viewerBlocks = hideTrailingSources
+    ? stripTrailingSourceBlocks(content.blocks)
+    : content.blocks;
+  const firstBlock = viewerBlocks[0];
   const blocks =
     skipFirstHeading &&
     firstBlock?.type === "heading" &&
     firstBlock.level <= 2
-      ? content.blocks.slice(1)
-      : content.blocks;
+      ? viewerBlocks.slice(1)
+      : viewerBlocks;
 
   if (blocks.length === 0) {
     return null;

@@ -37,7 +37,7 @@ export function LandingCtaButton({
 
   if (href) {
     return (
-      <Link href={href} className={classes}>
+      <Link href={href} className={classes} onClick={onClick}>
         {content}
       </Link>
     );
@@ -71,7 +71,7 @@ export function LandingSecondaryButton({
 
   if (href) {
     return (
-      <Link href={href} className={classes}>
+      <Link href={href} className={classes} onClick={onClick}>
         {children}
       </Link>
     );

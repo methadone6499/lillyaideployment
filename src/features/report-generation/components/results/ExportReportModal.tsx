@@ -16,6 +16,7 @@ type ExportReportModalProps = {
   isExporting: boolean;
   errorMessage?: string | null;
   statusMessage?: string | null;
+  presentationAvailable?: boolean;
 };
 
 type ExportFormatOption = {
@@ -60,6 +61,7 @@ export function ExportReportModal({
   isExporting,
   errorMessage,
   statusMessage,
+  presentationAvailable = false,
 }: ExportReportModalProps) {
   const [selectedFormat, setSelectedFormat] =
     useState<ExportFormat>("pdf");
@@ -148,14 +150,21 @@ export function ExportReportModal({
     }
   };
 
+  const effectiveFormat =
+    selectedFormat === "presentation" && !presentationAvailable
+      ? "pdf"
+      : selectedFormat;
+
   const canExport =
-    selectedFormat === "pdf" || selectedFormat === "presentation";
+    effectiveFormat === "pdf" ||
+    (effectiveFormat === "presentation" && presentationAvailable);
 
   const handleExport = async () => {
     if (
       isExporting ||
       exportInFlightRef.current ||
-      (selectedFormat !== "pdf" && selectedFormat !== "presentation")
+      (effectiveFormat !== "pdf" &&
+        !(effectiveFormat === "presentation" && presentationAvailable))
     ) {
       return;
     }
@@ -163,7 +172,7 @@ export function ExportReportModal({
     exportInFlightRef.current = true;
 
     try {
-      await onExport(selectedFormat);
+      await onExport(effectiveFormat);
       onClose();
     } catch {
       // The parent owns and renders the normalized export error message.
@@ -229,7 +238,11 @@ export function ExportReportModal({
           <fieldset className="mt-5 grid grid-cols-1 gap-4 min-[600px]:grid-cols-3">
             <legend className="sr-only">Export format</legend>
             {EXPORT_FORMATS.map((format) => {
-              const isSelected = selectedFormat === format.id;
+              const isAvailable =
+                format.id === "presentation"
+                  ? presentationAvailable
+                  : format.available;
+              const isSelected = effectiveFormat === format.id;
 
               return (
                 <label
@@ -239,7 +252,7 @@ export function ExportReportModal({
                     isSelected
                       ? "border-brand/20 bg-[rgba(16,185,129,0.12)]"
                       : "border-border-default bg-surface-default",
-                    format.available ? "cursor-pointer" : "cursor-not-allowed",
+                    isAvailable ? "cursor-pointer" : "cursor-not-allowed",
                   )}
                 >
                   <input
@@ -248,7 +261,7 @@ export function ExportReportModal({
                     name="export-format"
                     value={format.id}
                     checked={isSelected}
-                    disabled={!format.available || isExporting}
+                    disabled={!isAvailable || isExporting}
                     onChange={() => setSelectedFormat(format.id)}
                     className="sr-only"
                   />

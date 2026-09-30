@@ -3,16 +3,17 @@
 import { SearchIcon } from "@/components/ui/icons";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import {
-  DashboardPagination,
-  DashboardStatusFilter,
-  type DashboardStatusFilterOption,
-} from "@/features/dashboard";
-import {
+  formatAmountMinor,
   subscriptionStatusSchema,
   type BillingInterval,
   type PlanType,
   type SubscriptionStatus,
-} from "@/features/enterprise-activation";
+} from "@/features/billing";
+import {
+  DashboardPagination,
+  DashboardStatusFilter,
+  type DashboardStatusFilterOption,
+} from "@/features/dashboard";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/cn";
 import { ApiRequestError } from "@/services/ApiRequestError";
@@ -114,25 +115,6 @@ function isInvalidCursorError(error: unknown): boolean {
     error.status === 400 &&
     error.code === "invalid_cursor"
   );
-}
-
-function formatSubscriptionAmount(
-  amountMinor: number,
-  currency: string,
-): string {
-  try {
-    const normalizedCurrency = currency.toUpperCase();
-    const formatter = new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: normalizedCurrency,
-    });
-    const fractionDigits =
-      formatter.resolvedOptions().maximumFractionDigits ?? 2;
-
-    return formatter.format(amountMinor / 10 ** fractionDigits);
-  } catch {
-    return `${amountMinor} ${currency}`;
-  }
 }
 
 function getSubscriptionName(company: AdminCompanyResponse): string {
@@ -371,7 +353,7 @@ export function AdminSubscriptionsTable() {
 
                     <span className="min-w-0 truncate text-label font-medium text-white">
                       {subscription
-                        ? formatSubscriptionAmount(
+                        ? formatAmountMinor(
                             subscription.amount_minor,
                             subscription.currency,
                           )

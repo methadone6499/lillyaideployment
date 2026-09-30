@@ -60,8 +60,18 @@ function buildReport(overrides: Record<string, unknown> = {}) {
       full_name: "Ada Lovelace",
     },
     company_id: null,
+    assigned_reviewer_id: null,
     assigned_reviewer_user_id: null,
+    review_assignment_id: null,
+    review_cycle_id: null,
+    review_cycle: 0,
     review_status: "unassigned",
+    review_submitted_at: null,
+    review_locked_at: null,
+    review_assigned_at: null,
+    review_due_at: null,
+    is_editable: true,
+    is_overdue: false,
     title: "Nusinersen - Spinal Muscular Atrophy",
     drug_name: "Nusinersen",
     indications: "Spinal Muscular Atrophy",
@@ -127,15 +137,15 @@ assert.equal(personalUnassignedReport.creator.full_name, "Ada Lovelace");
 assert.equal(personalUnassignedReport.generation_status, "completed");
 assert.equal(personalUnassignedReport.review_status, "unassigned");
 
-const omittedCompanyAndReviewer = adminReportSummarySchema.parse(
-  buildAdminReportSummary({
-    company: undefined,
-    reviewer: undefined,
-  }),
+assert.equal(
+  adminReportSummarySchema.safeParse(
+    buildAdminReportSummary({
+      company: undefined,
+      reviewer: undefined,
+    }),
+  ).success,
+  false,
 );
-
-assert.equal(omittedCompanyAndReviewer.company, undefined);
-assert.equal(omittedCompanyAndReviewer.reviewer, undefined);
 
 const assignedCompanyReport = adminReportSummarySchema.parse(
   buildAdminReportSummary({
@@ -187,7 +197,7 @@ assert.equal(
       created_at: "2026-08-01T00:00:00Z",
       updated_at: "2026-08-02T12:00:00+00:00",
       generation_status: "failed",
-      review_status: "changes_requested",
+      review_status: "reviewed",
     }),
   }).success,
   true,
@@ -209,6 +219,9 @@ assert.equal(
   false,
 );
 
+const adminSummary = adminReportSummarySchema.parse(buildAdminReportSummary());
+assert.equal("review_cycle" in adminSummary, false);
+
 const listWithNullCursor = adminReportListResponseSchema.parse({
   items: [buildAdminReportSummary({ company: null, reviewer: null })],
   next_cursor: null,
@@ -219,12 +232,10 @@ assert.equal(listWithNullCursor.items.length, 1);
 assert.equal(listWithNullCursor.items[0]?.company, null);
 assert.equal(listWithNullCursor.items[0]?.reviewer, null);
 
-const listWithOmittedCursor = adminReportListResponseSchema.parse({
-  items: [],
-});
-
-assert.equal(listWithOmittedCursor.next_cursor, undefined);
-assert.equal(listWithOmittedCursor.items.length, 0);
+assert.equal(
+  adminReportListResponseSchema.safeParse({ items: [] }).success,
+  false,
+);
 
 assert.equal(
   adminReportListResponseSchema.parse({
@@ -239,3 +250,10 @@ const adminDetail = reportSchema.parse(buildReport());
 assert.equal(adminDetail.company_id, null);
 assert.equal(adminDetail.assigned_reviewer_user_id, null);
 assert.equal(adminDetail.generation_status, "completed");
+assert.equal(adminDetail.review_cycle_id, null);
+assert.equal(adminDetail.review_cycle, 0);
+
+assert.equal(
+  reportSchema.safeParse(buildReport({ review_cycle_id: undefined })).success,
+  false,
+);

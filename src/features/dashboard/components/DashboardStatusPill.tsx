@@ -26,6 +26,10 @@ const statusConfig: Record<
     label: "Unassigned",
     className: "bg-white/8 text-white/60",
   },
+  awaiting_assignment: {
+    label: "Awaiting Assignment",
+    className: "bg-white/8 text-white/60",
+  },
   pending: {
     label: "Pending Review",
     className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
@@ -34,21 +38,9 @@ const statusConfig: Record<
     label: "In Review",
     className: "bg-[rgba(255,200,92,0.12)] text-status-running",
   },
-  changes_requested: {
-    label: "Changes Requested",
-    className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
-  },
-  approved: {
-    label: "Approved",
-    className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
-  },
   reviewed: {
     label: "Reviewed",
     className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
-  },
-  sent_for_review: {
-    label: "Sent for Review",
-    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
   },
 };
 

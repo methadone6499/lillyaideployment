@@ -8,10 +8,10 @@ export const generationStatusSchema = z.enum([
 
 export const reviewStatusSchema = z.enum([
   "unassigned",
+  "awaiting_assignment",
   "pending",
   "in_review",
-  "changes_requested",
-  "approved",
+  "reviewed",
 ]);
 
 export const generationFiltersSchema = z
@@ -83,8 +83,18 @@ export const reportSchema = z.object({
   created_by_user_id: z.string(),
   creator_snapshot: creatorSnapshotSchema,
   company_id: z.string().nullable(),
+  assigned_reviewer_id: z.string().nullable(),
   assigned_reviewer_user_id: z.string().nullable(),
+  review_assignment_id: z.string().nullable(),
+  review_cycle_id: z.string().nullable(),
+  review_cycle: z.number().int().nonnegative(),
   review_status: reviewStatusSchema,
+  review_submitted_at: z.string().nullable(),
+  review_locked_at: z.string().nullable(),
+  review_assigned_at: z.string().nullable(),
+  review_due_at: z.string().nullable(),
+  is_editable: z.boolean(),
+  is_overdue: z.boolean(),
   title: z.string(),
   drug_name: z.string(),
   indications: z.string(),
@@ -103,6 +113,13 @@ export const reportSummarySchema = z.object({
   title: z.string(),
   generation_status: generationStatusSchema,
   review_status: reviewStatusSchema,
+  review_cycle: z.number().int().nonnegative(),
+  review_submitted_at: z.string().nullable(),
+  review_locked_at: z.string().nullable(),
+  review_assigned_at: z.string().nullable(),
+  review_due_at: z.string().nullable(),
+  is_editable: z.boolean(),
+  is_overdue: z.boolean(),
   created_at: z.string(),
 });
 

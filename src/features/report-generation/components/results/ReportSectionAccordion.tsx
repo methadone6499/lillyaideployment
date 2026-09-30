@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { HistoryIcon, StatusPill } from "@/components/ui";
 import { useAuthUser } from "@/features/auth";
 import { ReportApiError } from "../../api/reportFetch";
@@ -15,6 +15,8 @@ import {
 import { toEditingActor } from "../../utils/reportEditing";
 import { toReportSectionContent } from "../../utils/reportBlockEditing";
 import { toDisplayVersion } from "../../utils/revisionHistory";
+import { getClaimVerificationGroups } from "../../utils/claimVerification";
+import { isTrailingSourceHeading } from "../../utils/viewerSectionContent";
 import {
   createSaveEditableDocumentInput,
   getSaveEditableDocumentConflictAction,
@@ -26,12 +28,15 @@ import { ReportEditorConfirmationDialog } from "./ReportEditorConfirmationDialog
 import { ReportSectionAccordionFrame } from "./ReportSectionPresentation";
 import { RevisionHistoryModal } from "./RevisionHistoryModal";
 import { SectionContentRenderer } from "./SectionContentRenderer";
+import { SectionVerificationPanel } from "./SectionVerificationPanel";
 
 export type { ReportSectionAccordionItem };
 
 type ReportSectionAccordionProps = {
   reportServiceId: string;
   reportStatus: string;
+  allowEditing?: boolean;
+  hideTrailingSources?: boolean;
   item: ReportSectionAccordionItem;
   expanded: boolean;
   isEditing: boolean;
@@ -44,6 +49,7 @@ type ReportSectionAccordionProps = {
     accordionKey: string,
     document: EditableDocumentResponse,
   ) => void;
+  afterContent?: ReactNode;
 };
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -59,6 +65,8 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export function ReportSectionAccordion({
   reportServiceId,
   reportStatus,
+  allowEditing = true,
+  hideTrailingSources = false,
   item,
   expanded,
   isEditing,
@@ -68,12 +76,14 @@ export function ReportSectionAccordion({
   onStopEditing,
   onDirtyChange,
   onDocumentSaved,
+  afterContent,
 }: ReportSectionAccordionProps) {
   const { section, order, title, description, localContent, accordionKey } = item;
   const isLocalSection = localContent !== undefined;
   const sectionId = section.section_id ?? null;
   const canExpand = canExpandReportSection(section, isLocalSection);
   const canEdit =
+    allowEditing &&
     reportStatus === "completed" &&
     section.status === "completed" &&
     Boolean(sectionId);
@@ -126,6 +136,10 @@ export function ReportSectionAccordion({
   const isSaving = saveMutation.isPending;
 
   const apiContent = isLocalSection ? localContent : sectionContent?.content;
+  const verificationGroups = getClaimVerificationGroups(
+    section.section_type,
+    apiContent?.raw,
+  );
   const isWaitingForPersistedDocument =
     canEdit && expanded && isPersistedDocumentLoading;
   const renderedContent = persistedDocument
@@ -138,6 +152,8 @@ export function ReportSectionAccordion({
   const isReadOnlyContentError =
     isContentError && (!canEdit || isPersistedDocumentError);
   const hasSavedChanges = (persistedDocument?.revision ?? 0) > 0;
+  const shouldHideTrailingSources =
+    hideTrailingSources && !isTrailingSourceHeading(title);
 
   useEffect(() => {
     onDirtyChange(accordionKey, isDirty);
@@ -351,6 +367,7 @@ export function ReportSectionAccordion({
               actor={actor}
               blocks={draft.blocks}
               skipFirstHeading={!isLocalSection}
+              hideTrailingSources={shouldHideTrailingSources}
               onChange={handleDraftBlocks}
               onRewriteAccepted={acceptRewriteId}
             />
@@ -374,12 +391,19 @@ export function ReportSectionAccordion({
                   <SectionContentRenderer
                     content={renderedContent}
                     skipFirstHeading={!isLocalSection}
+                    hideTrailingSources={shouldHideTrailingSources}
+                  />
+                  <SectionVerificationPanel
+                    groups={verificationGroups}
+                    isStale={hasSavedChanges}
+                    onEdit={canEdit ? startEditing : undefined}
                   />
                 </div>
               )}
             </>
           )
         )}
+        {afterContent}
       </ReportSectionAccordionFrame>
 
       <ReportEditorConfirmationDialog

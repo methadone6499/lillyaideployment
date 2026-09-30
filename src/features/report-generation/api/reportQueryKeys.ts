@@ -9,6 +9,7 @@ export const reportQueryKeys = {
     ["report", reportServiceId, "economic-articles"] as const,
   comparators: (reportServiceId: string) =>
     ["report", reportServiceId, "comparators"] as const,
+  articleUploadMutation: ["report", "article-upload-mutation"] as const,
   status: (reportServiceId: string) =>
     ["report", reportServiceId, "status"] as const,
   section: (

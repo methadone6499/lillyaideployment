@@ -4,7 +4,7 @@ import {
   subscriptionLimitsSnapshotSchema,
   subscriptionStatusSchema,
   type SubscriptionStatus,
-} from "@/features/enterprise-activation";
+} from "@/features/billing";
 import { z } from "zod";
 
 const isoDateTimeSchema = z.string().datetime({ offset: true });

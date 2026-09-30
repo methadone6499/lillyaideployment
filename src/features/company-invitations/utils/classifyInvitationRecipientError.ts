@@ -10,6 +10,7 @@ export type InvitationRecipientErrorCode =
   | "account_already_exists"
   | "account_verification_required"
   | "seat_limit_reached"
+  | "company_plan_updating"
   | "retryable"
   | "generic";
 
@@ -31,6 +32,8 @@ const SEAT_LIMIT_MESSAGE =
   "This company has no available seats. Contact the company administrator.";
 const RETRYABLE_MESSAGE =
   "We could not process this invitation right now. Please try again in a moment.";
+const COMPANY_PLAN_UPDATING_MESSAGE =
+  "This company's plan is being updated, so new members can't join right now. Your invitation is still valid — please try again shortly.";
 const GENERIC_MESSAGE = "Something went wrong. Please try again.";
 
 const PUBLIC_TOKEN_GENERIC_CODES = new Set([
@@ -90,6 +93,14 @@ export function classifyInvitationRecipientError(
     return {
       code: "account_verification_required",
       message: error.message || VERIFICATION_REQUIRED_MESSAGE,
+    };
+  }
+
+  // A Custom plan payment freezes joins; the invitation must stay usable.
+  if (error.code === "custom_subscription_payment_in_progress") {
+    return {
+      code: "company_plan_updating",
+      message: COMPANY_PLAN_UPDATING_MESSAGE,
     };
   }
 

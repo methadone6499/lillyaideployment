@@ -1,5 +1,4 @@
 import { authenticatedAuthRequest } from "@/features/auth";
-import { ApiRequestError } from "@/services/ApiRequestError";
 import { apiRequest } from "@/services/apiRequest";
 
 import {
@@ -102,33 +101,13 @@ export async function getResolvedPlatformReport(
   options: { companyFallback: boolean; adminFallback: boolean },
   signal?: AbortSignal,
 ): Promise<Report> {
-  try {
-    return await getPlatformReport(platformReportId, signal);
-  } catch (error) {
-    if (!(error instanceof ApiRequestError) || error.status !== 404) {
-      throw error;
-    }
-
-    if (options.companyFallback) {
-      try {
-        return await getCompanyReport(platformReportId, signal);
-      } catch (companyError) {
-        if (
-          options.adminFallback &&
-          companyError instanceof ApiRequestError &&
-          companyError.status === 404
-        ) {
-          return getAdminReport(platformReportId, signal);
-        }
-
-        throw companyError;
-      }
-    }
-
-    if (options.adminFallback) {
-      return getAdminReport(platformReportId, signal);
-    }
-
-    throw error;
+  if (options.adminFallback) {
+    return getAdminReport(platformReportId, signal);
   }
+
+  if (options.companyFallback) {
+    return getCompanyReport(platformReportId, signal);
+  }
+
+  return getPlatformReport(platformReportId, signal);
 }

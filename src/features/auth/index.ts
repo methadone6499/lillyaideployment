@@ -4,6 +4,7 @@ export { AuthGradientLink } from "./components/AuthGradientLink";
 export { AuthPageShell } from "./components/AuthPageShell";
 export { AuthSubmitButton } from "./components/AuthSubmitButton";
 export { AuthenticatedBoundary } from "./components/AuthenticatedBoundary";
+export { AuthSessionLoading } from "./components/AuthSessionLoading";
 export { CheckEmailPage } from "./components/CheckEmailPage";
 export { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 export { LoginForm } from "./components/LoginForm";
@@ -12,6 +13,7 @@ export { SignupPage } from "./components/SignupPage";
 export { AuthSessionProvider } from "./providers/AuthSessionProvider";
 export { useCurrentUserQuery } from "./hooks/useCurrentUserQuery";
 export { useAuthUser } from "./hooks/useAuthUser";
+export { useResendCooldown } from "./hooks/useResendCooldown";
 export {
   useAuthStatus,
   useConfirmedUserId,
@@ -44,10 +46,16 @@ export {
   classifyLoginError,
   type LoginErrorState,
 } from "./utils/classifyLoginError";
-export { buildLoginRedirect, sanitizeReturnTo } from "./session/returnTo";
+export {
+  buildLoginRedirect,
+  buildPathWithReturnTo,
+  resolveAuthenticatedDestination,
+  sanitizeReturnTo,
+} from "./session/returnTo";
 export {
   getActiveContext,
   getPostAuthHomePath,
+  getReviewerDestination,
   hasPermission,
 } from "./utils/authAccess";
 export {

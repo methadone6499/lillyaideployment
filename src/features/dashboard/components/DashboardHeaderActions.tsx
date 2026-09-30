@@ -22,6 +22,7 @@ export type AccountMenuVariant =
   | "standard"
   | "company-admin"
   | "seat"
+  | "reviewer"
   | "super-admin";
 
 export type DashboardHeaderActionsProps = {
@@ -34,6 +35,10 @@ function getAccountMenuVariant(
 ): AccountMenuVariant {
   if (contextType === "global" && contextRole === "super_admin") {
     return "super-admin";
+  }
+
+  if (contextType === "reviewer" && contextRole === "reviewer") {
+    return "reviewer";
   }
 
   if (contextType === "company" && contextRole === "company_admin") {
@@ -103,13 +108,13 @@ export function DashboardHeaderActions({
       ? { href: "/company-admin/dashboard", label: "Company Menu" }
       : accountMenuVariant === "super-admin"
         ? { href: "/super-admin/dashboard", label: "Admin Menu" }
+        : accountMenuVariant === "reviewer"
+          ? { href: "/reviewer/assignments", label: "Reviewer Menu" }
         : null;
   const showBilling =
-    accountMenuVariant !== "seat" && accountMenuVariant !== "super-admin";
-  const billingHref =
-    accountMenuVariant === "company-admin"
-      ? "/company-admin/billing"
-      : "/billing";
+    accountMenuVariant !== "seat" &&
+    accountMenuVariant !== "reviewer" &&
+    accountMenuVariant !== "super-admin";
 
   useEffect(() => {
     if (!openPanel) return;
@@ -269,7 +274,7 @@ export function DashboardHeaderActions({
             ) : null}
             {showBilling ? (
               <Link
-                href={billingHref}
+                href="/settings/billing"
                 role="menuitem"
                 className="mx-2 mt-2 flex h-12 items-center justify-between rounded-card px-3.5 text-body-lg font-medium leading-normal text-white transition-colors hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 onClick={() => setOpenPanel(null)}

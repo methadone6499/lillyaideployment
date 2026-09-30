@@ -3,10 +3,17 @@ import type {
   advancedFiltersSchema,
   articleCandidateSchema,
   articleDiscoveryResponseSchema,
+  articleUploadResponseSchema,
+  articleUploadSelectionSchema,
+  articleUploadStatusSchema,
   blockSchema,
   builtInSectionTypeSchema,
   calloutBlockSchema,
   comparatorDiscoveryResponseSchema,
+  claimVerificationClaimSchema,
+  claimVerificationCountsSchema,
+  claimVerificationPayloadSchema,
+  claimVerificationStatusSchema,
   createCustomSectionPromptInputSchema,
   createReportInputSchema,
   createReportResponseSchema,
@@ -17,6 +24,7 @@ import type {
   customSectionTypeSchema,
   definitionBlockSchema,
   drugValidationResponseSchema,
+  evidenceBucketSchema,
   filterStateSchema,
   generateReportInputSchema,
   generateReportResponseSchema,
@@ -50,6 +58,7 @@ import type {
   tableBlockSchema,
   updateReportSelectionsInputSchema,
   updateReportSelectionsResponseSchema,
+  wizardArticleUploadSchema,
 } from "../schemas/reportSchemas";
 
 export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
@@ -72,9 +81,35 @@ export type ArticleCandidate = z.infer<typeof articleCandidateSchema>;
 export type ArticleDiscoveryResponse = z.infer<
   typeof articleDiscoveryResponseSchema
 >;
+export type EvidenceBucket = z.infer<typeof evidenceBucketSchema>;
+export type ArticleUploadStatus = z.infer<typeof articleUploadStatusSchema>;
+export type ArticleUploadResponse = z.infer<typeof articleUploadResponseSchema>;
+export type ArticleUploadSelection = z.infer<
+  typeof articleUploadSelectionSchema
+>;
+export type WizardArticleUpload = z.infer<typeof wizardArticleUploadSchema>;
 export type ComparatorDiscoveryResponse = z.infer<
   typeof comparatorDiscoveryResponseSchema
 >;
+
+export type ClaimVerificationStatus = z.infer<
+  typeof claimVerificationStatusSchema
+>;
+export type ClaimVerificationCounts = z.infer<
+  typeof claimVerificationCountsSchema
+>;
+export type ClaimVerificationClaim = z.infer<
+  typeof claimVerificationClaimSchema
+>;
+export type ClaimVerificationPayload = z.infer<
+  typeof claimVerificationPayloadSchema
+>;
+
+export type ClaimVerificationGroup = {
+  id: "clinical" | "economic" | "bia" | "hta";
+  label: string;
+  verification: ClaimVerificationPayload;
+};
 
 export type AdvancedFilters = z.infer<typeof advancedFiltersSchema>;
 export type ReportInputs = z.infer<typeof reportInputsSchema>;

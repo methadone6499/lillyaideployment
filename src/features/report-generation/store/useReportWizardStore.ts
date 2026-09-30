@@ -3,8 +3,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { DEFAULT_SECTION_IDS } from "../constants/reportSections";
+import { wizardArticleUploadSchema } from "../schemas/reportSchemas";
 import type {
   FilterState,
+  WizardArticleUpload,
   WizardCustomSection,
   WizardSectionId,
   WizardStep,
@@ -22,7 +24,7 @@ import {
 
 export { DEFAULT_SECTION_IDS };
 
-export const REPORT_WIZARD_PERSIST_VERSION = 12;
+export const REPORT_WIZARD_PERSIST_VERSION = 13;
 
 export const DEFAULT_FILTERS: FilterState = {
   timeRange: "last-1-year",
@@ -175,6 +177,7 @@ type PersistedWizardState = {
   selectedEconomicPmcids?: string[];
   selectedClinicalArticleIds?: string[];
   selectedEconomicArticleIds?: string[];
+  articleUploads?: unknown;
   selectedComparators?: string[];
   customComparators?: string[];
   selectedSectionIds?: string[];
@@ -195,6 +198,7 @@ type ReportWizardState = {
   platformSaveState: PlatformSaveState;
   selectedClinicalArticleIds: string[];
   selectedEconomicArticleIds: string[];
+  articleUploads: WizardArticleUpload[];
   selectedComparators: string[];
   customComparators: string[];
   selectedSectionIds: WizardSectionId[];
@@ -220,6 +224,8 @@ type ReportWizardState = {
   setSelectedEconomicArticleIds: (ids: string[]) => void;
   toggleClinicalArticleId: (id: string) => void;
   toggleEconomicArticleId: (id: string) => void;
+  upsertArticleUpload: (upload: WizardArticleUpload) => void;
+  removeArticleUpload: (uploadId: string) => void;
   toggleComparator: (name: string) => void;
   addCustomComparator: (name: string) => void;
   toggleSectionId: (id: WizardSectionId) => void;
@@ -256,6 +262,7 @@ const initialState = {
   platformSaveState: "not_started" as PlatformSaveState,
   selectedClinicalArticleIds: [] as string[],
   selectedEconomicArticleIds: [] as string[],
+  articleUploads: [] as WizardArticleUpload[],
   selectedComparators: [] as string[],
   customComparators: [] as string[],
   selectedSectionIds: getDefaultSelectedSectionIds(emptySectionInputs),
@@ -271,6 +278,7 @@ const reportPipelineState = {
   generationJobId: null as string | null,
   selectedClinicalArticleIds: [] as string[],
   selectedEconomicArticleIds: [] as string[],
+  articleUploads: [] as WizardArticleUpload[],
   selectedComparators: [] as string[],
   customComparators: [] as string[],
   customSections: [] as WizardCustomSection[],
@@ -347,6 +355,14 @@ function migrateCustomSections(value: unknown): WizardCustomSection[] {
   }
 
   return value.filter(isWizardCustomSection);
+}
+
+function isWizardArticleUpload(value: unknown): value is WizardArticleUpload {
+  return wizardArticleUploadSchema.safeParse(value).success;
+}
+
+function migrateArticleUploads(value: unknown): WizardArticleUpload[] {
+  return Array.isArray(value) ? value.filter(isWizardArticleUpload) : [];
 }
 
 function migrateSelectedComparators(
@@ -507,6 +523,13 @@ function migratePersistedState(
     };
   }
 
+  if (version < 13) {
+    state = {
+      ...state,
+      articleUploads: [],
+    };
+  }
+
   return state;
 }
 
@@ -632,6 +655,64 @@ export const useReportWizardStore = create<ReportWizardState>()(
             selectedEconomicArticleIds,
           });
         }),
+      upsertArticleUpload: (upload) =>
+        set((state) => {
+          const uploadIds = [upload.pmid, upload.pmcid].filter(Boolean);
+          const replacedUploads = state.articleUploads.filter((item) => {
+            if (item.bucket !== upload.bucket) {
+              return false;
+            }
+            const itemIds = [item.pmid, item.pmcid].filter(Boolean);
+            return itemIds.some((id) => uploadIds.includes(id));
+          });
+          const replacedSelectionIds = replacedUploads
+            .map((item) => item.pmcid || item.pmid)
+            .filter(Boolean);
+          const articleUploads = [
+            ...state.articleUploads.filter(
+              (item) => !replacedUploads.includes(item),
+            ),
+            upload,
+          ];
+          const selectionId = upload.pmcid || upload.pmid;
+          if (!selectionId) {
+            return { articleUploads };
+          }
+
+          if (upload.bucket === "clinical") {
+            const selectedClinicalArticleIds = [
+              ...new Set([
+                ...state.selectedClinicalArticleIds.filter(
+                  (id) => !replacedSelectionIds.includes(id),
+                ),
+                selectionId,
+              ]),
+            ];
+            return withSyncedSectionIdsOnInputChange(state, {
+              articleUploads,
+              selectedClinicalArticleIds,
+            });
+          }
+
+          const selectedEconomicArticleIds = [
+            ...new Set([
+              ...state.selectedEconomicArticleIds.filter(
+                (id) => !replacedSelectionIds.includes(id),
+              ),
+              selectionId,
+            ]),
+          ];
+          return withSyncedSectionIdsOnInputChange(state, {
+            articleUploads,
+            selectedEconomicArticleIds,
+          });
+        }),
+      removeArticleUpload: (uploadId) =>
+        set((state) => ({
+          articleUploads: state.articleUploads.filter(
+            (upload) => upload.upload_id !== uploadId,
+          ),
+        })),
       toggleComparator: (name) =>
         set((state) => {
           const selected = state.selectedComparators;
@@ -727,6 +808,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
           ...currentState,
           ...persisted,
           customSections: migrateCustomSections(persisted.customSections),
+          articleUploads: migrateArticleUploads(persisted.articleUploads),
         } as ReportWizardState;
       },
       partialize: (state) => ({
@@ -739,6 +821,7 @@ export const useReportWizardStore = create<ReportWizardState>()(
         platformSaveState: state.platformSaveState,
         selectedClinicalArticleIds: state.selectedClinicalArticleIds,
         selectedEconomicArticleIds: state.selectedEconomicArticleIds,
+        articleUploads: state.articleUploads,
         selectedComparators: state.selectedComparators,
         customComparators: state.customComparators,
         selectedSectionIds: state.selectedSectionIds,

@@ -20,7 +20,7 @@ import { toReviewerSectionPresentationItems } from "../utils/mapReviewerReportCo
 import { ReviewerSectionNotes } from "./ReviewerSectionNotes";
 import { ReviewerUnsavedNotesDialog } from "./ReviewerUnsavedNotesDialog";
 
-const REVIEWER_DASHBOARD_HREF = "/reviewer/dashboard";
+const REVIEWER_DASHBOARD_HREF = "/reviewer/assignments";
 const EMPTY_NOTIFICATIONS: readonly ReviewerNotification[] = [];
 
 type ReviewerReportShellProps = {

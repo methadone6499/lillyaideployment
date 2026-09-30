@@ -15,6 +15,8 @@ const INVALID_CREDENTIALS_MESSAGE =
   "The email or password you entered is incorrect.";
 const ACCOUNT_DISABLED_MESSAGE =
   "This account has been disabled. Contact support if you need help.";
+const REVIEWER_ACCESS_DISABLED_MESSAGE =
+  "Your reviewer access has been suspended. Contact a platform administrator if you need help.";
 const COMPANY_ACCESS_DISABLED_MESSAGE =
   "Your company access has been disabled. Contact your company administrator.";
 const COMPANY_ACCESS_UNAVAILABLE_MESSAGE =
@@ -45,6 +47,13 @@ export function classifyLoginError(
       return {
         type: "account_disabled",
         message: error.message || ACCOUNT_DISABLED_MESSAGE,
+      };
+    }
+
+    if (error.code === "reviewer_access_disabled") {
+      return {
+        type: "account_disabled",
+        message: error.message || REVIEWER_ACCESS_DISABLED_MESSAGE,
       };
     }
 

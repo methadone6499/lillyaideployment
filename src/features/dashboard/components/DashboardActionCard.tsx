@@ -13,6 +13,8 @@ type DashboardActionCardProps = {
   ctaLabel: string;
   href?: string;
   onCtaClick?: () => void;
+  disabled?: boolean;
+  disabledReason?: string;
 };
 
 function ActionCardCta({
@@ -20,14 +22,18 @@ function ActionCardCta({
   href,
   onCtaClick,
   variant,
+  disabled,
+  disabledReason,
 }: {
   ctaLabel: string;
   href?: string;
   onCtaClick?: () => void;
   variant: DashboardActionCardVariant;
+  disabled?: boolean;
+  disabledReason?: string;
 }) {
   const className = cn(
-    "mt-auto flex h-[52px] w-full items-center justify-between rounded-step-badge px-5 text-label font-medium transition-colors",
+    "mt-auto flex h-[52px] w-full items-center justify-between rounded-step-badge px-5 text-label font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
     variant === "highlight" && "bg-brand text-white hover:bg-brand/90",
     variant === "admin" &&
       "border border-dashed border-brand/28 bg-brand/9 text-white hover:bg-brand/16",
@@ -42,7 +48,7 @@ function ActionCardCta({
     </>
   );
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <Link href={href} className={className}>
         {content}
@@ -51,7 +57,13 @@ function ActionCardCta({
   }
 
   return (
-    <button type="button" className={className} onClick={onCtaClick}>
+    <button
+      type="button"
+      className={className}
+      disabled={disabled}
+      title={disabled ? disabledReason : undefined}
+      onClick={onCtaClick}
+    >
       {content}
     </button>
   );
@@ -64,6 +76,8 @@ export function DashboardActionCard({
   ctaLabel,
   href,
   onCtaClick,
+  disabled = false,
+  disabledReason,
 }: DashboardActionCardProps) {
   const titleNode: ReactNode = (
     <p
@@ -87,6 +101,9 @@ export function DashboardActionCard({
       <div className="flex flex-col gap-6">
         {titleNode}
         <p className="text-label leading-6 text-text-step">{description}</p>
+        {disabled && disabledReason ? (
+          <p className="text-helper text-status-running">{disabledReason}</p>
+        ) : null}
       </div>
 
       <ActionCardCta
@@ -94,6 +111,8 @@ export function DashboardActionCard({
         href={href}
         onCtaClick={onCtaClick}
         variant={variant}
+        disabled={disabled}
+        disabledReason={disabledReason}
       />
     </Card>
   );

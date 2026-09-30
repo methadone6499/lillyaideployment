@@ -1,7 +1,6 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { ApiRequestError } from "@/services/ApiRequestError";
@@ -14,8 +13,6 @@ import {
   beginNewAuthSession,
   establishAuthenticatedSession,
 } from "../session/authSession";
-import { sanitizeReturnTo } from "../session/returnTo";
-import { getPostAuthHomePath } from "../utils/authAccess";
 import {
   classifyLoginError,
   type LoginErrorState,
@@ -25,11 +22,10 @@ import { AuthPageShell } from "./AuthPageShell";
 import { LoginForm } from "./LoginForm";
 
 export function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const signinMutation = useSigninMutation();
   const resendMutation = useResendVerificationMutation();
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorState, setErrorState] = useState<LoginErrorState>({
     type: "none",
   });
@@ -37,6 +33,11 @@ export function LoginPage() {
   const [resendError, setResendError] = useState<string | null>(null);
 
   const handleSubmit = async (values: { email: string; password: string }) => {
+    if (isSigningIn) {
+      return;
+    }
+
+    setIsSigningIn(true);
     setErrorState({ type: "none" });
     setResendMessage(null);
     setResendError(null);
@@ -63,15 +64,10 @@ export function LoginPage() {
         });
         return;
       }
-
-      router.push(
-        sanitizeReturnTo(
-          searchParams.get("returnTo"),
-          getPostAuthHomePath(me),
-        ),
-      );
     } catch (error) {
       setErrorState(classifyLoginError(error, email));
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -108,7 +104,7 @@ export function LoginPage() {
       ) : null}
       <LoginForm
         errorState={errorState}
-        isSubmitting={signinMutation.isPending}
+        isSubmitting={isSigningIn || signinMutation.isPending}
         isResendingVerification={resendMutation.isPending}
         onSubmit={handleSubmit}
         onResendVerification={handleResendVerification}

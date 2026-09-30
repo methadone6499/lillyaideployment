@@ -6,8 +6,14 @@ import {
   Button,
   PlusIcon,
 } from "@/components/ui";
+import {
+  resolvePaidActionErrorPath,
+  resolvePaidActionFailurePath,
+  usePaidFeatureAccess,
+} from "@/features/billing";
 import type { GenerationFilters } from "@/features/reports";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   downloadPdfWhenReady,
   downloadPptxWhenReady,
@@ -32,8 +38,18 @@ export type ReportViewerProps = {
   selectedSectionIds: string[];
   /** Ordered fallback titles for `custom:<uuid>` rows (snapshot or wizard). */
   customSectionTitles?: string[];
+  isEditable?: boolean;
+  onEditingDirtyChange?: (dirty: boolean) => void;
   onBack: () => void;
   onRegenerate?: () => Promise<void>;
+  renderAfterSectionContent?: (section: ReportViewerSectionIdentity) => ReactNode;
+  renderAfterSections?: (sections: readonly ReportViewerSectionIdentity[]) => ReactNode;
+};
+
+export type ReportViewerSectionIdentity = {
+  sectionId: string | null;
+  title: string;
+  headingOccurrence: number;
 };
 
 type ViewerAction =
@@ -75,9 +91,16 @@ export function ReportViewer({
   filters,
   selectedSectionIds,
   customSectionTitles,
+  isEditable = true,
+  onEditingDirtyChange,
   onBack,
   onRegenerate,
+  renderAfterSectionContent,
+  renderAfterSections,
 }: ReportViewerProps) {
+  const router = useRouter();
+  const { overview, features, canUseFeature } = usePaidFeatureAccess();
+  const canExportPresentation = features?.ai_presentation === true;
   const { data: reportStatus, isLoading, isError, error } =
     useReportStatus(reportServiceId);
 
@@ -114,6 +137,15 @@ export function ReportViewer({
       ),
     [customSectionTitles, sections, selectedSectionIds],
   );
+  const sectionsWithHeadingOccurrence = useMemo(() => {
+    const counts = new Map<string, number>();
+    return sectionItems.map((item) => {
+      const heading = item.title.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+      const headingOccurrence = (counts.get(heading) ?? 0) + 1;
+      counts.set(heading, headingOccurrence);
+      return { ...item, headingOccurrence };
+    });
+  }, [sectionItems]);
 
   const isCompleted = reportStatus?.report_status === "completed";
   const isPartiallyCompleted =
@@ -205,8 +237,11 @@ export function ReportViewer({
 
   useEffect(() => {
     if (dirtySectionKeys.size === 0) {
+      onEditingDirtyChange?.(false);
       return;
     }
+
+    onEditingDirtyChange?.(true);
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -214,7 +249,7 @@ export function ReportViewer({
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [dirtySectionKeys]);
+  }, [dirtySectionKeys, onEditingDirtyChange]);
 
   const subtitle = isCompleted
     ? `Evidence Report - Generated on ${new Date().toLocaleDateString()}`
@@ -250,6 +285,17 @@ export function ReportViewer({
       title.trim().replace(/[^\w]+/g, "_").replace(/^_|_$/g, "") || "report";
 
     try {
+      if (format === "presentation") {
+        if (overview && !canUseFeature("ai_presentation")) {
+          router.replace(
+            resolvePaidActionFailurePath("subscription_required", overview),
+          );
+          throw new Error(
+            "A paid subscription is required to export a presentation.",
+          );
+        }
+      }
+
       if (format === "pdf") {
         setExportProgress(PDF_EXPORT_DEFAULT_PROGRESS_LABEL);
         const blob = await downloadPdfWhenReady(reportServiceId);
@@ -267,6 +313,14 @@ export function ReportViewer({
       });
       triggerBlobDownload(blob, `${safeTitle}_presentation.pptx`);
     } catch (exportFailure) {
+      const paidFailurePath = resolvePaidActionErrorPath(
+        exportFailure,
+        overview,
+      );
+      if (paidFailurePath) {
+        router.replace(paidFailurePath);
+      }
+
       setExportError(getErrorMessage(exportFailure));
       throw exportFailure;
     } finally {
@@ -334,6 +388,7 @@ export function ReportViewer({
         isExporting={isExporting}
         errorMessage={exportError}
         statusMessage={exportProgress}
+        presentationAvailable={canExportPresentation}
       />
 
       {isJobFailed && (
@@ -399,7 +454,7 @@ export function ReportViewer({
       )}
 
       <ReportSectionPresentation
-        items={sectionItems}
+        items={sectionsWithHeadingOccurrence}
         expandedId={expandedId}
         onToggle={(id, element) =>
           requestViewerAction({
@@ -420,9 +475,11 @@ export function ReportViewer({
             key={`${item.accordionKey}:${discardVersionByKey[item.accordionKey] ?? 0}`}
             reportServiceId={reportServiceId}
             reportStatus={reportStatus.report_status}
+            allowEditing={isEditable}
+            hideTrailingSources
             item={item}
             expanded={expanded}
-            isEditing={editingKey === item.accordionKey}
+            isEditing={isEditable && editingKey === item.accordionKey}
             sessionDocument={sessionDocumentByKey[item.accordionKey]}
             onToggle={onToggle}
             onRequestEdit={(element) =>
@@ -439,9 +496,24 @@ export function ReportViewer({
             }
             onDirtyChange={handleDirtyChange}
             onDocumentSaved={handleDocumentSaved}
+            afterContent={renderAfterSectionContent?.({
+              sectionId: item.section.section_id ?? null,
+              title: item.title,
+              headingOccurrence: item.headingOccurrence,
+            })}
           />
         )}
       />
+
+      {renderAfterSections?.(
+        sectionsWithHeadingOccurrence
+          .filter((item) => item.canExpand)
+          .map(({ section, title, headingOccurrence }) => ({
+            sectionId: section.section_id ?? null,
+            title,
+            headingOccurrence,
+          })),
+      )}
 
       <footer className="mt-auto border-t border-border-default pt-7">
         {!isExportModalOpen && exportError && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRightIcon } from "@/components/ui/icons";
+import { hasPermission, useAuthUser } from "@/features/auth";
 import { cn } from "@/lib/cn";
 import {
   usePlatformReports,
@@ -12,6 +13,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { DashboardStatusFilterValue } from "../types";
 import { formatReportDateTime } from "../utils/formatReportDateTime";
+import { getReportDisplayStatus } from "../utils/getReportDisplayStatus";
 import { DashboardPagination } from "./DashboardPagination";
 import { DashboardSearchInput } from "./DashboardSearchInput";
 import { DashboardStatusFilter } from "./DashboardStatusFilter";
@@ -48,6 +50,8 @@ function isInvalidCursorError(error: unknown): boolean {
 }
 
 export function RecentReportsTable() {
+  const { authMe } = useAuthUser();
+  const canSeeReviewState = hasPermission(authMe, "report:submit_review");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<DashboardStatusFilterValue>("all");
@@ -221,8 +225,15 @@ export function RecentReportsTable() {
                     {formatReportDateTime(report.created_at)}
                   </span>
 
-                  <span className="justify-self-start">
-                    <DashboardStatusPill status={report.generation_status} />
+                  <span className="flex flex-wrap gap-2 justify-self-start">
+                    <DashboardStatusPill
+                      status={
+                        canSeeReviewState
+                          ? getReportDisplayStatus(report)
+                          : report.generation_status
+                      }
+                    />
+                    {canSeeReviewState && report.is_overdue ? <span className="rounded-card bg-red-400/10 px-3 py-2 text-label font-medium text-red-400">Overdue</span> : null}
                   </span>
 
                   <ChevronRightIcon className="justify-self-end text-white" />

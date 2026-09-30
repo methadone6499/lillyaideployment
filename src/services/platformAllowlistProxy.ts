@@ -13,6 +13,8 @@ export const PLATFORM_PROXY_PREFIXES = [
   "subscriptions",
   "companies/me",
   "company-invitations",
+  "reviewer-invitations",
+  "reviewer",
   "admin",
 ] as const;
 
@@ -29,7 +31,87 @@ const PARAM_SEGMENT_PATTERN = /^[A-Za-z0-9._~-]+$/;
 const PLATFORM_PROXY_ALLOWLIST = [
   {
     prefix: "subscriptions",
-    pattern: ["enterprise", "activate"],
+    pattern: ["me"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["checkout"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["portal"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["upgrade"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["downgrade"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["downgrade", "cancel"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "requests"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "requests", "me"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "requests", ":request_id"],
+    methods: ["PATCH"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "requests", ":request_id", "cancel"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "offers", "current"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "offers", ":offer_id", "accept"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "offers", ":offer_id", "request-changes"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "offers", ":offer_id", "decline"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "offers", ":offer_id", "resend-email"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "offers", ":offer_id", "payment", "resume"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "subscriptions",
+    pattern: ["custom", "offers", ":offer_id", "payment", "cancel"],
     methods: ["POST"],
   },
   {
@@ -56,6 +138,11 @@ const PLATFORM_PROXY_ALLOWLIST = [
     prefix: "companies/me",
     pattern: ["quota", "me"],
     methods: ["GET"],
+  },
+  {
+    prefix: "companies/me",
+    pattern: ["quota", "redistribution", "dismiss"],
+    methods: ["POST"],
   },
   {
     prefix: "companies/me",
@@ -98,6 +185,46 @@ const PLATFORM_PROXY_ALLOWLIST = [
     methods: ["POST"],
   },
   {
+    prefix: "reviewer-invitations",
+    pattern: ["preview"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "reviewer-invitations",
+    pattern: ["register"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "reviewer",
+    pattern: ["dashboard"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "reviewer",
+    pattern: ["assignments"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "reviewer",
+    pattern: ["assignments", ":assignment_id"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "reviewer",
+    pattern: ["assignments", ":assignment_id", "start"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "reviewer",
+    pattern: ["assignments", ":assignment_id", "complete"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "reviewer",
+    pattern: ["assignments", ":assignment_id", "section-notes"],
+    methods: ["GET", "PUT"],
+  },
+  {
     prefix: "company-invitations",
     pattern: ["preview"],
     methods: ["POST"],
@@ -129,6 +256,16 @@ const PLATFORM_PROXY_ALLOWLIST = [
   },
   {
     prefix: "admin",
+    pattern: ["reports", ":report_id", "review-history"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reports", ":report_id", "comments"],
+    methods: ["GET", "POST"],
+  },
+  {
+    prefix: "admin",
     pattern: ["report-analytics", "popular-drugs"],
     methods: ["GET"],
   },
@@ -156,6 +293,136 @@ const PLATFORM_PROXY_ALLOWLIST = [
     prefix: "admin",
     pattern: ["users", ":user_id"],
     methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reviewer-invitations"],
+    methods: ["GET", "POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reviewer-invitations", ":invitation_id", "resend"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reviewer-invitations", ":invitation_id", "revoke"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reviewers"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reviewers", ":reviewer_id", "suspend"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reviewers", ":reviewer_id", "activate"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["reviewer-assignment-settings"],
+    methods: ["GET", "PUT"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["review-dashboard"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["review-assignments"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["review-assignments", ":assignment_id", "reassign"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["review-assignments", ":assignment_id", "section-notes"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["review-assignments", "queue", ":report_id", "retry"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "requests"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "requests", ":request_id"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "requests", ":request_id", "review"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: [
+      "custom-subscriptions",
+      "requests",
+      ":request_id",
+      "action-required",
+    ],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "requests", ":request_id", "close"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: [
+      "custom-subscriptions",
+      "requests",
+      ":request_id",
+      "resend-close-email",
+    ],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "requests", ":request_id", "notes"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "requests", ":request_id", "offers"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "offers", ":offer_id"],
+    methods: ["PATCH"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "offers", ":offer_id", "publish"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "offers", ":offer_id", "cancel"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["custom-subscriptions", "offers", ":offer_id", "resend-email"],
+    methods: ["POST"],
   },
 ] as const satisfies readonly PlatformProxyRule[];
 
@@ -215,7 +482,7 @@ function matchAllowlistedPath(
 }
 
 /**
- * Allowlisted BFF proxy for company, subscription, invitation, and admin
+ * Allowlisted BFF proxy for company, subscription, invitation, reviewer, and admin
  * Platform API paths. Never forwards acting user, role, or company headers.
  */
 export async function proxyAllowlistedPlatformRequest(

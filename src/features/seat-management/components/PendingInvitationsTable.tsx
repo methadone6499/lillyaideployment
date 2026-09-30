@@ -17,6 +17,7 @@ type PendingInvitationsTableProps = {
   nextPageErrorMessage?: string | null;
   pendingInvitationId?: string | null;
   resendCooldownSecondsById?: Record<string, number>;
+  resendLocked?: boolean;
   onPageChange: (page: number) => void | Promise<void>;
   onRetry?: () => void;
   onRetryNextPage?: () => void;
@@ -53,6 +54,7 @@ export function PendingInvitationsTable({
   nextPageErrorMessage = null,
   pendingInvitationId = null,
   resendCooldownSecondsById = {},
+  resendLocked = false,
   onPageChange,
   onRetry,
   onRetryNextPage,
@@ -165,11 +167,15 @@ export function PendingInvitationsTable({
                           <span className="flex items-center justify-end gap-2">
                             <button
                               type="button"
-                              disabled={isRowPending || isCoolingDown}
+                              disabled={
+                                isRowPending || isCoolingDown || resendLocked
+                              }
                               title={
-                                isCoolingDown
-                                  ? `Wait ${cooldownSeconds}s before resending`
-                                  : "Resend invitation"
+                                resendLocked
+                                  ? "Paused while a Custom plan payment is in progress"
+                                  : isCoolingDown
+                                    ? `Wait ${cooldownSeconds}s before resending`
+                                    : "Resend invitation"
                               }
                               onClick={() => onResend(invitation)}
                               className="inline-flex h-10 items-center justify-center rounded-card px-3 text-input font-medium text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"

@@ -1,10 +1,12 @@
 "use client";
 
+import { clearBillingSession } from "@/features/billing";
 import { clearCompanyInvitationSession } from "@/features/company-invitations";
 import { clearCompanyQuotaSession } from "@/features/company-quota";
+import { clearCustomSubscriptionSession } from "@/features/custom-subscriptions";
 import { clearDosageCalculatorSession } from "@/features/dosage-calculator";
-import { clearEnterpriseActivationSession } from "@/features/enterprise-activation";
 import { clearReportGenerationSession } from "@/features/report-generation";
+import { clearReviewerSession } from "@/features/reviewer";
 import {
   clearPlatformReportSession,
   syncPendingPlatformSavesWithAuthSession,
@@ -46,13 +48,15 @@ export function UserSessionIsolationProvider({
 
       if (becameUnauthenticated || userChanged) {
         // Cross-feature orchestration: each feature clears only its own session.
+        void clearBillingSession(queryClient);
         void clearReportGenerationSession(queryClient);
         void clearPlatformReportSession(queryClient);
-        void clearEnterpriseActivationSession(queryClient);
         void clearCompanySeatSession(queryClient);
         void clearCompanyInvitationSession(queryClient);
         void clearCompanyQuotaSession(queryClient);
+        void clearCustomSubscriptionSession(queryClient);
         void clearDosageCalculatorSession(queryClient);
+        void clearReviewerSession(queryClient);
       } else if (becameAuthenticated) {
         void syncPendingPlatformSavesWithAuthSession(queryClient);
       }

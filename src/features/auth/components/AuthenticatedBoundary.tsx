@@ -8,7 +8,10 @@ import { useBootstrapAuthSession } from "../hooks/useBootstrapAuthSession";
 import { useCurrentUserQuery } from "../hooks/useCurrentUserQuery";
 import type { Permission } from "../schemas/authSchemas";
 import { AuthSessionUnavailableError } from "../session/authSessionErrors";
-import { buildLoginRedirect, sanitizeReturnTo } from "../session/returnTo";
+import {
+  buildLoginRedirect,
+  resolveAuthenticatedDestination,
+} from "../session/returnTo";
 import { getPostAuthHomePath, hasPermission } from "../utils/authAccess";
 import { AuthSessionLoading } from "./AuthSessionLoading";
 import { AuthSessionUnavailable } from "./AuthSessionUnavailable";
@@ -17,12 +20,16 @@ type AuthenticatedBoundaryProps = {
   children: ReactNode;
   mode?: "require-auth" | "public-only";
   requiredPermission?: Permission;
+  authenticatedDestination?: string;
+  authenticatedContent?: ReactNode;
 };
 
 function AuthenticatedBoundaryInner({
   children,
   mode = "require-auth",
   requiredPermission,
+  authenticatedDestination,
+  authenticatedContent,
 }: AuthenticatedBoundaryProps) {
   const status = useAuthStatus();
   const pathname = usePathname();
@@ -31,6 +38,7 @@ function AuthenticatedBoundaryInner({
   const bootstrapQuery = useBootstrapAuthSession();
   const { data: me } = useCurrentUserQuery();
   const homePath = getPostAuthHomePath(me);
+  const hasAuthenticatedContent = authenticatedContent !== undefined;
   const isWaitingForAuthMe =
     mode === "require-auth" &&
     status === "authenticated" &&
@@ -53,7 +61,10 @@ function AuthenticatedBoundaryInner({
     }
 
     if (mode === "require-auth" && status === "unauthenticated") {
-      router.replace(buildLoginRedirect(pathname));
+      const search = searchParams.toString();
+      router.replace(
+        buildLoginRedirect(search ? `${pathname}?${search}` : pathname),
+      );
       return;
     }
 
@@ -63,8 +74,18 @@ function AuthenticatedBoundaryInner({
       return;
     }
 
-    if (mode === "public-only" && status === "authenticated") {
-      router.replace(sanitizeReturnTo(searchParams.get("returnTo"), homePath));
+    if (
+      mode === "public-only" &&
+      status === "authenticated" &&
+      !hasAuthenticatedContent
+    ) {
+      router.replace(
+        resolveAuthenticatedDestination(
+          authenticatedDestination,
+          searchParams.get("returnTo"),
+          homePath,
+        ),
+      );
     }
   }, [
     status,
@@ -76,6 +97,8 @@ function AuthenticatedBoundaryInner({
     isWaitingForAuthMe,
     lacksRequiredPermission,
     homePath,
+    authenticatedDestination,
+    hasAuthenticatedContent,
   ]);
 
   if (status === "initializing" && !isUnavailable) {
@@ -98,7 +121,7 @@ function AuthenticatedBoundaryInner({
   }
 
   if (mode === "public-only" && status === "authenticated") {
-    return <AuthSessionLoading />;
+    return authenticatedContent ?? <AuthSessionLoading />;
   }
 
   if (isWaitingForAuthMe || lacksRequiredPermission) {

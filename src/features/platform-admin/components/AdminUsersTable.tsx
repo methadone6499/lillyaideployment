@@ -37,6 +37,7 @@ const EFFECTIVE_ROLE_LABELS: Record<EffectiveRole, string> = {
   standard_user: "Standard User",
   company_admin: "Company Admin",
   company_seat_user: "Seat User",
+  reviewer: "Reviewer",
   super_admin: "Super Admin",
 };
 

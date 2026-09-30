@@ -22,9 +22,7 @@ export function AuthPageShell({ title, children }: AuthPageShellProps) {
 
       <header className="relative z-10 flex h-[var(--layout-auth-header-height)] shrink-0 items-center justify-center border-b-[1.2px] border-white/10">
         <LogoLink
-          width={69}
-          height={24}
-          className="inline-flex [&_img]:h-auto [&_img]:w-[clamp(50px,min(3.594vw,6.389vh),69px)]"
+          className="inline-flex [&_img]:h-auto [&_img]:w-[clamp(120px,min(8.333vw,14.815vh),160px)]"
         />
       </header>
 

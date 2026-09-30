@@ -167,7 +167,10 @@ export function AcceptInvitationPage() {
         return;
       }
 
-      setCanRetryAccept(classified.code === "retryable");
+      setCanRetryAccept(
+        classified.code === "retryable" ||
+          classified.code === "company_plan_updating",
+      );
       setRecipientError(classified.message);
     }
   }, [acceptMutation, isAuthenticated, logoutMutation, router]);

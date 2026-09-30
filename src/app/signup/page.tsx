@@ -1,9 +1,15 @@
-import { AuthenticatedBoundary, SignupPage } from "@/features/auth";
+import { SignupPage } from "@/features/auth";
+import { sanitizePlanIntentParam } from "@/features/billing";
 
-export default function SignupRoutePage() {
-  return (
-    <AuthenticatedBoundary mode="public-only">
-      <SignupPage />
-    </AuthenticatedBoundary>
-  );
+type SignupRoutePageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function SignupRoutePage({
+  searchParams,
+}: SignupRoutePageProps) {
+  const params = await searchParams;
+  const planIntent = sanitizePlanIntentParam(params.plan);
+
+  return <SignupPage planIntent={planIntent} />;
 }

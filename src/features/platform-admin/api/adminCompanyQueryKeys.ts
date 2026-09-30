@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from "@/features/enterprise-activation";
+import type { SubscriptionStatus } from "@/features/billing";
 
 export type AdminCompanyListQueryParams = {
   limit?: number;

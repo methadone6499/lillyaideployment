@@ -6,22 +6,31 @@ export const userStatusSchema = z.enum([
   "disabled",
 ]);
 
-export const globalRoleSchema = z.enum(["super_admin"]);
+export const globalRoleSchema = z.enum(["super_admin", "reviewer"]);
 
-export const contextTypeSchema = z.enum(["personal", "company", "global"]);
+export const contextTypeSchema = z.enum([
+  "personal",
+  "company",
+  "global",
+  "reviewer",
+]);
 
 export const effectiveRoleSchema = z.enum([
   "standard_user",
   "company_admin",
   "company_seat_user",
   "super_admin",
+  "reviewer",
 ]);
 
 export const permissionSchema = z.enum([
   "account:read",
   "account:update",
   "admin:companies_read",
+  "admin:report_comments_manage",
   "admin:reports_read",
+  "admin:reviewers_manage",
+  "admin:subscriptions_manage",
   "admin:users_read",
   "company:read",
   "company:billing_read",
@@ -33,6 +42,9 @@ export const permissionSchema = z.enum([
   "report:create",
   "report:read_company",
   "report:read_own",
+  "report:submit_review",
+  "review_assignments:read_own",
+  "review_assignments:update_own",
   "settings:read",
   "settings:update",
   "notification:read",

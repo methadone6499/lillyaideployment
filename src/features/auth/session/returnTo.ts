@@ -20,6 +20,21 @@ function isUnsafePath(value: string): boolean {
   return false;
 }
 
+function splitPath(path: string): { pathname: string; search: string } {
+  const hashIndex = path.indexOf("#");
+  const withoutHash = hashIndex === -1 ? path : path.slice(0, hashIndex);
+  const queryIndex = withoutHash.indexOf("?");
+
+  if (queryIndex === -1) {
+    return { pathname: withoutHash, search: "" };
+  }
+
+  return {
+    pathname: withoutHash.slice(0, queryIndex),
+    search: withoutHash.slice(queryIndex + 1),
+  };
+}
+
 export function sanitizeReturnTo(
   value: string | null | undefined,
   fallback = DEFAULT_RETURN_PATH,
@@ -45,6 +60,40 @@ export function sanitizeReturnTo(
   }
 
   return trimmed;
+}
+
+export function buildPathWithReturnTo(
+  destination: string,
+  returnTo?: string | null,
+  fallback = DEFAULT_RETURN_PATH,
+): string {
+  const safeDestination = sanitizeReturnTo(destination, fallback);
+  const { pathname, search } = splitPath(safeDestination);
+  const params = new URLSearchParams(search);
+  const safeReturnTo = returnTo ? sanitizeReturnTo(returnTo, "") : "";
+
+  if (safeReturnTo && splitPath(safeReturnTo).pathname !== pathname) {
+    params.set("returnTo", safeReturnTo);
+  }
+
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+export function resolveAuthenticatedDestination(
+  authenticatedDestination: string | null | undefined,
+  returnTo: string | null | undefined,
+  fallback: string,
+): string {
+  if (!authenticatedDestination) {
+    return sanitizeReturnTo(returnTo, fallback);
+  }
+
+  return buildPathWithReturnTo(
+    authenticatedDestination,
+    returnTo,
+    fallback,
+  );
 }
 
 export function buildLoginRedirect(pathname: string): string {

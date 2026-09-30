@@ -65,6 +65,15 @@ export const sectionTypeSchema = z.union([
 
 export const textAvailabilitySchema = z.enum(["full_text", "abstract_only"]);
 
+export const evidenceBucketSchema = z.enum(["clinical", "economic"]);
+
+export const articleUploadStatusSchema = z.enum([
+  "match_good",
+  "match_poor",
+  "not_found",
+  "low_quality",
+]);
+
 /** Coerce discovery IDs (string or number) to a trimmed non-empty string. */
 const requiredArticleIdSchema = z
   .union([z.string(), z.number()])
@@ -78,6 +87,18 @@ const optionalArticleIdSchema = z.preprocess((value) => {
   return normalized.length > 0 ? normalized : undefined;
 }, z.string().min(1).optional());
 
+/** Upload responses use an empty string when an identifier could not be resolved. */
+const resolvedArticleIdSchema = z
+  .union([z.string(), z.number()])
+  .transform((value) => String(value).trim());
+
+const relevanceCriterionSchema = z.object({
+  match_percent: z.number(),
+  label: z.enum(["Exact", "Strong", "Partial", "Weak", "Mismatch"]),
+  points: z.number(),
+  max_points: z.number(),
+});
+
 export const articleCandidateSchema = z.object({
   pmid: requiredArticleIdSchema,
   pmcid: optionalArticleIdSchema,
@@ -90,6 +111,57 @@ export const articleCandidateSchema = z.object({
   text_availability: textAvailabilitySchema.optional(),
   pubmed_url: z.string().optional(),
   pmc_url: z.string().optional(),
+  original_rank: z.number().int().positive().nullable().optional(),
+  relevance_score: z.number().nullable().optional(),
+  relevance_confidence: z.number().nullable().optional(),
+  relevance_breakdown: z
+    .record(z.string(), z.number())
+    .nullable()
+    .optional(),
+  relevance_criteria: z
+    .record(z.string(), relevanceCriterionSchema)
+    .nullable()
+    .optional(),
+  relevance_reason: z.string().nullable().optional(),
+  relevance_model: z.string().nullable().optional(),
+  relevance_version: z.string().nullable().optional(),
+});
+
+export const articleUploadScoresSchema = z.object({
+  title: z.number().nullable(),
+  year: z.number().nullable(),
+  authors: z.number().nullable(),
+  abstract: z.number().nullable(),
+});
+
+/**
+ * Known upload fields are validated while undocumented extracted metadata is
+ * retained so newer backend fields remain available without blocking uploads.
+ */
+export const articleUploadResponseSchema = z.looseObject({
+  upload_id: z.string().min(1),
+  pmid: resolvedArticleIdSchema,
+  pmcid: resolvedArticleIdSchema,
+  bucket: evidenceBucketSchema,
+  status: articleUploadStatusSchema,
+  message: z.string(),
+  scores: articleUploadScoresSchema,
+});
+
+export const articleUploadSelectionSchema = z.object({
+  upload_id: z.string().min(1),
+  pmid: z.string(),
+  pmcid: z.string(),
+  bucket: evidenceBucketSchema,
+  match_status: articleUploadStatusSchema,
+  accepted_warning: z.boolean(),
+  replace_existing: z.boolean(),
+});
+
+export const wizardArticleUploadSchema = articleUploadSelectionSchema.extend({
+  fileName: z.string(),
+  message: z.string(),
+  scores: articleUploadScoresSchema,
 });
 
 export const articleDiscoveryResponseSchema = z.object({
@@ -149,6 +221,7 @@ export const reportSelectionsSchema = z.object({
   comparators: z.array(z.string()),
   clinical_pmcids: z.array(z.string()),
   economic_pmcids: z.array(z.string()),
+  article_uploads: z.array(articleUploadSelectionSchema).optional().default([]),
   section_types: z.array(sectionTypeSchema),
 });
 
@@ -174,6 +247,7 @@ export const updateReportSelectionsInputSchema = z.object({
   custom_comparators: z.array(z.string()),
   clinical_pmcids: z.array(z.string()),
   economic_pmcids: z.array(z.string()),
+  article_uploads: z.array(articleUploadSelectionSchema),
   section_types: z.array(sectionTypeSchema),
 });
 
@@ -334,8 +408,59 @@ export const sectionBlockSchema = z.object({
   blocks: z.array(blockSchema),
 });
 
+export const claimVerificationStatusSchema = z.enum([
+  "supported",
+  "partially_supported",
+  "contradicted",
+  "not_found",
+  "unverifiable",
+]);
+
+export const claimVerificationCountsSchema = z.object({
+  supported: z.number().int().nonnegative(),
+  partially_supported: z.number().int().nonnegative(),
+  contradicted: z.number().int().nonnegative(),
+  not_found: z.number().int().nonnegative(),
+  unverifiable: z.number().int().nonnegative(),
+});
+
+export const claimVerificationClaimSchema = z.object({
+  claim_id: z.string().min(1),
+  domain: z.string(),
+  subject_id: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  field: z.string(),
+  claim_text: z.string(),
+  current_value: z.string().nullable().optional(),
+  decision_index: z.number().int().nonnegative().nullable().optional(),
+  status: claimVerificationStatusSchema,
+  confidence: z.number().nullable().optional(),
+  source_file: z.string().nullable().optional(),
+  source_passage: z.string().nullable().optional(),
+  source_section: z.string().nullable().optional(),
+  char_start: z.number().int().nonnegative().nullable().optional(),
+  char_end: z.number().int().nonnegative().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  suggested_value: z.string().nullable().optional(),
+  suggested_claim: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
+  version: z.string().nullable().optional(),
+});
+
+export const claimVerificationPayloadSchema = z.object({
+  stage: z.string(),
+  model: z.string().nullable().optional(),
+  version: z.string().nullable().optional(),
+  total_claims: z.number().int().nonnegative(),
+  counts: claimVerificationCountsSchema,
+  claims: z.array(claimVerificationClaimSchema),
+});
+
 export const reportSectionContentSchema = z.object({
-  raw: z.unknown().optional(),
+  raw: z.preprocess(
+    (value) => (value == null ? undefined : value),
+    z.record(z.string(), z.unknown()).optional(),
+  ),
   blocks: z.array(blockSchema),
 });
 

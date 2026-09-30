@@ -1,10 +1,5 @@
-import {
-  ReviewerDashboardShell,
-  fixtureReviewerDataSource,
-} from "@/features/reviewer";
+import { redirect } from "next/navigation";
 
-export default async function ReviewerDashboardPage() {
-  const snapshot = await fixtureReviewerDataSource.getDashboard();
-
-  return <ReviewerDashboardShell snapshot={snapshot} />;
+export default function ReviewerDashboardPage() {
+  redirect("/reviewer/assignments");
 }

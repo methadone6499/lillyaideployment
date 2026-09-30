@@ -1,3 +1,6 @@
+"use client";
+
+import { storePlanIntent } from "@/features/billing";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
 import type { PricingPlanContent } from "../types";
@@ -31,7 +34,9 @@ function ChecklistItem({ label }: { label: string }) {
 }
 
 export function PricingCard({ plan }: PricingCardProps) {
-  const ctaHref = "#contact";
+  const persistPlanIntent = () => {
+    storePlanIntent(plan.id);
+  };
 
   return (
     <article
@@ -93,20 +98,22 @@ export function PricingCard({ plan }: PricingCardProps) {
 
       {plan.ctaVariant === "primary" ? (
         <LandingCtaButton
-          href={ctaHref}
+          href={plan.ctaHref}
+          onClick={persistPlanIntent}
           fullWidth
           showArrow={false}
           className="mt-auto h-[clamp(44px,2.7083vw,52px)] rounded-button shadow-landing-emerald-glow"
         >
-          Contact Sales
+          {plan.ctaLabel}
         </LandingCtaButton>
       ) : (
         <LandingSecondaryButton
-          href={ctaHref}
+          href={plan.ctaHref}
+          onClick={persistPlanIntent}
           fullWidth
           className="mt-auto h-[clamp(44px,2.7083vw,52px)]"
         >
-          Contact Sales
+          {plan.ctaLabel}
         </LandingSecondaryButton>
       )}
     </article>

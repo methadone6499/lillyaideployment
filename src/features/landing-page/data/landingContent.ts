@@ -64,7 +64,7 @@ export const pricingPlans: PricingPlanContent[] = [
     iconSrc: "/landing/pricing-standard.svg",
     name: "Standard",
     audience: "Small teams getting started",
-    highlight: "30 reports per year",
+    highlight: "30 monthly reports",
     price: "£480",
     priceSuffix: "/mo",
     features: [
@@ -73,6 +73,8 @@ export const pricingPlans: PricingPlanContent[] = [
       "PDF & DOCX export",
       "Email support",
     ],
+    ctaLabel: "Get Started",
+    ctaHref: "/signup?plan=standard",
     ctaVariant: "secondary",
   },
   {
@@ -80,8 +82,8 @@ export const pricingPlans: PricingPlanContent[] = [
     iconSrc: "/landing/pricing-enterprise.svg",
     name: "Enterprise",
     audience: "Most popular for HTA consultancies",
-    highlight: "Up to 10 users. Unlimited Evaluations",
-    price: "£2400",
+    highlight: "10 seats / 100 company reports",
+    price: "£2,400",
     priceSuffix: "/mo",
     featured: true,
     features: [
@@ -92,6 +94,8 @@ export const pricingPlans: PricingPlanContent[] = [
       "Multi-HTA compliance",
       "Priority support",
     ],
+    ctaLabel: "Get Started",
+    ctaHref: "/signup?plan=enterprise",
     ctaVariant: "primary",
   },
   {
@@ -109,6 +113,8 @@ export const pricingPlans: PricingPlanContent[] = [
       "On-prem deployment option",
       "Account manager + SLA",
     ],
+    ctaLabel: "Contact Sales",
+    ctaHref: "/#contact",
     ctaVariant: "secondary",
   },
 ];

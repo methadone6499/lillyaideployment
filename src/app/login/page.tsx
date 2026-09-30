@@ -1,9 +1,5 @@
-import { AuthenticatedBoundary, LoginPage } from "@/features/auth";
+import { LoginPage } from "@/features/auth";
 
 export default function LoginRoutePage() {
-  return (
-    <AuthenticatedBoundary mode="public-only">
-      <LoginPage />
-    </AuthenticatedBoundary>
-  );
+  return <LoginPage />;
 }

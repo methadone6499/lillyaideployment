@@ -3,6 +3,7 @@ import { apiRequest } from "@/services/apiRequest";
 
 import {
   companyQuotaSummarySchema,
+  dismissQuotaRedistributionRequestSchema,
   ownQuotaSchema,
   quotaAllocationSchema,
   setMemberQuotaRequestSchema,
@@ -13,6 +14,8 @@ import {
 
 const COMPANY_QUOTA_URL = "/api/v1/companies/me/quota";
 const OWN_COMPANY_QUOTA_URL = "/api/v1/companies/me/quota/me";
+const DISMISS_REDISTRIBUTION_URL =
+  "/api/v1/companies/me/quota/redistribution/dismiss";
 const COMPANY_SEATS_API_PREFIX = "/api/v1/companies/me/seats";
 
 function bearerHeaders(accessToken: string): HeadersInit {
@@ -63,6 +66,27 @@ export function setMemberQuota(
         headers: bearerHeaders(accessToken),
         body,
         schema: quotaAllocationSchema,
+        signal: requestSignal,
+      }),
+    signal,
+  );
+}
+
+export function dismissQuotaRedistribution(
+  quotaPeriodId: string,
+  signal?: AbortSignal,
+): Promise<CompanyQuotaSummary> {
+  const body = dismissQuotaRedistributionRequestSchema.parse({
+    quota_period_id: quotaPeriodId,
+  });
+
+  return authenticatedAuthRequest(
+    (accessToken, requestSignal) =>
+      apiRequest(DISMISS_REDISTRIBUTION_URL, {
+        method: "POST",
+        headers: bearerHeaders(accessToken),
+        body,
+        schema: companyQuotaSummarySchema,
         signal: requestSignal,
       }),
     signal,

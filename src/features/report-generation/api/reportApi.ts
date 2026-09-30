@@ -1,5 +1,6 @@
 import {
   articleDiscoveryResponseSchema,
+  articleUploadResponseSchema,
   comparatorDiscoveryResponseSchema,
   createReportResponseSchema,
   customSectionResponseSchema,
@@ -16,6 +17,7 @@ import {
 import type {
   CreateCustomSectionInput,
   CreateReportInput,
+  EvidenceBucket,
   CustomSectionResponse,
   GenerateReportInput,
   GenerateReportResponse,
@@ -136,6 +138,40 @@ export async function discoverComparators(
   return reportFetch(`/reports/${reportServiceId}/discovery/comparators`, {
     method: "POST",
     schema: comparatorDiscoveryResponseSchema,
+    signal,
+  });
+}
+
+export async function uploadReportArticle(
+  reportServiceId: string,
+  input: {
+    file: File;
+    bucket: EvidenceBucket;
+    pmid?: string;
+    pmcid?: string;
+  },
+  signal?: AbortSignal,
+) {
+  const pmid = input.pmid?.trim();
+  const pmcid = input.pmcid?.trim();
+  if (!pmid && !pmcid) {
+    throw new Error("Enter a PMID or PMCID for the uploaded article.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", input.file);
+  formData.append("bucket", input.bucket);
+  if (pmid) {
+    formData.append("pmid", pmid);
+  }
+  if (pmcid) {
+    formData.append("pmcid", pmcid);
+  }
+
+  return reportFetch(`/reports/${reportServiceId}/articles/upload`, {
+    method: "POST",
+    body: formData,
+    schema: articleUploadResponseSchema,
     signal,
   });
 }

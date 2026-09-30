@@ -14,10 +14,11 @@ export function LandingFooter() {
         <div className="flex w-full flex-col items-center gap-[clamp(48px,3.75vw,72px)]">
           <div className="flex flex-col items-center gap-14">
             <Image
-              src="/lillyailogo.svg"
-              alt="Lilly AI"
-              width={115}
-              height={40}
+              src="/formulary-hta-logo.png"
+              alt="Formulary HTA"
+              width={737}
+              height={111}
+              className="h-auto w-[220px]"
             />
             <div className="flex items-center gap-14">
               <a href="#" aria-label="X" className="hover:text-white/50">

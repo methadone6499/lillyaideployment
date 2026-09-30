@@ -5,26 +5,27 @@ import Image from "next/image";
 import Link from "next/link";
 
 type LogoLinkProps = {
-  width: number;
-  height: number;
   className?: string;
 };
 
-export function LogoLink({ width, height, className }: LogoLinkProps) {
+export function LogoLink({ className }: LogoLinkProps) {
   const { isAuthenticated, authMe } = useAuthUser();
   const href = isAuthenticated ? getPostAuthHomePath(authMe) : "/";
 
   return (
     <Link
       href={href}
-      aria-label="Lilly AI home"
-      className={className ?? "inline-flex shrink-0"}
+      aria-label="Formulary HTA home"
+      className={
+        className ??
+        "inline-flex shrink-0 [&_img]:h-auto [&_img]:w-[180px]"
+      }
     >
       <Image
-        src="/lillyailogo.svg"
-        alt="Lilly AI"
-        width={width}
-        height={height}
+        src="/formulary-hta-logo.png"
+        alt="Formulary HTA"
+        width={737}
+        height={111}
         priority
       />
     </Link>

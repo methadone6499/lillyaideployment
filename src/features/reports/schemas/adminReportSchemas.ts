@@ -31,8 +31,8 @@ export const adminReportSummarySchema = z.object({
   title: z.string(),
   drug_name: z.string(),
   creator: adminReportCreatorSchema,
-  company: adminReportCompanySchema.nullish(),
-  reviewer: adminReportReviewerSchema.nullish(),
+  company: adminReportCompanySchema.nullable(),
+  reviewer: adminReportReviewerSchema.nullable(),
   generation_status: generationStatusSchema,
   review_status: reviewStatusSchema,
   quota_charged: z.boolean(),
@@ -42,7 +42,7 @@ export const adminReportSummarySchema = z.object({
 
 export const adminReportListResponseSchema = z.object({
   items: z.array(adminReportSummarySchema),
-  next_cursor: z.string().nullish(),
+  next_cursor: z.string().nullable(),
 });
 
 export type AdminReportCreator = z.infer<typeof adminReportCreatorSchema>;

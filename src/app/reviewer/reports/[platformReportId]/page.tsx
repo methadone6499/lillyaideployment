@@ -1,23 +1,5 @@
-import {
-  ReviewerReportShell,
-  fixtureReviewerDataSource,
-} from "@/features/reviewer";
+import { redirect } from "next/navigation";
 
-export default async function ReviewerReportPage({
-  params,
-}: {
-  params: Promise<{ platformReportId: string }>;
-}) {
-  const { platformReportId } = await params;
-  const [report, snapshot] = await Promise.all([
-    fixtureReviewerDataSource.getReport(platformReportId),
-    fixtureReviewerDataSource.getDashboard(),
-  ]);
-
-  return (
-    <ReviewerReportShell
-      report={report}
-      notifications={snapshot.notifications}
-    />
-  );
+export default function ReviewerReportPage() {
+  redirect("/reviewer/assignments");
 }

@@ -3,16 +3,19 @@
 import { ChevronRightIcon } from "@/components/ui/icons";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import {
+  generationStatusSchema,
+  reviewStatusSchema,
   useCompanyReports,
   type GenerationStatus,
+  type ReviewStatus,
 } from "@/features/reports";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/cn";
 import { ApiRequestError } from "@/services/ApiRequestError";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { DashboardStatusFilterValue } from "../types";
 import { formatReportDateTime } from "../utils/formatReportDateTime";
+import { getReportDisplayStatus } from "../utils/getReportDisplayStatus";
 import { DashboardPagination } from "./DashboardPagination";
 import { DashboardSearchInput } from "./DashboardSearchInput";
 import {
@@ -25,12 +28,19 @@ const ROWS_PER_PAGE = 6;
 const SEARCH_DEBOUNCE_MS = 300;
 const MAX_SEARCH_LENGTH = 100;
 
+type CompanyReportStatusFilterValue = GenerationStatus | ReviewStatus | "all";
+
 const COMPANY_STATUS_FILTER_OPTIONS = [
   { value: "all", label: "All Status" },
   { value: "completed", label: "Completed" },
   { value: "generating", label: "In Progress" },
   { value: "failed", label: "Failed" },
-] as const satisfies readonly DashboardStatusFilterOption<DashboardStatusFilterValue>[];
+  { value: "unassigned", label: "Not Submitted" },
+  { value: "awaiting_assignment", label: "Awaiting Assignment" },
+  { value: "pending", label: "Pending Review" },
+  { value: "in_review", label: "In Review" },
+  { value: "reviewed", label: "Reviewed" },
+] as const satisfies readonly DashboardStatusFilterOption<CompanyReportStatusFilterValue>[];
 
 const companyReportRowClass =
   "grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(148px,180px)_140px_24px] items-center gap-x-6 px-6";
@@ -64,7 +74,7 @@ export function CompanyReportsTable() {
   const canReadCompanyReports = hasPermission(authMe, "report:read_company");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] =
-    useState<DashboardStatusFilterValue>("all");
+    useState<CompanyReportStatusFilterValue>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearch = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
 
@@ -72,16 +82,23 @@ export function CompanyReportsTable() {
     debouncedSearch.trim().length > 0
       ? debouncedSearch.trim().slice(0, MAX_SEARCH_LENGTH)
       : undefined;
-  const generationStatus: GenerationStatus | undefined =
-    statusFilter === "all" ? undefined : statusFilter;
+  const generationStatusResult = generationStatusSchema.safeParse(statusFilter);
+  const reviewStatusResult = reviewStatusSchema.safeParse(statusFilter);
+  const generationStatus = generationStatusResult.success
+    ? generationStatusResult.data
+    : undefined;
+  const reviewStatus = reviewStatusResult.success
+    ? reviewStatusResult.data
+    : undefined;
 
   const reportsQuery = useCompanyReports({
     limit: ROWS_PER_PAGE,
     search,
     generationStatus,
+    reviewStatus,
     enabled: canReadCompanyReports,
   });
-  const hasActiveFilters = Boolean(search || generationStatus);
+  const hasActiveFilters = Boolean(search || generationStatus || reviewStatus);
 
   const loadedPageCount = reportsQuery.data?.pages.length ?? 0;
   const safeCurrentPage = Math.min(currentPage, Math.max(loadedPageCount, 1));
@@ -99,7 +116,7 @@ export function CompanyReportsTable() {
     setCurrentPage(1);
   };
 
-  const handleStatusFilterChange = (value: DashboardStatusFilterValue) => {
+  const handleStatusFilterChange = (value: CompanyReportStatusFilterValue) => {
     setStatusFilter(value);
     setCurrentPage(1);
   };
@@ -256,8 +273,9 @@ export function CompanyReportsTable() {
                     {formatReportDateTime(report.updated_at)}
                   </span>
 
-                  <span className="justify-self-start">
-                    <DashboardStatusPill status={report.generation_status} />
+                  <span className="flex flex-wrap gap-2 justify-self-start">
+                    <DashboardStatusPill status={getReportDisplayStatus(report)} />
+                    {report.is_overdue ? <span className="rounded-card bg-red-400/10 px-3 py-2 text-label font-medium text-red-400">Overdue</span> : null}
                   </span>
 
                   <ChevronRightIcon className="justify-self-end text-white" />

@@ -7,4 +7,6 @@ export const companyQuotaQueryKeys = {
   mutations: () => [...companyQuotaQueryKeys.root, "mutation"] as const,
   setMemberQuota: () =>
     [...companyQuotaQueryKeys.mutations(), "set-member"] as const,
+  dismissRedistribution: () =>
+    [...companyQuotaQueryKeys.mutations(), "dismiss-redistribution"] as const,
 };

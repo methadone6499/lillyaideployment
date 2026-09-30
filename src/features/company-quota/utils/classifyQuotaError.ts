@@ -19,6 +19,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   quota_target_removed: "That seat has already been removed.",
   company_quota_unavailable:
     "Company quota is not available for this workspace.",
+  custom_subscription_payment_in_progress:
+    "A Custom plan payment is in progress. Seats, invitations, quota changes and report generation are paused until it completes or is cancelled.",
 };
 
 export function classifyQuotaMutationError(error: unknown): string {
@@ -50,6 +52,31 @@ export function classifyQuotaMutationError(error: unknown): string {
   }
 
   return error.message || GENERIC_MESSAGE;
+}
+
+const REDISTRIBUTION_ERROR_MESSAGES: Record<string, string> = {
+  quota_redistribution_conflict:
+    "The quota period changed. Showing the latest quota.",
+  quota_redistribution_not_required:
+    "Quota redistribution is no longer needed for this period.",
+};
+
+export function classifyQuotaRedistributionError(error: unknown): {
+  message: string;
+  refetch: boolean;
+} {
+  if (
+    error instanceof ApiRequestError &&
+    error.code &&
+    REDISTRIBUTION_ERROR_MESSAGES[error.code]
+  ) {
+    return {
+      message: REDISTRIBUTION_ERROR_MESSAGES[error.code],
+      refetch: true,
+    };
+  }
+
+  return { message: classifyQuotaMutationError(error), refetch: false };
 }
 
 export function classifyQuotaQueryError(

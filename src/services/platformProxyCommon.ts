@@ -109,6 +109,16 @@ export function missingConfigResponse(): Response {
   });
 }
 
+function upstreamUnavailableResponse(): Response {
+  return new Response(GENERIC_PROXY_ERROR_BODY, {
+    status: 502,
+    headers: {
+      ...NO_CACHE_RESPONSE_HEADERS,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
 export function getPlatformUpstreamBaseUrl(): string | null {
   const platformApiBaseUrl = getPlatformApiBaseUrl();
 
@@ -124,16 +134,20 @@ export async function forwardToUpstream(
   upstreamUrl: string,
   method: string,
 ): Promise<Response> {
-  const upstreamResponse = await fetch(upstreamUrl, {
-    method,
-    headers: buildUpstreamRequestHeaders(request),
-    body:
-      method === "GET" || method === "HEAD"
-        ? undefined
-        : await request.arrayBuffer(),
-    cache: "no-store",
-    signal: request.signal,
-  });
+  try {
+    const upstreamResponse = await fetch(upstreamUrl, {
+      method,
+      headers: buildUpstreamRequestHeaders(request),
+      body:
+        method === "GET" || method === "HEAD"
+          ? undefined
+          : await request.arrayBuffer(),
+      cache: "no-store",
+      signal: request.signal,
+    });
 
-  return createProxyResponse(upstreamResponse);
+    return createProxyResponse(upstreamResponse);
+  } catch {
+    return upstreamUnavailableResponse();
+  }
 }

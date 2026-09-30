@@ -4,12 +4,9 @@ export type DashboardGenerationStatus = GenerationStatus;
 
 export type DashboardReviewStatus = ReviewStatus;
 
-export type DashboardAdminDisplayStatus = "reviewed" | "sent_for_review";
-
 export type DashboardStatusPillStatus =
   | DashboardGenerationStatus
-  | DashboardReviewStatus
-  | DashboardAdminDisplayStatus;
+  | DashboardReviewStatus;
 
 export type DashboardStatusFilterValue = DashboardGenerationStatus | "all";
 
@@ -22,6 +19,12 @@ export type DashboardQuota = {
   total: number | null;
   additionalReportPrice: string;
 };
+
+export type DashboardQuotaView =
+  | { kind: "loading" }
+  | { kind: "unlimited" }
+  | { kind: "unavailable" }
+  | { kind: "known"; used: number; total: number; remaining: number };
 
 export type DashboardNotification = {
   id: string;

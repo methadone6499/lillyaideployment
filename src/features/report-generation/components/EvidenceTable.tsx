@@ -12,11 +12,25 @@ import { getArticleSelectionId } from "../utils/getArticleSelectionId";
 import { getTextAvailability } from "../utils/getTextAvailability";
 import { useState } from "react";
 
+const relevanceNumberFormatter = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1,
+});
+
+function formatRelevanceNumber(value: number): string {
+  return relevanceNumberFormatter.format(value);
+}
+
+function formatCriterionName(criterion: string): string {
+  const words = criterion.replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 type EvidenceTableProps = {
   items: ArticleCandidate[];
   selectedIds: string[];
   onToggle: (id: string) => void;
   onSelectAll: (ids: string[]) => void;
+  onUploadArticle?: (article: ArticleCandidate) => void;
 };
 
 function getSourceLink(item: ArticleCandidate): string | null {
@@ -37,6 +51,7 @@ export function EvidenceTable({
   selectedIds,
   onToggle,
   onSelectAll,
+  onUploadArticle,
 }: EvidenceTableProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
@@ -46,10 +61,10 @@ export function EvidenceTable({
     selectableIds.every((id) => selectedIds.includes(id));
 
   const evidenceRowClass =
-    "grid grid-cols-[40px_minmax(0,1fr)_167px_122px_116px_140px_32px]";
+    "grid min-w-[1000px] grid-cols-[40px_minmax(260px,1fr)_130px_96px_90px_86px_86px_32px]";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 overflow-x-auto">
       <div
         className={cn(
           evidenceRowClass,
@@ -66,6 +81,7 @@ export function EvidenceTable({
         />
 
         <span className="text-body-lg font-medium text-text-muted">Title</span>
+        <span className="text-body-lg font-medium text-text-muted">AI score</span>
         <span />
         <span className="text-body-lg font-medium text-text-muted">Year</span>
         <span className="text-body-lg font-medium text-text-muted">PMC</span>
@@ -79,6 +95,13 @@ export function EvidenceTable({
           const selected = selectedIds.includes(selectionId);
           const expanded = expandedKey === selectionId;
           const sourceLink = getSourceLink(item);
+          const textAvailability = getTextAvailability(item);
+          const relevanceCriteria = Object.entries(
+            item.relevance_criteria ?? {},
+          );
+          const legacyRelevanceBreakdown = Object.entries(
+            item.relevance_breakdown ?? {},
+          );
 
           return (
             <div
@@ -99,17 +122,23 @@ export function EvidenceTable({
 
                 <div className="min-w-0 overflow-hidden pr-4">
                   <p
-                    className="wrap-break-word text-card-title font-medium leading-7 text-white"
+                    className="line-clamp-3 wrap-break-word text-card-title font-medium leading-7 text-white"
                     title={item.title}
                   >
                     {item.title}
                   </p>
                 </div>
 
+                <span className="text-body-lg font-medium text-text-primary">
+                  <span className="block">
+                    {item.relevance_score == null
+                      ? "Not scored"
+                      : `${formatRelevanceNumber(item.relevance_score)} / 100`}
+                  </span>
+                </span>
+
                 <span className="inline-flex h-[42px] max-w-[103px] items-center whitespace-nowrap rounded-card bg-brand-badge px-4 text-body-lg font-normal text-white">
-                  {getTextAvailability(item) === "full_text"
-                    ? "Full Text"
-                    : "Abstract"}
+                  {textAvailability === "full_text" ? "Full Text" : "Abstract"}
                 </span>
 
                 <span className="text-body-lg text-text-primary">
@@ -162,6 +191,59 @@ export function EvidenceTable({
                 <div className="border-t border-border-default px-[83px] pb-8 pt-6">
                   <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-x-6 gap-y-5 text-body-lg">
                     <span className="font-medium text-text-heading">
+                      AI relevance
+                    </span>
+                    <span className="text-text-muted">
+                      {item.relevance_reason ??
+                        "This article was retained, but the relevance scorer did not return an explanation."}
+                    </span>
+
+                    {relevanceCriteria.length > 0 ? (
+                      <>
+                        <span className="font-medium text-text-heading">
+                          Score details
+                        </span>
+                        <div className="flex flex-col gap-2">
+                          {relevanceCriteria.map(([criterion, details]) => (
+                            <div
+                              key={criterion}
+                              className="grid grid-cols-[minmax(100px,1fr)_72px_auto] items-center gap-3 rounded-card border border-border-default bg-surface-subtle px-3 py-2 text-helper"
+                            >
+                              <span className="font-medium text-text-heading">
+                                {formatCriterionName(criterion)}
+                              </span>
+                              <span className="text-text-primary">
+                                {details.label}
+                              </span>
+                              <span className="text-right text-text-muted">
+                                {`${formatRelevanceNumber(details.points)} / ${formatRelevanceNumber(details.max_points)} points · ${formatRelevanceNumber(details.match_percent)}% match`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : legacyRelevanceBreakdown.length > 0 ? (
+                      <>
+                        <span className="font-medium text-text-heading">
+                          Score details
+                        </span>
+                        <span className="flex flex-wrap gap-2 text-text-muted">
+                          {legacyRelevanceBreakdown.map(
+                            ([criterion, matchPercent]) => (
+                              <span
+                                key={criterion}
+                                className="rounded-card border border-border-default bg-surface-subtle px-3 py-1 text-helper"
+                              >
+                                {formatCriterionName(criterion)}: {" "}
+                                {formatRelevanceNumber(matchPercent)}% match
+                              </span>
+                            ),
+                          )}
+                        </span>
+                      </>
+                    ) : null}
+
+                    <span className="font-medium text-text-heading">
                       Authors
                     </span>
                     <span className="text-text-muted">
@@ -182,6 +264,19 @@ export function EvidenceTable({
                       {item.abstract}
                     </p>
                   </div>
+                  {onUploadArticle ? (
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => onUploadArticle(item)}
+                        className="inline-flex h-11 items-center rounded-button border border-border-default bg-surface-default px-4 text-label font-medium text-white transition-colors hover:border-brand-border hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      >
+                        {textAvailability === "full_text"
+                          ? "Replace PDF"
+                          : "Upload PDF"}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>

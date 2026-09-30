@@ -3,6 +3,13 @@
 import { AppHeader } from "@/components/shared/AppHeader";
 import { useIsAuthenticated } from "@/features/auth";
 import {
+  OperationLockBanner,
+  resolvePaidActionErrorPath,
+  resolvePaidActionFailurePath,
+  useOperationLock,
+  usePaidFeatureAccess,
+} from "@/features/billing";
+import {
   buildCreateReportInput,
   createReportInputSchema,
   enqueuePendingPlatformSave,
@@ -38,6 +45,7 @@ import {
 } from "../store/reportWizardSession";
 import { useReportWizardStore } from "../store/useReportWizardStore";
 import { enabledCustomSectionTitles } from "../utils/customSections";
+import { buildSelectedArticleUploads } from "../utils/articleUploads";
 import { mapFiltersToBackend } from "../utils/mapFiltersToBackend";
 import { buildApiSectionTypes } from "../utils/sectionOrdering";
 import { ReportResults } from "./results/ReportResults";
@@ -115,6 +123,9 @@ export function GenerateReportShell() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const isAuthenticated = useIsAuthenticated();
+  const { overview, canUseFeature } = usePaidFeatureAccess();
+  const operationLock = useOperationLock();
+  const isReportGenerationPaused = operationLock.isBlocked("report_generation");
   const currentStep = useReportWizardStore((s) => s.currentStep);
   const drugName = useReportWizardStore((s) => s.drugName);
   const indications = useReportWizardStore((s) => s.indications);
@@ -126,6 +137,7 @@ export function GenerateReportShell() {
   const selectedEconomicArticleIds = useReportWizardStore(
     (s) => s.selectedEconomicArticleIds,
   );
+  const articleUploads = useReportWizardStore((s) => s.articleUploads);
   const selectedComparators = useReportWizardStore(
     (s) => s.selectedComparators,
   );
@@ -193,6 +205,13 @@ export function GenerateReportShell() {
       setStep2Error(null);
       setDiscoveryWarnings([]);
 
+      if (overview && !canUseFeature("report_generation")) {
+        router.replace(
+          resolvePaidActionFailurePath("subscription_required", overview),
+        );
+        return;
+      }
+
       try {
         const report = await createReportMutation.mutateAsync({
           drug: drugName.trim(),
@@ -234,6 +253,12 @@ export function GenerateReportShell() {
         setDiscoveryWarnings(warnings);
         setStep(3);
       } catch (error) {
+        const paidFailurePath = resolvePaidActionErrorPath(error, overview);
+        if (paidFailurePath) {
+          router.replace(paidFailurePath);
+          return;
+        }
+
         setStep2Error(getErrorMessage(error));
       } finally {
         setIsPrefetchingDiscovery(false);
@@ -245,9 +270,23 @@ export function GenerateReportShell() {
     if (currentStep === 5) {
       setStep5Error(null);
 
+      if (isReportGenerationPaused) {
+        setStep5Error(
+          "Report generation is paused while a Custom plan payment is in progress. Try again once it completes or is cancelled.",
+        );
+        return;
+      }
+
       if (!reportServiceId) {
         setStep5Error(
           "Report is not configured. Go back to Filters and continue again.",
+        );
+        return;
+      }
+
+      if (overview && !canUseFeature("report_generation")) {
+        router.replace(
+          resolvePaidActionFailurePath("subscription_required", overview),
         );
         return;
       }
@@ -260,6 +299,11 @@ export function GenerateReportShell() {
             custom_comparators: customComparators,
             clinical_pmcids: selectedClinicalArticleIds,
             economic_pmcids: selectedEconomicArticleIds,
+            article_uploads: buildSelectedArticleUploads(
+              articleUploads,
+              selectedClinicalArticleIds,
+              selectedEconomicArticleIds,
+            ),
             section_types: buildApiSectionTypes(
               selectedSectionIds,
               customSections,
@@ -267,6 +311,12 @@ export function GenerateReportShell() {
           },
         });
       } catch (error) {
+        const paidFailurePath = resolvePaidActionErrorPath(error, overview);
+        if (paidFailurePath) {
+          router.replace(paidFailurePath);
+          return;
+        }
+
         setStep5Error(getErrorMessage(error));
         return;
       }
@@ -392,6 +442,12 @@ export function GenerateReportShell() {
           }
         })();
       } catch (error) {
+        const paidFailurePath = resolvePaidActionErrorPath(error, overview);
+        if (paidFailurePath) {
+          router.replace(paidFailurePath);
+          return;
+        }
+
         setStep5Error(getErrorMessage(error));
       }
 
@@ -427,6 +483,7 @@ export function GenerateReportShell() {
               synthesize structured, HTA-compliant evidence.
             </p>
             <Stepper currentStep={currentStep} />
+            <OperationLockBanner />
           </div>
         )}
 
@@ -481,6 +538,7 @@ export function GenerateReportShell() {
                 indications,
                 selectedSectionIds,
               ) ||
+              (currentStep === 5 && isReportGenerationPaused) ||
               saveSelectionsMutation.isPending ||
               generateMutation.isPending ||
               customSectionMutating > 0 ||

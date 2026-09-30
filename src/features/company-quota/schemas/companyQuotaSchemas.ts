@@ -13,6 +13,26 @@ export const quotaSourceSchema = z.enum([
 
 export const isoDateTimeSchema = z.string().datetime({ offset: true });
 
+export const quotaRedistributionTriggerSchema = z.enum([
+  "custom_offer",
+  "subscription_plan_change",
+]);
+
+export const quotaRedistributionStateSchema = z.object({
+  required: z.boolean(),
+  trigger_type: quotaRedistributionTriggerSchema,
+  trigger_id: z.string().min(1),
+  created_at: isoDateTimeSchema,
+  dismissed_at: isoDateTimeSchema.nullable(),
+  dismissed_by_user_id: z.string().nullable(),
+});
+
+export const dismissQuotaRedistributionRequestSchema = z
+  .object({
+    quota_period_id: z.string().min(1),
+  })
+  .strict();
+
 export const setMemberQuotaRequestSchema = z
   .object({
     quota_total: z.number().int().nonnegative(),
@@ -32,6 +52,7 @@ export const companyQuotaSummarySchema = z.object({
   quota_unallocated: z.number().int().nonnegative(),
   quota_used: z.number().int().nonnegative(),
   quota_remaining: z.number().int().nonnegative(),
+  redistribution: quotaRedistributionStateSchema.nullable().default(null),
 });
 
 export const ownQuotaSchema = z.object({
@@ -65,6 +86,15 @@ export type QuotaPeriodStatus = z.infer<typeof quotaPeriodStatusSchema>;
 export type QuotaAllocationStatus = z.infer<typeof quotaAllocationStatusSchema>;
 export type QuotaSource = z.infer<typeof quotaSourceSchema>;
 export type SetMemberQuotaRequest = z.infer<typeof setMemberQuotaRequestSchema>;
+export type QuotaRedistributionTrigger = z.infer<
+  typeof quotaRedistributionTriggerSchema
+>;
+export type QuotaRedistributionState = z.infer<
+  typeof quotaRedistributionStateSchema
+>;
+export type DismissQuotaRedistributionRequest = z.infer<
+  typeof dismissQuotaRedistributionRequestSchema
+>;
 export type CompanyQuotaSummary = z.infer<typeof companyQuotaSummarySchema>;
 export type OwnQuota = z.infer<typeof ownQuotaSchema>;
 export type QuotaAllocation = z.infer<typeof quotaAllocationSchema>;

@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 
+import { ApiRequestError } from "@/services/ApiRequestError";
+
 import {
   seatListResponseSchema,
   seatSchema,
   seatSummarySchema,
 } from "../schemas/seatManagementSchemas";
+import { classifySeatMutationError } from "../utils/classifySeatMutationError";
 
 function buildSeat(overrides: Record<string, unknown> = {}) {
   return {
@@ -137,4 +140,17 @@ assert.equal(
     next_cursor: "cursor-2",
   }).next_cursor,
   "cursor-2",
+);
+
+// --- Custom plan payment freeze ---
+
+assert.match(
+  classifySeatMutationError(
+    new ApiRequestError({
+      status: 409,
+      code: "custom_subscription_payment_in_progress",
+      message: "",
+    }),
+  ),
+  /Custom plan payment is in progress/,
 );

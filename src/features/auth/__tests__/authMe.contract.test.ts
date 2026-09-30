@@ -40,7 +40,10 @@ const COMPANY_SEAT_PERMISSIONS = [
 const SUPER_ADMIN_PERMISSIONS = [
   ...STANDARD_USER_PERMISSIONS,
   "admin:companies_read",
+  "admin:report_comments_manage",
   "admin:reports_read",
+  "admin:reviewers_manage",
+  "admin:subscriptions_manage",
   "admin:users_read",
 ] as const satisfies readonly Permission[];
 
@@ -202,6 +205,10 @@ assert.equal(hasPermission(personalMe, "company:members_read"), false);
 assert.equal(hasPermission(companyAdminMe, "company:members_read"), true);
 assert.equal(hasPermission(companySeatMe, "company:quota_read_own"), true);
 assert.equal(hasPermission(superAdminMe, "admin:reports_read"), true);
+assert.equal(
+  hasPermission(superAdminMe, "admin:report_comments_manage"),
+  true,
+);
 
 assert.equal(
   authMeResponseSchema.safeParse({

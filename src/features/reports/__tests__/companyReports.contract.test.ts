@@ -6,6 +6,7 @@ import {
 } from "../schemas/companyReportSchemas";
 import {
   createReportInputSchema,
+  reportSummarySchema,
   reportSchema,
 } from "../schemas/platformReportSchemas";
 import { buildCreateReportInput } from "../utils/buildCreateReportInput";
@@ -27,6 +28,13 @@ function buildCompanyReportSummary(overrides: Record<string, unknown> = {}) {
     creator: buildCreator(),
     generation_status: "completed",
     review_status: "unassigned",
+    review_cycle: 0,
+    review_submitted_at: null,
+    review_locked_at: null,
+    review_assigned_at: null,
+    review_due_at: null,
+    is_editable: true,
+    is_overdue: false,
     created_at: "2026-08-01T00:00:00.000Z",
     updated_at: "2026-08-02T12:00:00.000Z",
     ...overrides,
@@ -44,8 +52,18 @@ function buildReport(overrides: Record<string, unknown> = {}) {
       full_name: "Ada Lovelace",
     },
     company_id: "company-1",
+    assigned_reviewer_id: null,
     assigned_reviewer_user_id: null,
+    review_assignment_id: null,
+    review_cycle_id: null,
+    review_cycle: 0,
     review_status: "unassigned",
+    review_submitted_at: null,
+    review_locked_at: null,
+    review_assigned_at: null,
+    review_due_at: null,
+    is_editable: true,
+    is_overdue: false,
     title: "Nusinersen - Spinal Muscular Atrophy",
     drug_name: "Nusinersen",
     indications: "Spinal Muscular Atrophy",
@@ -140,7 +158,7 @@ assert.equal(
       created_at: "2026-08-01T00:00:00Z",
       updated_at: "2026-08-02T12:00:00+00:00",
       generation_status: "failed",
-      review_status: "changes_requested",
+      review_status: "reviewed",
     }),
   }).success,
   true,
@@ -162,6 +180,22 @@ assert.equal(
   false,
 );
 
+assert.equal(
+  companyReportSummarySchema.safeParse({
+    ...buildCompanyReportSummary(),
+    review_cycle: undefined,
+  }).success,
+  false,
+);
+
+assert.equal(
+  companyReportSummarySchema.safeParse({
+    ...buildCompanyReportSummary(),
+    review_locked_at: undefined,
+  }).success,
+  false,
+);
+
 const listWithNullCursor = companyReportListResponseSchema.parse({
   items: [buildCompanyReportSummary()],
   next_cursor: null,
@@ -171,12 +205,10 @@ assert.equal(listWithNullCursor.next_cursor, null);
 assert.equal(listWithNullCursor.items.length, 1);
 assert.equal(listWithNullCursor.items[0]?.creator.full_name, "Ada Lovelace");
 
-const listWithOmittedCursor = companyReportListResponseSchema.parse({
-  items: [],
-});
-
-assert.equal(listWithOmittedCursor.next_cursor, undefined);
-assert.equal(listWithOmittedCursor.items.length, 0);
+assert.equal(
+  companyReportListResponseSchema.safeParse({ items: [] }).success,
+  false,
+);
 
 assert.equal(
   companyReportListResponseSchema.parse({
@@ -192,6 +224,50 @@ assert.equal(generatingCompanyDetail.generation_status, "generating");
 assert.equal(generatingCompanyDetail.result.completed_at, null);
 assert.equal(generatingCompanyDetail.status_last_checked_at, null);
 assert.equal(generatingCompanyDetail.company_id, "company-1");
+assert.equal(generatingCompanyDetail.review_cycle_id, null);
+assert.equal(generatingCompanyDetail.review_cycle, 0);
+
+assert.equal(
+  reportSchema.safeParse(buildReport({ review_cycle: undefined })).success,
+  false,
+);
+
+assert.equal(
+  reportSchema.safeParse(buildReport({ review_cycle_id: undefined })).success,
+  false,
+);
+
+const platformSummary = {
+  id: "report-1",
+  report_service_id: "11111111-1111-4111-8111-111111111111",
+  title: "Nusinersen - Spinal Muscular Atrophy",
+  generation_status: "completed",
+  review_status: "unassigned",
+  review_cycle: 0,
+  review_submitted_at: null,
+  review_locked_at: null,
+  review_assigned_at: null,
+  review_due_at: null,
+  is_editable: true,
+  is_overdue: false,
+  created_at: "2026-08-01T00:00:00.000Z",
+};
+
+assert.equal(reportSummarySchema.safeParse(platformSummary).success, true);
+assert.equal(
+  reportSummarySchema.safeParse({
+    ...platformSummary,
+    review_cycle: undefined,
+  }).success,
+  false,
+);
+assert.equal(
+  reportSummarySchema.safeParse({
+    ...platformSummary,
+    review_locked_at: undefined,
+  }).success,
+  false,
+);
 
 const titledSnapshotReport = reportSchema.parse(
   buildReport({

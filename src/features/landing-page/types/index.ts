@@ -1,3 +1,5 @@
+import type { PlanIntent } from "@/features/billing";
+
 export type FeatureCardContent = {
   title: string;
   description: string;
@@ -11,7 +13,7 @@ export type WhyCardContent = {
 };
 
 export type PricingPlanContent = {
-  id: string;
+  id: PlanIntent;
   iconSrc: string;
   name: string;
   audience: string;
@@ -21,5 +23,7 @@ export type PricingPlanContent = {
   priceLabel?: string;
   features: string[];
   featured?: boolean;
+  ctaLabel: string;
+  ctaHref: string;
   ctaVariant: "primary" | "secondary";
 };

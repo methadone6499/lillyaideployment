@@ -1,29 +1,26 @@
 import { Card } from "@/components/ui/Card";
-import type { DashboardQuota } from "../types";
+import { additionalReportPrice } from "../data/dashboardData";
+import type { DashboardQuotaView } from "../types";
 
 type ReportQuotaCardProps = {
-  quota: DashboardQuota;
-  isLoading?: boolean;
+  view: DashboardQuotaView;
   errorMessage?: string | null;
   onRetry?: () => void;
   showBuyAdditional?: boolean;
 };
 
-function formatQuotaValue(value: number | null): string {
-  if (value === null) {
-    return "—";
-  }
-
+function formatQuotaValue(value: number): string {
   return String(value);
 }
 
 export function ReportQuotaCard({
-  quota,
-  isLoading = false,
+  view,
   errorMessage = null,
   onRetry,
   showBuyAdditional = true,
 }: ReportQuotaCardProps) {
+  const isLoading = view.kind === "loading";
+
   return (
     <Card
       aria-busy={isLoading}
@@ -31,15 +28,57 @@ export function ReportQuotaCard({
     >
       <p className="text-card-title font-medium text-text-heading">Report quota</p>
 
-      <p className="mt-4 flex items-baseline font-medium leading-none">
-        <span className="text-[72px] tracking-[-0.02em] text-brand">
-          {formatQuotaValue(quota.used)}
-        </span>
-        <span className="text-[36px] tracking-[0.1em] text-text-step">/</span>
-        <span className="text-[36px] text-text-step">
-          {formatQuotaValue(quota.total)}
-        </span>
-      </p>
+      {view.kind === "unlimited" ? (
+        <>
+          <p className="mt-4 text-[72px] font-medium leading-none tracking-[-0.02em] text-brand">
+            Unlimited
+          </p>
+          <p className="mt-4 text-helper text-text-muted">
+            This account is not quota-limited.
+          </p>
+        </>
+      ) : null}
+
+      {view.kind === "unavailable" ? (
+        <>
+          <p className="mt-4 text-[72px] font-medium leading-none tracking-[-0.02em] text-brand">
+            Unavailable
+          </p>
+          {errorMessage ? null : (
+            <p className="mt-4 text-helper text-text-muted">
+              No matching quota period is available. This is not unlimited
+              access.
+            </p>
+          )}
+        </>
+      ) : null}
+
+      {view.kind === "loading" ? (
+        <p className="mt-4 flex items-baseline font-medium leading-none">
+          <span className="text-[72px] tracking-[-0.02em] text-brand">—</span>
+          <span className="text-[36px] tracking-[0.1em] text-text-step">/</span>
+          <span className="text-[36px] text-text-step">—</span>
+        </p>
+      ) : null}
+
+      {view.kind === "known" ? (
+        <p className="mt-4 flex items-baseline font-medium leading-none">
+          <span className="text-[72px] tracking-[-0.02em] text-brand">
+            {formatQuotaValue(view.used)}
+          </span>
+          <span className="text-[36px] tracking-[0.1em] text-text-step">/</span>
+          <span className="text-[36px] text-text-step">
+            {formatQuotaValue(view.total)}
+          </span>
+        </p>
+      ) : null}
+
+      {view.kind === "known" ? (
+        <p className="mt-4 text-helper text-text-muted">
+          {view.remaining} remaining. Remaining quota is informational; report
+          generation is confirmed by the server.
+        </p>
+      ) : null}
 
       {errorMessage ? (
         <div
@@ -59,12 +98,12 @@ export function ReportQuotaCard({
         </div>
       ) : null}
 
-      {showBuyAdditional ? (
+      {showBuyAdditional && view.kind === "known" ? (
         <button
           type="button"
           className="mt-auto flex w-full items-center rounded-step-badge border border-dashed border-brand-chip-border bg-brand-bg px-5 py-5 text-left text-label font-medium text-brand transition-colors hover:bg-brand-bg/80"
         >
-          + Buy additional reports ({quota.additionalReportPrice} each)
+          + Buy additional reports ({additionalReportPrice} each)
         </button>
       ) : null}
     </Card>

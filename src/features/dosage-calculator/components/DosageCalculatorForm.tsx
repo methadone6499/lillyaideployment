@@ -43,6 +43,7 @@ type FieldErrors = Partial<Record<DosageCalculatorTextField, string>>;
 
 type DosageCalculatorFormProps = {
   isSubmitting?: boolean;
+  isSubmitDisabled?: boolean;
   onSubmitCalculation: (
     submission: DosageCalculatorSubmission,
   ) => Promise<void>;
@@ -50,6 +51,7 @@ type DosageCalculatorFormProps = {
 
 export function DosageCalculatorForm({
   isSubmitting = false,
+  isSubmitDisabled = false,
   onSubmitCalculation,
 }: DosageCalculatorFormProps) {
   const {
@@ -70,6 +72,7 @@ export function DosageCalculatorForm({
   const [isStarting, setIsStarting] = useState(false);
 
   const busy = isSubmitting || isStarting;
+  const submitBlocked = busy || isSubmitDisabled;
 
   const clearFieldError = (field: DosageCalculatorTextField) => {
     setErrors((current) => {
@@ -89,7 +92,7 @@ export function DosageCalculatorForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (busy) return;
+    if (submitBlocked) return;
 
     const formValues = selectDosageCalculatorFormValues(
       useDosageCalculatorStore.getState(),
@@ -336,7 +339,7 @@ export function DosageCalculatorForm({
           </p>
         ) : null}
 
-        <Button type="submit" disabled={busy} className="h-14 w-full text-body-lg">
+        <Button type="submit" disabled={submitBlocked} className="h-14 w-full text-body-lg">
           {busy ? "Starting calculation…" : "Run calculation"}
         </Button>
       </form>

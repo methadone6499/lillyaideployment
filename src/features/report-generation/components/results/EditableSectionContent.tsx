@@ -28,6 +28,7 @@ import {
   getRewritePreviewStatusMessage,
   REWRITE_PREVIEW_APPLY_FAILED_MESSAGE,
 } from "../../utils/rewritePreview";
+import { stripTrailingEditableSourceBlocks } from "../../utils/viewerSectionContent";
 import { RewriteWithAiPopover } from "./RewriteWithAiPopover";
 
 type SelectionHighlightRect = {
@@ -50,6 +51,7 @@ type EditableSectionContentProps = {
   actor: EditingActor | null;
   blocks: EditableBlock[];
   skipFirstHeading?: boolean;
+  hideTrailingSources?: boolean;
   onChange: (blocks: EditableBlock[]) => void;
   onRewriteAccepted: (rewriteId: string) => void;
 };
@@ -480,6 +482,7 @@ export function EditableSectionContent({
   actor,
   blocks,
   skipFirstHeading = false,
+  hideTrailingSources = false,
   onChange,
   onRewriteAccepted,
 }: EditableSectionContentProps) {
@@ -498,13 +501,16 @@ export function EditableSectionContent({
     sectionType,
   );
 
-  const firstBlock = blocks[0];
+  const viewerBlocks = hideTrailingSources
+    ? stripTrailingEditableSourceBlocks(blocks)
+    : blocks;
+  const firstBlock = viewerBlocks[0];
   const visibleBlocks =
     skipFirstHeading &&
     firstBlock?.type === "heading" &&
     firstBlock.level <= 2
-      ? blocks.slice(1)
-      : blocks;
+      ? viewerBlocks.slice(1)
+      : viewerBlocks;
 
   const handleTextChange = (target: EditableTextTarget, value: string) => {
     setSelection(null);

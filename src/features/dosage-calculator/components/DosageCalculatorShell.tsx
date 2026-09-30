@@ -1,7 +1,14 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/AppHeader";
+import {
+  resolvePaidActionErrorPath,
+  resolvePaidActionFailurePath,
+  usePaidFeatureAccess,
+} from "@/features/billing";
 import { DashboardHeaderActions } from "@/features/dashboard";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDosageCalculatorJob } from "../hooks/useDosageCalculatorJob";
 import {
@@ -27,6 +34,14 @@ function cloneRequestWithNewKey(
 }
 
 export function DosageCalculatorShell() {
+  const router = useRouter();
+  const { overview, features, isPending, canUseFeature } =
+    usePaidFeatureAccess();
+  const dosageAllowed = features?.dosage_calculator !== false;
+  const missingAccessPath =
+    overview && !canUseFeature("dosage_calculator")
+      ? resolvePaidActionFailurePath("subscription_required", overview)
+      : null;
   const {
     jobId,
     error,
@@ -97,30 +112,54 @@ export function DosageCalculatorShell() {
 
   const handleSubmitCalculation = useCallback(
     async (submission: DosageCalculatorSubmission) => {
+      if (isPending) {
+        return;
+      }
+
+      if (overview && !canUseFeature("dosage_calculator")) {
+        router.replace(
+          resolvePaidActionFailurePath("subscription_required", overview),
+        );
+        return;
+      }
+
       setSubmittedInputs(submission.submittedInputs);
       setLastRequest(submission.request);
 
       try {
         await start(submission.request);
-      } catch {
-        // Surfaced through job.error.
+      } catch (error) {
+        const paidFailurePath = resolvePaidActionErrorPath(error, overview);
+        if (paidFailurePath) {
+          router.replace(paidFailurePath);
+        }
       }
     },
-    [start],
+    [canUseFeature, isPending, overview, router, start],
   );
 
   const handleRetry = useCallback(async () => {
     if (!lastRequest) return;
+
+    if (overview && !canUseFeature("dosage_calculator")) {
+      router.replace(
+        resolvePaidActionFailurePath("subscription_required", overview),
+      );
+      return;
+    }
 
     const nextRequest = cloneRequestWithNewKey(lastRequest);
     setLastRequest(nextRequest);
 
     try {
       await start(nextRequest);
-    } catch {
-      // Surfaced through job.error.
+    } catch (error) {
+      const paidFailurePath = resolvePaidActionErrorPath(error, overview);
+      if (paidFailurePath) {
+        router.replace(paidFailurePath);
+      }
     }
-  }, [lastRequest, start]);
+  }, [canUseFeature, lastRequest, overview, router, start]);
 
   const handleStartOver = useCallback(async () => {
     setSubmittedInputs(null);
@@ -145,8 +184,20 @@ export function DosageCalculatorShell() {
 
         <div className="mt-7 grid w-full max-w-[1484px] items-start gap-4 lg:mt-12 xl:grid-cols-[1.028fr_1fr]">
           <div className="min-w-0">
+            {missingAccessPath ? (
+              <p
+                role="alert"
+                className="mb-4 text-helper leading-5.5 text-status-running"
+              >
+                A paid subscription is required to run calculations.{" "}
+                <Link href={missingAccessPath} className="underline">
+                  Choose a plan
+                </Link>
+              </p>
+            ) : null}
             <DosageCalculatorForm
               isSubmitting={isEnqueueing}
+              isSubmitDisabled={isPending || !dosageAllowed}
               onSubmitCalculation={handleSubmitCalculation}
             />
           </div>

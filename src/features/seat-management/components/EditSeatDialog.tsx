@@ -16,6 +16,8 @@ type EditSeatDialogProps = {
   seat: Seat;
   isPending?: boolean;
   quotaUnallocated?: number | null;
+  seatChangesLocked?: boolean;
+  quotaChangesLocked?: boolean;
   onClose: () => void;
   onConfirm: (seat: Seat, values: EditSeatFormValues) => Promise<string | null>;
   onRequestRemove?: (seat: Seat) => void;
@@ -42,13 +44,16 @@ export function EditSeatDialog({
   seat,
   isPending = false,
   quotaUnallocated = null,
+  seatChangesLocked = false,
+  quotaChangesLocked = false,
   onClose,
   onConfirm,
   onRequestRemove,
 }: EditSeatDialogProps) {
   const canChangeStatus =
-    seat.can_manage_status && seat.status !== "removed";
-  const canChangeQuota = seat.can_manage_quota && seat.status !== "removed";
+    seat.can_manage_status && seat.status !== "removed" && !seatChangesLocked;
+  const canChangeQuota =
+    seat.can_manage_quota && seat.status !== "removed" && !quotaChangesLocked;
   const canSave = canChangeStatus || canChangeQuota;
   const initialStatus: SeatStatus =
     seat.status === "disabled" ? "disabled" : "active";
@@ -249,7 +254,17 @@ export function EditSeatDialog({
           </p>
         )}
 
-        {onRequestRemove && seat.can_manage && seat.status !== "removed" ? (
+        {seatChangesLocked || quotaChangesLocked ? (
+          <p className="text-helper text-status-running">
+            Seat and quota changes are paused while a Custom plan payment is in
+            progress.
+          </p>
+        ) : null}
+
+        {onRequestRemove &&
+        seat.can_manage &&
+        seat.status !== "removed" &&
+        !seatChangesLocked ? (
           <button
             type="button"
             disabled={isPending}

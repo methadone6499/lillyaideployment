@@ -5,6 +5,10 @@ export const COMPANY_ACCESS_CLOSED_SESSION_CODES = [
   "company_access_unavailable",
 ] as const;
 
+export const REVIEWER_ACCESS_CLOSED_SESSION_CODES = [
+  "reviewer_access_disabled",
+] as const;
+
 type CompanyAccessClosedSessionCode =
   (typeof COMPANY_ACCESS_CLOSED_SESSION_CODES)[number];
 
@@ -26,5 +30,8 @@ export function isClosedSessionAuthError(error: unknown): boolean {
     return true;
   }
 
-  return isCompanyAccessClosedSessionCode(error.code);
+  return (
+    isCompanyAccessClosedSessionCode(error.code) ||
+    error.code === REVIEWER_ACCESS_CLOSED_SESSION_CODES[0]
+  );
 }

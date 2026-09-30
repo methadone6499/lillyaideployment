@@ -32,6 +32,7 @@ type SeatListTableProps = {
   errorMessage?: string | null;
   nextPageErrorMessage?: string | null;
   pendingMembershipId?: string | null;
+  seatChangesLocked?: boolean;
   emptyMessage: string;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: SeatStatusFilterValue) => void;
@@ -104,6 +105,7 @@ export function SeatListTable({
   onEditSeat,
   onStatusChange,
   onRemoveSeat,
+  seatChangesLocked = false,
 }: SeatListTableProps) {
   return (
     <section
@@ -297,7 +299,12 @@ export function SeatListTable({
                             <button
                               type="button"
                               aria-label={`Remove seat for ${seat.full_name}`}
-                              disabled={isRowPending}
+                              disabled={isRowPending || seatChangesLocked}
+                              title={
+                                seatChangesLocked
+                                  ? "Paused while a Custom plan payment is in progress"
+                                  : undefined
+                              }
                               onClick={() => onRemoveSeat(seat)}
                               className="inline-flex size-10 shrink-0 items-center justify-center rounded-card bg-surface-elevated text-[#d92244] transition-colors hover:bg-[rgba(217,34,68,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d92244] disabled:cursor-not-allowed disabled:opacity-50"
                             >
@@ -313,7 +320,7 @@ export function SeatListTable({
                                   ? "disabled"
                                   : "active"
                               }
-                              disabled={isRowPending}
+                              disabled={isRowPending || seatChangesLocked}
                               onChange={(nextStatus) => {
                                 onStatusChange(seat, nextStatus);
                               }}
