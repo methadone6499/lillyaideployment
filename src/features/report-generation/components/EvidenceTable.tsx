@@ -61,7 +61,7 @@ export function EvidenceTable({
     selectableIds.every((id) => selectedIds.includes(id));
 
   const evidenceRowClass =
-    "grid min-w-[1000px] grid-cols-[40px_minmax(260px,1fr)_130px_96px_90px_86px_86px_32px]";
+    "grid min-w-[1000px] grid-cols-[40px_minmax(260px,1fr)_130px_104px_90px_86px_86px_32px] gap-x-4";
 
   return (
     <div className="flex flex-col gap-6 overflow-x-auto">
@@ -137,7 +137,7 @@ export function EvidenceTable({
                   </span>
                 </span>
 
-                <span className="inline-flex h-[42px] max-w-[103px] items-center whitespace-nowrap rounded-card bg-brand-badge px-4 text-body-lg font-normal text-white">
+                <span className="inline-flex h-[42px] max-w-[103px] justify-self-start items-center whitespace-nowrap rounded-card bg-brand-badge px-4 text-body-lg font-normal text-white">
                   {textAvailability === "full_text" ? "Full Text" : "Abstract"}
                 </span>
 
@@ -203,19 +203,19 @@ export function EvidenceTable({
                         <span className="font-medium text-text-heading">
                           Score details
                         </span>
-                        <div className="flex flex-col gap-2">
+                        <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
                           {relevanceCriteria.map(([criterion, details]) => (
                             <div
                               key={criterion}
-                              className="grid grid-cols-[minmax(100px,1fr)_72px_auto] items-center gap-3 rounded-card border border-border-default bg-surface-subtle px-3 py-2 text-helper"
+                              className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-3 rounded-card border border-border-default bg-surface-subtle px-3 py-2 text-helper"
                             >
-                              <span className="font-medium text-text-heading">
+                              <span className="col-start-1 row-start-1 font-medium text-text-heading">
                                 {formatCriterionName(criterion)}
                               </span>
-                              <span className="text-text-primary">
+                              <span className="col-start-1 row-start-2 text-text-primary">
                                 {details.label}
                               </span>
-                              <span className="text-right text-text-muted">
+                              <span className="col-start-2 row-span-2 row-start-1 whitespace-nowrap text-right text-text-muted">
                                 {`${formatRelevanceNumber(details.points)} / ${formatRelevanceNumber(details.max_points)} points · ${formatRelevanceNumber(details.match_percent)}% match`}
                               </span>
                             </div>
