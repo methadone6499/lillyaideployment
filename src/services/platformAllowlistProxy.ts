@@ -146,6 +146,16 @@ const PLATFORM_PROXY_ALLOWLIST = [
   },
   {
     prefix: "companies/me",
+    pattern: ["branding", "logo"],
+    methods: ["GET", "PUT", "DELETE"],
+  },
+  {
+    prefix: "companies/me",
+    pattern: ["branding", "logo", "content"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "companies/me",
     pattern: ["reports"],
     methods: ["GET"],
   },
