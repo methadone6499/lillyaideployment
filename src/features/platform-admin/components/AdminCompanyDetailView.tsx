@@ -8,7 +8,6 @@ import { useAdminCompany } from "../hooks/useAdminCompany";
 import { classifyAdminManagementError } from "../utils/adminManagement";
 import {
   COMPANY_STATUS_LABELS,
-  COMPANY_TYPE_LABELS,
   PLAN_TYPE_LABELS,
   SUBSCRIPTION_STATUS_LABELS,
   formatAdminDateTime,
@@ -83,8 +82,7 @@ export function AdminCompanyDetailView({ companyId }: AdminCompanyDetailViewProp
           </span>
         </div>
 
-        <dl className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
-          <DetailItem label="Company type" value={COMPANY_TYPE_LABELS[company.type]} />
+        <dl className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
           <DetailItem label="Created" value={formatAdminDateTime(company.created_at)} />
           <DetailItem label="Primary administrator" value={company.primary_admin?.full_name ?? "Unassigned"} />
           <DetailItem label="Administrator email" value={company.primary_admin?.email ?? "—"} />

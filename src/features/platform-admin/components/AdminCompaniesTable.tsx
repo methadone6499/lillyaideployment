@@ -19,14 +19,11 @@ import { cn } from "@/lib/cn";
 import { useAdminCompanies } from "../hooks/useAdminCompanies";
 import {
   companyStatusSchema,
-  companyTypeSchema,
   type CompanyStatus,
-  type CompanyType,
 } from "../schemas/adminCompanySchemas";
 import { classifyAdminManagementError } from "../utils/adminManagement";
 import {
   COMPANY_STATUS_LABELS,
-  COMPANY_TYPE_LABELS,
   PLAN_TYPE_LABELS,
   SUBSCRIPTION_STATUS_LABELS,
   statusPillClass,
@@ -38,12 +35,9 @@ const MAX_SEARCH_LENGTH = 100;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const companyRowClass =
-  "grid min-w-[1180px] grid-cols-[minmax(220px,1.4fr)_minmax(210px,1.25fr)_120px_130px_150px_150px_100px] items-center gap-x-5 px-6";
+  "grid min-w-[1040px] grid-cols-[minmax(220px,1.4fr)_minmax(210px,1.25fr)_130px_150px_150px_100px] items-center gap-x-5 px-6";
 
 const STATUS_OPTIONS = Object.entries(COMPANY_STATUS_LABELS).map(
-  ([value, label]) => ({ value, label }),
-);
-const TYPE_OPTIONS = Object.entries(COMPANY_TYPE_LABELS).map(
   ([value, label]) => ({ value, label }),
 );
 const PLAN_OPTIONS = Object.entries(PLAN_TYPE_LABELS).map(
@@ -58,14 +52,12 @@ export function AdminCompaniesTable() {
   const canRead = hasPermission(authMe, "admin:companies_read");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [subscriptionFilter, setSubscriptionFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearch = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
 
   const status = companyStatusSchema.safeParse(statusFilter);
-  const companyType = companyTypeSchema.safeParse(typeFilter);
   const planType = planTypeSchema.safeParse(planFilter);
   const subscriptionStatus = subscriptionStatusSchema.safeParse(
     subscriptionFilter,
@@ -76,7 +68,6 @@ export function AdminCompaniesTable() {
     limit: ROWS_PER_PAGE,
     search,
     status: status.success ? (status.data as CompanyStatus) : undefined,
-    type: companyType.success ? (companyType.data as CompanyType) : undefined,
     planType: planType.success ? (planType.data as PlanType) : undefined,
     subscriptionStatus: subscriptionStatus.success
       ? (subscriptionStatus.data as SubscriptionStatus)
@@ -95,14 +86,13 @@ export function AdminCompaniesTable() {
     ? classifyAdminManagementError(query.error)
     : null;
   const hasFilters = Boolean(
-    search || status.success || companyType.success || planType.success || subscriptionStatus.success,
+    search || status.success || planType.success || subscriptionStatus.success,
   );
 
   const resetPage = () => setCurrentPage(1);
   const clearFilters = () => {
     setSearchQuery("");
     setStatusFilter("");
-    setTypeFilter("");
     setPlanFilter("");
     setSubscriptionFilter("");
     resetPage();
@@ -156,7 +146,7 @@ export function AdminCompaniesTable() {
             </label>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Select
               value={statusFilter}
               options={STATUS_OPTIONS}
@@ -165,17 +155,6 @@ export function AdminCompaniesTable() {
               clearLabel="All statuses"
               onChange={(event) => {
                 setStatusFilter(event.target.value);
-                resetPage();
-              }}
-            />
-            <Select
-              value={typeFilter}
-              options={TYPE_OPTIONS}
-              placeholder="Company type"
-              clearable
-              clearLabel="All types"
-              onChange={(event) => {
-                setTypeFilter(event.target.value);
                 resetPage();
               }}
             />
@@ -214,7 +193,7 @@ export function AdminCompaniesTable() {
 
         <div className="overflow-x-auto">
           <div className={cn(companyRowClass, "h-14 bg-surface-subtle text-label font-medium text-text-step")}>
-            <span>Company</span><span>Primary Admin</span><span>Type</span><span>Plan</span><span>Seats</span><span>Quota</span><span>Status</span>
+            <span>Company</span><span>Primary Admin</span><span>Plan</span><span>Seats</span><span>Quota</span><span>Status</span>
           </div>
           <div className="flex flex-col">
             {showLoading ? (
@@ -242,7 +221,6 @@ export function AdminCompaniesTable() {
                 >
                   <span className="min-w-0"><span className="block truncate font-medium">{company.name}</span><span className="block truncate text-helper text-text-muted">{company.billing_email}</span></span>
                   <span className="min-w-0"><span className="block truncate">{company.primary_admin?.full_name ?? "Unassigned"}</span><span className="block truncate text-helper text-text-muted">{company.primary_admin?.email ?? "—"}</span></span>
-                  <span>{COMPANY_TYPE_LABELS[company.type]}</span>
                   <span>{company.subscription ? PLAN_TYPE_LABELS[company.subscription.plan_type] : "None"}</span>
                   <span>{company.seats.occupied} / {company.seats.limit} occupied</span>
                   <span>{company.quota ? `${company.quota.remaining} / ${company.quota.total} remaining` : "—"}</span>
