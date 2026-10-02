@@ -1,4 +1,8 @@
 import {
+  planTypeSchema,
+  subscriptionStatusSchema,
+} from "@/features/billing";
+import {
   contextTypeSchema,
   effectiveRoleSchema,
   globalRoleSchema,
@@ -24,6 +28,12 @@ export const adminUserAccessSchema = z.object({
   membership_status: membershipStatusSchema.nullish(),
 });
 
+export const adminUserAccessSubscriptionSchema = z.object({
+  id: z.string(),
+  plan_type: planTypeSchema,
+  status: subscriptionStatusSchema,
+});
+
 export const adminUserResponseSchema = z.object({
   id: z.string(),
   email: z.string(),
@@ -33,8 +43,11 @@ export const adminUserResponseSchema = z.object({
   email_verified: z.boolean(),
   global_role: globalRoleSchema.nullish(),
   last_login_at: isoDateTimeSchema.nullish(),
+  disabled_at: isoDateTimeSchema.nullable(),
+  disabled_by_user_id: z.string().nullable(),
   created_at: isoDateTimeSchema,
   access: adminUserAccessSchema,
+  access_subscription: adminUserAccessSubscriptionSchema.nullable(),
 });
 
 export const adminUserListResponseSchema = z.object({
@@ -44,6 +57,9 @@ export const adminUserListResponseSchema = z.object({
 
 export type MembershipStatus = z.infer<typeof membershipStatusSchema>;
 export type AdminUserAccess = z.infer<typeof adminUserAccessSchema>;
+export type AdminUserAccessSubscription = z.infer<
+  typeof adminUserAccessSubscriptionSchema
+>;
 export type AdminUserResponse = z.infer<typeof adminUserResponseSchema>;
 export type AdminUserListResponse = z.infer<
   typeof adminUserListResponseSchema

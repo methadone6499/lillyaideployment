@@ -1,5 +1,5 @@
-import { SuperAdminPlaceholderPage } from "../_components/SuperAdminPlaceholderPage";
+import { redirect } from "next/navigation";
 
 export default function SuperAdminCompaniesPage() {
-  return <SuperAdminPlaceholderPage title="Company Management" />;
+  redirect("/admin/companies");
 }

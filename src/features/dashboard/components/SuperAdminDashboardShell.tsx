@@ -1,7 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/AppHeader";
-import { useAuthUser } from "@/features/auth";
+import { hasPermission, useAuthUser, type Permission } from "@/features/auth";
 import { DashboardActionCard } from "./DashboardActionCard";
 import { DashboardGreeting } from "./DashboardGreeting";
 import { DashboardHeaderActions } from "./DashboardHeaderActions";
@@ -13,14 +13,16 @@ const SUPER_ADMIN_ACTION_CARDS = [
     description:
       "Manage user access, roles, and permissions to ensure secure platform administration.",
     ctaLabel: "Manage Users",
-    href: "/super-admin/users",
+    href: "/admin/users",
+    permission: "admin:users_read",
   },
   {
     title: "Company Management",
     description:
       "Create, organize, and oversee company profiles, settings, and organizational details.",
     ctaLabel: "Manage Company",
-    href: "/super-admin/companies",
+    href: "/admin/companies",
+    permission: "admin:companies_read",
   },
   {
     title: "Subscription Management",
@@ -28,6 +30,7 @@ const SUPER_ADMIN_ACTION_CARDS = [
       "Monitor subscription plans, licensing, billing status, and account entitlements.",
     ctaLabel: "Manage Subscriptions",
     href: "/super-admin/subscriptions",
+    permission: "admin:subscriptions_manage",
   },
   {
     title: "Reviewer Management",
@@ -35,6 +38,7 @@ const SUPER_ADMIN_ACTION_CARDS = [
       "Assign, manage, and track expert reviewers responsible for HTA submission evaluations.",
     ctaLabel: "Manage Reviewers",
     href: "/super-admin/reviewers",
+    permission: "admin:reviewers_manage",
   },
   {
     title: "Reports Management",
@@ -42,11 +46,18 @@ const SUPER_ADMIN_ACTION_CARDS = [
       "Access, generate, and review compliance reports, submission insights, and platform analytics.",
     ctaLabel: "Manage Reports",
     href: "/super-admin/reports",
+    permission: "admin:reports_read",
   },
-] as const;
+] as const satisfies readonly {
+  title: string;
+  description: string;
+  ctaLabel: string;
+  href: string;
+  permission: Permission;
+}[];
 
 export function SuperAdminDashboardShell() {
-  const { displayName } = useAuthUser();
+  const { authMe, displayName } = useAuthUser();
 
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-text-body">
@@ -59,7 +70,9 @@ export function SuperAdminDashboardShell() {
           aria-label="Super administrator actions"
           className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:mt-[55px] xl:grid-cols-3"
         >
-          {SUPER_ADMIN_ACTION_CARDS.map((card) => (
+          {SUPER_ADMIN_ACTION_CARDS.filter((card) =>
+            hasPermission(authMe, card.permission),
+          ).map((card) => (
             <DashboardActionCard
               key={card.href}
               variant="admin"

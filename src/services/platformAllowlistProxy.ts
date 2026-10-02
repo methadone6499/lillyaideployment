@@ -246,6 +246,11 @@ const PLATFORM_PROXY_ALLOWLIST = [
   },
   {
     prefix: "admin",
+    pattern: ["companies", ":company_id", "members"],
+    methods: ["GET"],
+  },
+  {
+    prefix: "admin",
     pattern: ["reports"],
     methods: ["GET"],
   },
@@ -293,6 +298,16 @@ const PLATFORM_PROXY_ALLOWLIST = [
     prefix: "admin",
     pattern: ["users", ":user_id"],
     methods: ["GET"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["users", ":user_id", "disable"],
+    methods: ["POST"],
+  },
+  {
+    prefix: "admin",
+    pattern: ["users", ":user_id", "enable"],
+    methods: ["POST"],
   },
   {
     prefix: "admin",

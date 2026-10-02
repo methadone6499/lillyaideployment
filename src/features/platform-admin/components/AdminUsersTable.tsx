@@ -16,9 +16,11 @@ import {
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/cn";
 import { ApiRequestError } from "@/services/ApiRequestError";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useAdminUsers } from "../hooks/useAdminUsers";
 import type { AdminUserResponse } from "../schemas/adminUserSchemas";
+import { AdminRequestId } from "./AdminRequestId";
 
 const ROWS_PER_PAGE = 6;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -60,7 +62,7 @@ const USER_STATUS_PILL_CONFIG: Record<
 };
 
 const adminUserRowClass =
-  "grid min-w-[960px] grid-cols-[minmax(200px,1.4fr)_minmax(220px,1.2fr)_minmax(140px,1fr)_minmax(160px,1.2fr)_minmax(148px,180px)] items-center gap-x-6 px-6";
+  "grid min-w-[1040px] grid-cols-[minmax(200px,1.4fr)_minmax(220px,1.2fr)_minmax(140px,1fr)_minmax(160px,1.2fr)_minmax(148px,180px)_90px] items-center gap-x-6 px-6";
 
 function getListErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -76,6 +78,10 @@ function getListErrorMessage(error: unknown): string {
   }
 
   return "Unable to load users. Please try again.";
+}
+
+function getRequestId(error: unknown): string | null {
+  return error instanceof ApiRequestError ? error.requestId : null;
 }
 
 function isInvalidCursorError(error: unknown): boolean {
@@ -232,6 +238,7 @@ export function AdminUsersTable() {
             <span>Access</span>
             <span>Company</span>
             <span>Status</span>
+            <span className="justify-self-end">Action</span>
           </div>
 
           <div className="flex flex-col">
@@ -249,6 +256,7 @@ export function AdminUsersTable() {
                 role="alert"
               >
                 <p>{getListErrorMessage(usersQuery.error)}</p>
+                <AdminRequestId requestId={getRequestId(usersQuery.error)} />
                 <button
                   type="button"
                   className="rounded-button border border-border-default px-4 py-2 font-medium text-white transition-colors hover:bg-surface-elevated"
@@ -308,6 +316,13 @@ export function AdminUsersTable() {
                         {statusPill.label}
                       </span>
                     </span>
+
+                    <Link
+                      href={`/admin/users/${encodeURIComponent(user.id)}`}
+                      className="justify-self-end rounded-button border border-border-default px-3 py-2 text-input font-medium text-white hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      View
+                    </Link>
                   </div>
                 );
               })
@@ -326,6 +341,7 @@ export function AdminUsersTable() {
           role="alert"
         >
           <span>{getListErrorMessage(usersQuery.error)}</span>
+          <AdminRequestId requestId={getRequestId(usersQuery.error)} />
           <button
             type="button"
             className="rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"

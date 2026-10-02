@@ -165,6 +165,7 @@ const SUPER_ADMIN_PERMISSIONS = [
   "admin:companies_read",
   "admin:reports_read",
   "admin:users_read",
+  "admin:users_manage",
 ] as const satisfies readonly Permission[];
 
 const STANDARD_FEATURES = {

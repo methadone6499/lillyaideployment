@@ -3,17 +3,24 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useConfirmedUserId, useIsAuthenticated } from "@/features/auth";
-import type { SubscriptionStatus } from "@/features/billing";
+import type { PlanType, SubscriptionStatus } from "@/features/billing";
 import { ApiRequestError } from "@/services/ApiRequestError";
 
 import { listAdminCompanies } from "../api/adminCompanyApi";
 import { adminCompanyQueryKeys } from "../api/adminCompanyQueryKeys";
+import type {
+  CompanyStatus,
+  CompanyType,
+} from "../schemas/adminCompanySchemas";
 
 const DEFAULT_LIST_LIMIT = 20;
 
 export type UseAdminCompaniesParams = {
   limit?: number;
   search?: string;
+  status?: CompanyStatus;
+  type?: CompanyType;
+  planType?: PlanType;
   subscriptionStatus?: SubscriptionStatus;
   enabled?: boolean;
 };
@@ -46,6 +53,9 @@ export function useAdminCompanies(params: UseAdminCompaniesParams = {}) {
   const listParams = {
     limit,
     search: normalizedSearch,
+    status: params.status,
+    type: params.type,
+    planType: params.planType,
     subscriptionStatus: params.subscriptionStatus,
   };
   const listQueryKey = adminCompanyQueryKeys.list(userId ?? "", listParams);

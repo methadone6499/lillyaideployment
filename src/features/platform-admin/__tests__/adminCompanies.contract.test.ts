@@ -4,6 +4,10 @@ import {
   adminCompanyListResponseSchema,
   adminCompanyResponseSchema,
 } from "../schemas/adminCompanySchemas";
+import {
+  adminCompanyMemberListResponseSchema,
+  adminCompanyMemberSchema,
+} from "../schemas/adminCompanyMemberSchemas";
 
 function buildSeats(overrides: Record<string, unknown> = {}) {
   return {
@@ -279,4 +283,59 @@ assert.equal(
     next_cursor: "cursor-2",
   }).next_cursor,
   "cursor-2",
+);
+
+function buildAdminCompanyMember(overrides: Record<string, unknown> = {}) {
+  return {
+    membership_id: "membership-1",
+    user_id: "user-1",
+    full_name: "Ada Lovelace",
+    email: "ada@example.com",
+    user_status: "active",
+    email_verified: true,
+    role: "company_admin",
+    membership_status: "active",
+    occupies_seat: true,
+    activated_at: "2026-08-01T00:00:00.000Z",
+    disabled_at: null,
+    disabled_by_user_id: null,
+    removed_at: null,
+    removed_by_user_id: null,
+    created_at: "2026-08-01T00:00:00.000Z",
+    updated_at: "2026-08-02T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+const currentMember = adminCompanyMemberSchema.parse(buildAdminCompanyMember());
+assert.equal(currentMember.role, "company_admin");
+assert.equal(currentMember.membership_status, "active");
+assert.equal(currentMember.user_status, "active");
+
+const removedMember = adminCompanyMemberSchema.parse(
+  buildAdminCompanyMember({
+    role: "company_seat_user",
+    membership_status: "removed",
+    occupies_seat: false,
+    removed_at: "2026-09-01T00:00:00.000Z",
+    removed_by_user_id: "admin-1",
+  }),
+);
+assert.equal(removedMember.membership_status, "removed");
+assert.equal(removedMember.occupies_seat, false);
+
+assert.equal(
+  adminCompanyMemberSchema.safeParse(
+    buildAdminCompanyMember({ membership_status: "deleted" }),
+  ).success,
+  false,
+);
+
+assert.equal(
+  adminCompanyMemberListResponseSchema.parse({
+    company_id: "company-1",
+    items: [buildAdminCompanyMember()],
+    next_cursor: null,
+  }).items.length,
+  1,
 );

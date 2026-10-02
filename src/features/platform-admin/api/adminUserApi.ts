@@ -3,7 +3,9 @@ import { apiRequest } from "@/services/apiRequest";
 
 import {
   adminUserListResponseSchema,
+  adminUserResponseSchema,
   type AdminUserListResponse,
+  type AdminUserResponse,
   type ListAdminUsersParams,
 } from "../schemas/adminUserSchemas";
 
@@ -65,4 +67,54 @@ export function listAdminUsers(
       }),
     signal,
   );
+}
+
+function userPath(userId: string): string {
+  return `${ADMIN_USERS_API_PREFIX}/${encodeURIComponent(userId)}`;
+}
+
+export function getAdminUser(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<AdminUserResponse> {
+  return authenticatedAuthRequest(
+    (accessToken, requestSignal) =>
+      apiRequest(userPath(userId), {
+        headers: bearerHeaders(accessToken),
+        schema: adminUserResponseSchema,
+        signal: requestSignal,
+      }),
+    signal,
+  );
+}
+
+function updateAdminUserStatus(
+  userId: string,
+  action: "disable" | "enable",
+  signal?: AbortSignal,
+): Promise<AdminUserResponse> {
+  return authenticatedAuthRequest(
+    (accessToken, requestSignal) =>
+      apiRequest(`${userPath(userId)}/${action}`, {
+        method: "POST",
+        headers: bearerHeaders(accessToken),
+        schema: adminUserResponseSchema,
+        signal: requestSignal,
+      }),
+    signal,
+  );
+}
+
+export function disableAdminUser(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<AdminUserResponse> {
+  return updateAdminUserStatus(userId, "disable", signal);
+}
+
+export function enableAdminUser(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<AdminUserResponse> {
+  return updateAdminUserStatus(userId, "enable", signal);
 }

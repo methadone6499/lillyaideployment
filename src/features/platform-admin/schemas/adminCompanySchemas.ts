@@ -1,5 +1,6 @@
 import {
   billingIntervalSchema,
+  type PlanType,
   planTypeSchema,
   subscriptionLimitsSnapshotSchema,
   subscriptionStatusSchema,
@@ -91,5 +92,8 @@ export type ListAdminCompaniesParams = {
   limit?: number;
   cursor?: string | null;
   search?: string;
+  status?: CompanyStatus;
+  type?: CompanyType;
+  planType?: PlanType;
   subscriptionStatus?: SubscriptionStatus;
 };
