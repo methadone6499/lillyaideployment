@@ -11,6 +11,10 @@ import {
   resolvePaidActionFailurePath,
   usePaidFeatureAccess,
 } from "@/features/billing";
+import {
+  getCompanyLogoBlob,
+  useCompanyLogoMetadata,
+} from "@/features/company-branding";
 import type { GenerationFilters } from "@/features/reports";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -27,7 +31,11 @@ import { buildReportSectionItems } from "../../utils/buildReportSectionItems";
 import { formatPptxExportProgress } from "../../utils/pptxExportProgress";
 import { ReportSectionAccordion } from "./ReportSectionAccordion";
 import { ReportSectionPresentation } from "./ReportSectionPresentation";
-import { ExportReportModal, type ExportReportFormat } from "./ExportReportModal";
+import {
+  ExportReportModal,
+  type ExportReportFormat,
+  type ExportReportOptions,
+} from "./ExportReportModal";
 import { ReportEditorConfirmationDialog } from "./ReportEditorConfirmationDialog";
 import { SearchFiltersModal } from "./SearchFiltersModal";
 
@@ -101,6 +109,8 @@ export function ReportViewer({
   const router = useRouter();
   const { overview, features, canUseFeature } = usePaidFeatureAccess();
   const canExportPresentation = features?.ai_presentation === true;
+  const companyLogoQuery = useCompanyLogoMetadata();
+  const companyLogoAvailable = Boolean(companyLogoQuery.data?.logo);
   const { data: reportStatus, isLoading, isError, error } =
     useReportStatus(reportServiceId);
 
@@ -276,7 +286,10 @@ export function ReportViewer({
     }
   };
 
-  const handleExport = async (format: ExportReportFormat) => {
+  const handleExport = async (
+    format: ExportReportFormat,
+    options: ExportReportOptions,
+  ) => {
     setExportError(null);
     setExportProgress(null);
     setIsExporting(true);
@@ -298,7 +311,12 @@ export function ReportViewer({
 
       if (format === "pdf") {
         setExportProgress(PDF_EXPORT_DEFAULT_PROGRESS_LABEL);
-        const blob = await downloadPdfWhenReady(reportServiceId);
+        const companyLogo = options.includeCompanyLogo
+          ? await getCompanyLogoBlob()
+          : undefined;
+        const blob = await downloadPdfWhenReady(reportServiceId, {
+          logo: companyLogo,
+        });
         triggerBlobDownload(blob, `${safeTitle}_evidence_report.pdf`);
         return;
       }
@@ -313,6 +331,10 @@ export function ReportViewer({
       });
       triggerBlobDownload(blob, `${safeTitle}_presentation.pptx`);
     } catch (exportFailure) {
+      if (format === "pdf" && options.includeCompanyLogo) {
+        void companyLogoQuery.refetch();
+      }
+
       const paidFailurePath = resolvePaidActionErrorPath(
         exportFailure,
         overview,
@@ -389,6 +411,10 @@ export function ReportViewer({
         errorMessage={exportError}
         statusMessage={exportProgress}
         presentationAvailable={canExportPresentation}
+        companyLogoAvailable={companyLogoAvailable}
+        companyLogoLoading={
+          companyLogoQuery.enabled && companyLogoQuery.isLoading
+        }
       />
 
       {isJobFailed && (

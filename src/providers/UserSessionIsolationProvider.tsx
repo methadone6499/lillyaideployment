@@ -1,6 +1,7 @@
 "use client";
 
 import { clearBillingSession } from "@/features/billing";
+import { clearCompanyBrandingSession } from "@/features/company-branding";
 import { clearCompanyInvitationSession } from "@/features/company-invitations";
 import { clearCompanyQuotaSession } from "@/features/company-quota";
 import { clearCustomSubscriptionSession } from "@/features/custom-subscriptions";
@@ -51,6 +52,7 @@ export function UserSessionIsolationProvider({
         void clearBillingSession(queryClient);
         void clearReportGenerationSession(queryClient);
         void clearPlatformReportSession(queryClient);
+        void clearCompanyBrandingSession(queryClient);
         void clearCompanySeatSession(queryClient);
         void clearCompanyInvitationSession(queryClient);
         void clearCompanyQuotaSession(queryClient);

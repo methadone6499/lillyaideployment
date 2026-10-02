@@ -18,6 +18,7 @@ import type {
   PptxExportStatusResponse,
 } from "../types";
 import {
+  createPdfExportRequestPayload,
   createPptxRebuildInput,
   getPdfExportPath,
   getPptxExportPath,
@@ -46,6 +47,22 @@ assert.equal(
   getPptxExportStatusPath(REPORT_ID),
   `/reports/${REPORT_ID}/export/pptx/status`,
 );
+
+const standardPdfRequest = createPdfExportRequestPayload();
+assert.equal(standardPdfRequest.body, undefined);
+assert.equal(standardPdfRequest.headers, undefined);
+
+const companyLogo = new Blob(["png"], { type: "image/png" });
+const brandedPdfRequest = createPdfExportRequestPayload(companyLogo);
+assert.equal(
+  new Headers(brandedPdfRequest.headers).get("X-Premium-User"),
+  "true",
+);
+assert.ok(brandedPdfRequest.body instanceof FormData);
+const brandedLogo = brandedPdfRequest.body.get("logo");
+assert.ok(brandedLogo instanceof Blob);
+assert.equal(brandedLogo.type, "image/png");
+assert.equal("name" in brandedLogo ? brandedLogo.name : null, "company-logo.png");
 
 const rebuildInput = createPptxRebuildInput();
 assert.deepEqual(Object.keys(rebuildInput).sort(), [

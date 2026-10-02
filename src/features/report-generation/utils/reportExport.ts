@@ -28,6 +28,27 @@ export function getPptxExportStatusPath(reportServiceId: string): string {
   return `/reports/${reportServiceId}/export/pptx/status`;
 }
 
+export type PdfExportRequestPayload = {
+  body?: FormData;
+  headers?: HeadersInit;
+};
+
+export function createPdfExportRequestPayload(
+  logo?: Blob,
+): PdfExportRequestPayload {
+  if (!logo) {
+    return {};
+  }
+
+  const formData = new FormData();
+  formData.append("logo", logo, "company-logo.png");
+
+  return {
+    body: formData,
+    headers: { "X-Premium-User": "true" },
+  };
+}
+
 export function createPptxRebuildInput(
   idempotencyKey: string = crypto.randomUUID(),
 ): QueuePptxExportInput {

@@ -35,6 +35,8 @@ export const permissionSchema = z.enum([
   "admin:users_manage",
   "company:read",
   "company:billing_read",
+  "company:branding_manage",
+  "company:branding_read",
   "company:members_read",
   "company:members_manage",
   "company:quota_read",

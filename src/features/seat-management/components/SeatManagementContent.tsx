@@ -21,6 +21,7 @@ import {
   useRevokeInvitationMutation,
   type Invitation,
 } from "@/features/company-invitations";
+import { CompanyBrandingCard } from "@/features/company-branding";
 import {
   classifyQuotaMutationError,
   classifyQuotaQueryError,
@@ -596,6 +597,8 @@ export function SeatManagementContent() {
           }}
         />
       ) : null}
+
+      <CompanyBrandingCard />
 
       <SeatListTable
         seats={seats}

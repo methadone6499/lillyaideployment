@@ -25,6 +25,8 @@ const COMPANY_ADMIN_PERMISSIONS = [
   ...STANDARD_USER_PERMISSIONS,
   "company:read",
   "company:billing_read",
+  "company:branding_read",
+  "company:branding_manage",
   "company:members_read",
   "company:members_manage",
   "company:quota_read",
@@ -34,6 +36,7 @@ const COMPANY_ADMIN_PERMISSIONS = [
 
 const COMPANY_SEAT_PERMISSIONS = [
   ...STANDARD_USER_PERMISSIONS,
+  "company:branding_read",
   "company:quota_read_own",
 ] as const satisfies readonly Permission[];
 
@@ -204,6 +207,10 @@ assert.equal(getPostAuthHomePath(companyAdminMe), "/company-admin/dashboard");
 assert.equal(hasPermission(undefined, "company:members_read"), false);
 assert.equal(hasPermission(personalMe, "company:members_read"), false);
 assert.equal(hasPermission(companyAdminMe, "company:members_read"), true);
+assert.equal(hasPermission(companyAdminMe, "company:branding_manage"), true);
+assert.equal(hasPermission(companyAdminMe, "company:branding_read"), true);
+assert.equal(hasPermission(companySeatMe, "company:branding_manage"), false);
+assert.equal(hasPermission(companySeatMe, "company:branding_read"), true);
 assert.equal(hasPermission(companySeatMe, "company:quota_read_own"), true);
 assert.equal(hasPermission(superAdminMe, "admin:reports_read"), true);
 assert.equal(hasPermission(superAdminMe, "admin:users_manage"), true);

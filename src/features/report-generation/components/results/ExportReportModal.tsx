@@ -9,14 +9,23 @@ type ExportFormat = "pdf" | "docx" | "presentation";
 
 export type ExportReportFormat = Exclude<ExportFormat, "docx">;
 
+export type ExportReportOptions = {
+  includeCompanyLogo: boolean;
+};
+
 type ExportReportModalProps = {
   open: boolean;
   onClose: () => void;
-  onExport: (format: ExportReportFormat) => Promise<void>;
+  onExport: (
+    format: ExportReportFormat,
+    options: ExportReportOptions,
+  ) => Promise<void>;
   isExporting: boolean;
   errorMessage?: string | null;
   statusMessage?: string | null;
   presentationAvailable?: boolean;
+  companyLogoAvailable?: boolean;
+  companyLogoLoading?: boolean;
 };
 
 type ExportFormatOption = {
@@ -62,9 +71,12 @@ export function ExportReportModal({
   errorMessage,
   statusMessage,
   presentationAvailable = false,
+  companyLogoAvailable = false,
+  companyLogoLoading = false,
 }: ExportReportModalProps) {
   const [selectedFormat, setSelectedFormat] =
     useState<ExportFormat>("pdf");
+  const [includeCompanyLogo, setIncludeCompanyLogo] = useState(true);
   const dialogRef = useRef<HTMLDivElement>(null);
   const selectedFormatRef = useRef<HTMLInputElement>(null);
   const onCloseRef = useRef(onClose);
@@ -96,6 +108,7 @@ export function ExportReportModal({
       if (event.key === "Escape") {
         if (!isExportingRef.current) {
           event.preventDefault();
+          setIncludeCompanyLogo(true);
           onCloseRef.current();
         }
         return;
@@ -146,6 +159,7 @@ export function ExportReportModal({
 
   const requestClose = () => {
     if (!isExporting) {
+      setIncludeCompanyLogo(true);
       onClose();
     }
   };
@@ -156,7 +170,7 @@ export function ExportReportModal({
       : selectedFormat;
 
   const canExport =
-    effectiveFormat === "pdf" ||
+    (effectiveFormat === "pdf" && !companyLogoLoading) ||
     (effectiveFormat === "presentation" && presentationAvailable);
 
   const handleExport = async () => {
@@ -172,7 +186,13 @@ export function ExportReportModal({
     exportInFlightRef.current = true;
 
     try {
-      await onExport(effectiveFormat);
+      await onExport(effectiveFormat, {
+        includeCompanyLogo:
+          effectiveFormat === "pdf" &&
+          companyLogoAvailable &&
+          includeCompanyLogo,
+      });
+      setIncludeCompanyLogo(true);
       onClose();
     } catch {
       // The parent owns and renders the normalized export error message.
@@ -295,6 +315,32 @@ export function ExportReportModal({
               );
             })}
           </fieldset>
+
+          {effectiveFormat === "pdf" && companyLogoLoading ? (
+            <p className="mt-5 text-helper text-text-muted" role="status">
+              Checking company branding…
+            </p>
+          ) : effectiveFormat === "pdf" && companyLogoAvailable ? (
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-button border border-border-default bg-surface-default px-4 py-3.5">
+              <input
+                type="checkbox"
+                checked={includeCompanyLogo}
+                disabled={isExporting}
+                onChange={(event) =>
+                  setIncludeCompanyLogo(event.target.checked)
+                }
+                className="mt-0.5 size-4 shrink-0 accent-brand"
+              />
+              <span>
+                <span className="block text-label font-medium text-white">
+                  Include company logo
+                </span>
+                <span className="mt-1 block text-helper leading-[18px] text-text-muted">
+                  Add your company&apos;s saved logo to this PDF export.
+                </span>
+              </span>
+            </label>
+          ) : null}
 
           {statusMessage && (
             <p

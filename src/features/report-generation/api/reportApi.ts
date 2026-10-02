@@ -35,6 +35,7 @@ import {
 } from "../utils/customSections";
 import {
   createPptxRebuildInput,
+  createPdfExportRequestPayload,
   getPdfExportPath,
   getPptxExportPath,
   getPptxExportStatusPath,
@@ -52,6 +53,13 @@ export type DownloadPptxWhenReadyOptions = {
     status: PptxExportStatusResponse,
   ) => void;
 };
+
+export type QueuePdfExportOptions = {
+  logo?: Blob;
+  signal?: AbortSignal;
+};
+
+export type DownloadPdfWhenReadyOptions = QueuePdfExportOptions;
 
 export {
   ReportApiError,
@@ -330,12 +338,16 @@ export async function fetchReportSection(
 
 export async function queuePdfExport(
   reportServiceId: string,
-  signal?: AbortSignal,
+  options: QueuePdfExportOptions = {},
 ) {
+  const request = createPdfExportRequestPayload(options.logo);
+
   return reportFetch(getPdfExportPath(reportServiceId), {
     method: "POST",
+    body: request.body,
+    headers: request.headers,
     schema: pdfExportResponseSchema,
-    signal,
+    signal: options.signal,
   });
 }
 
@@ -351,10 +363,16 @@ export async function downloadPdf(
 
 export async function downloadPdfWhenReady(
   reportServiceId: string,
-  signal?: AbortSignal,
+  options: DownloadPdfWhenReadyOptions = {},
 ): Promise<Blob> {
+  const signal = options.signal;
+
   return runPdfRebuildThenDownload({
-    queue: () => queuePdfExport(reportServiceId, signal),
+    queue: () =>
+      queuePdfExport(reportServiceId, {
+        logo: options.logo,
+        signal,
+      }),
     download: () => downloadPdf(reportServiceId, signal),
     delay: (ms) => delay(ms, signal),
     signal,
