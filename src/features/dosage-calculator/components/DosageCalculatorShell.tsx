@@ -174,7 +174,7 @@ export function DosageCalculatorShell() {
       <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 pb-12 sm:px-6 lg:px-12">
         <div className="mt-8 flex flex-col gap-2 lg:mt-[46px]">
           <h1 className="text-[28px] font-medium leading-tight tracking-[-0.02em] text-text-heading lg:text-[40px]">
-            Dosage Calculator
+            Budget Impact Analysis
           </h1>
           <p className="max-w-3xl text-input leading-5.5 text-text-body lg:text-body-lg lg:leading-7">
             Label-based dosing and cost estimates from the FDA DailyMed

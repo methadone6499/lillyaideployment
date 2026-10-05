@@ -58,7 +58,7 @@ const PLAN_OPTIONS = [
       "All free + paid sources (Scopus, Embase, Clarivate)",
       "AI Clinical Intelligence Engine",
       "PDF, DOCX, PowerPoint + AI presenter",
-      "Dosage calculator",
+      "Budget Impact Analysis",
       "Multi-HTA compliance",
       "Priority support",
     ],
