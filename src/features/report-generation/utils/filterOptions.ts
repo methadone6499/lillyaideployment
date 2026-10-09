@@ -26,7 +26,7 @@ export const CLINICAL_STUDY_TYPES = [
 
 export const ECONOMIC_STUDY_TYPES = [
   { id: "cost-effectiveness", label: "Cost-Effectiveness" },
-  { id: "budget-impact", label: "Budget Impact" },
+  { id: "budget-impact", label: "Budget Impact Analysis" },
   { id: "cost-utility", label: "Cost-Utility" },
   { id: "pharmacoeconomic-studies", label: "Pharmacoeconomic Studies" },
   { id: "resource-utilization", label: "Resource Utilization" },

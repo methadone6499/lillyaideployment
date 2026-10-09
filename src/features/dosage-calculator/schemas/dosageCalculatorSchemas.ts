@@ -54,6 +54,47 @@ function requiredPositiveNumber(label: string) {
   );
 }
 
+function requiredNonNegativeNumber(label: string) {
+  return z.preprocess(
+    (value) => {
+      if (typeof value !== "string") {
+        return value;
+      }
+
+      const trimmed = value.trim();
+      return trimmed === "" ? undefined : Number(trimmed);
+    },
+    z
+      .number({ error: `${label} is required and must be a number` })
+      .finite(`${label} must be a finite number`)
+      .nonnegative(`${label} must be 0 or greater`),
+  );
+}
+
+function requiredPercentage(label: string) {
+  return requiredNonNegativeNumber(label).pipe(
+    z.number().max(100, `${label} must be 100 or less`),
+  );
+}
+
+function requiredPositiveInteger(label: string) {
+  return z.preprocess(
+    (value) => {
+      if (typeof value !== "string") {
+        return value;
+      }
+
+      const trimmed = value.trim();
+      return trimmed === "" ? undefined : Number(trimmed);
+    },
+    z
+      .number({ error: `${label} is required and must be a number` })
+      .finite(`${label} must be a finite number`)
+      .int(`${label} must be a whole number`)
+      .positive(`${label} must be greater than 0`),
+  );
+}
+
 function optionalPositiveInteger(label: string) {
   return z.preprocess((value) => {
     if (value == null) return undefined;
@@ -65,6 +106,104 @@ function optionalPositiveInteger(label: string) {
 }
 
 const isoDateTimeSchema = z.string().datetime({ offset: true });
+
+export const structuredCostAnalysisAnnualCostsSchema = z
+  .object({
+    administration: z.number().finite().nonnegative(),
+    monitoring: z.number().finite().nonnegative(),
+    lab_diagnostics: z.number().finite().nonnegative(),
+    outpatient_visits: z.number().finite().nonnegative(),
+    ae_management: z.number().finite().nonnegative(),
+    ae_rate_percent: z.number().finite().min(0).max(100),
+    hospitalizations: z.number().finite().nonnegative(),
+    other_direct_costs: z.number().finite().nonnegative(),
+  })
+  .strict();
+
+export const structuredCostAnalysisOffsetsSchema = z
+  .object({
+    hospitalization_avoidance: z.number().finite().nonnegative(),
+    other_offsets: z.number().finite().nonnegative(),
+  })
+  .strict();
+
+const structuredComparatorCostFieldsSchema = z
+  .object({
+    annual_drug_cost: z.number().finite().nonnegative(),
+    administration_and_monitoring: z.number().finite().nonnegative(),
+    offsets: z.number().finite().nonnegative(),
+  })
+  .strict();
+
+export const standaloneStructuredComparatorSchema =
+  structuredComparatorCostFieldsSchema
+    .extend({ name: requiredText("Comparator name") })
+    .strict();
+
+export const reportStructuredComparatorSchema =
+  structuredComparatorCostFieldsSchema
+    .extend({
+      name: requiredText("Comparator name").nullable().optional(),
+    })
+    .strict();
+
+export const structuredCostAnalysisPopulationSchema = z
+  .object({
+    eligible_patients: z.number().finite().int().positive(),
+    uptake_year_1_percent: z.number().finite().min(0).max(100),
+    uptake_year_2_percent: z.number().finite().min(0).max(100),
+    uptake_year_3_percent: z.number().finite().min(0).max(100),
+  })
+  .strict();
+
+const structuredCostAnalysisBaseShape = {
+  annual_costs: structuredCostAnalysisAnnualCostsSchema,
+  offsets: structuredCostAnalysisOffsetsSchema,
+  population: structuredCostAnalysisPopulationSchema,
+};
+
+export const standaloneStructuredCostAnalysisSchema = z
+  .object({
+    ...structuredCostAnalysisBaseShape,
+    comparator: standaloneStructuredComparatorSchema,
+  })
+  .strict();
+
+export const reportStructuredCostAnalysisSchema = z
+  .object({
+    ...structuredCostAnalysisBaseShape,
+    comparator: reportStructuredComparatorSchema,
+  })
+  .strict();
+
+export const structuredCostAnalysisFormFieldsSchema = z
+  .object({
+    costAdministration: requiredNonNegativeNumber("Administration cost"),
+    costMonitoring: requiredNonNegativeNumber("Monitoring cost"),
+    costLabDiagnostics: requiredNonNegativeNumber("Lab and diagnostics cost"),
+    costOutpatientVisits: requiredNonNegativeNumber("Outpatient visits cost"),
+    costAeManagement: requiredNonNegativeNumber("AE management cost"),
+    costAeRatePercent: requiredPercentage("AE rate"),
+    costHospitalizations: requiredNonNegativeNumber("Hospitalization cost"),
+    costOtherDirectCosts: requiredNonNegativeNumber("Other direct costs"),
+    costHospitalizationAvoidance: requiredNonNegativeNumber(
+      "Hospitalization avoidance",
+    ),
+    costOtherOffsets: requiredNonNegativeNumber("Other offsets"),
+    costComparatorName: requiredText("Comparator name"),
+    costComparatorAnnualDrugCost: requiredNonNegativeNumber(
+      "Comparator annual drug cost",
+    ),
+    costComparatorAdministrationAndMonitoring: requiredNonNegativeNumber(
+      "Comparator administration and monitoring",
+    ),
+    costComparatorOffsets: requiredNonNegativeNumber("Comparator offsets"),
+    costEligiblePatients: requiredPositiveInteger("Eligible patients"),
+    costUptakeYear1Percent: requiredPercentage("Year 1 uptake"),
+    costUptakeYear2Percent: requiredPercentage("Year 2 uptake"),
+    costUptakeYear3Percent: requiredPercentage("Year 3 uptake"),
+  })
+  .strict();
 
 export const dosageCalculatorPopulationSlugSchema = z.enum(
   DOSAGE_CALCULATOR_POPULATION_SLUGS,
@@ -103,7 +242,11 @@ export const dosageCalculatorTerminalJobStatusSchema = z.enum([
   "failed",
 ]);
 
-export const dosageCalculatorIndicationMatchSchema = z.enum(["exact", "none"]);
+export const dosageCalculatorIndicationMatchSchema = z.enum([
+  "exact",
+  "close",
+  "none",
+]);
 
 export const dosageCalculatorPriceSourceSchema = z.literal("user_provided");
 
@@ -119,6 +262,25 @@ const dosageCalculatorCalculationFieldsObjectSchema = z
     customCurrency: optionalUppercaseText(),
     unitPrice: requiredPositiveNumber("Unit price"),
     patientVolume: optionalPositiveInteger("Patient volume"),
+    includeCostAnalysis: z.boolean().default(false),
+    costAdministration: z.string().default("0"),
+    costMonitoring: z.string().default("0"),
+    costLabDiagnostics: z.string().default("0"),
+    costOutpatientVisits: z.string().default("0"),
+    costAeManagement: z.string().default("0"),
+    costAeRatePercent: z.string().default("0"),
+    costHospitalizations: z.string().default("0"),
+    costOtherDirectCosts: z.string().default("0"),
+    costHospitalizationAvoidance: z.string().default("0"),
+    costOtherOffsets: z.string().default("0"),
+    costComparatorName: z.string().default(""),
+    costComparatorAnnualDrugCost: z.string().default("0"),
+    costComparatorAdministrationAndMonitoring: z.string().default("0"),
+    costComparatorOffsets: z.string().default("0"),
+    costEligiblePatients: z.string().default(""),
+    costUptakeYear1Percent: z.string().default(""),
+    costUptakeYear2Percent: z.string().default(""),
+    costUptakeYear3Percent: z.string().default(""),
   })
   .strict();
 
@@ -130,7 +292,26 @@ export const dosageCalculatorCalculationFieldsSchema =
   );
 
 export const dosageCalculatorFormSchema =
-  dosageCalculatorCalculationFieldsSchema;
+  dosageCalculatorCalculationFieldsSchema.superRefine((value, context) => {
+    if (!value.includeCostAnalysis) {
+      return;
+    }
+
+    const result = structuredCostAnalysisFormFieldsSchema
+      .loose()
+      .safeParse(value);
+    if (result.success) {
+      return;
+    }
+
+    for (const issue of result.error.issues) {
+      context.addIssue({
+        code: "custom",
+        path: issue.path,
+        message: issue.message,
+      });
+    }
+  });
 
 const dosageCalculatorRequestFieldsSchema = z.object({
   drug: requiredText("Drug"),
@@ -147,14 +328,18 @@ const dosageCalculatorRequestFieldsSchema = z.object({
     .number()
     .int("Patient volume must be a whole number")
     .positive("Patient volume must be greater than 0")
+    .nullable()
     .optional(),
-  idempotency_key: z.string().trim().min(1).optional(),
+  idempotency_key: z.string().trim().min(1).nullable().optional(),
+  cost_analysis: standaloneStructuredCostAnalysisSchema
+    .nullable()
+    .optional(),
 });
 
 /** Complete backend contract, including optional `model`. */
 export const dosageCalculatorRequestSchema = dosageCalculatorRequestFieldsSchema
   .extend({
-    model: z.string().trim().min(1).optional(),
+    model: z.string().trim().min(1).nullable().optional(),
   })
   .strict();
 
@@ -223,6 +408,9 @@ export const dosageCalculatorTableRowSchema = z
     period: z.string(),
     presentation: z.string(),
     units: z.number(),
+    unit_price_amount: z.number().finite().nullable().optional(),
+    cost_per_patient_amount: z.number().finite().nullable().optional(),
+    cost_cohort_amount: z.number().finite().nullable().optional(),
   })
   .strict();
 
@@ -233,6 +421,7 @@ export const dosageCalculatorArtifactsSchema = z
     extraction_path: z.string(),
     markdown_path: z.string(),
     metadata_path: z.string().optional(),
+    budget_impact_path: z.string().nullable().optional(),
   })
   .strict();
 
@@ -246,6 +435,7 @@ export const dosageCalculatorResultSchema = z
     markdown: z.string(),
     artifacts: dosageCalculatorArtifactsSchema,
     warnings: z.array(z.string()),
+    budget_impact: z.looseObject({}).nullable().optional(),
   })
   .strict();
 
@@ -290,6 +480,21 @@ export type DosageCalculatorTableRow = z.output<
 >;
 export type DosageCalculatorResult = z.output<
   typeof dosageCalculatorResultSchema
+>;
+export type StandaloneStructuredCostAnalysis = z.output<
+  typeof standaloneStructuredCostAnalysisSchema
+>;
+export type ReportStructuredCostAnalysis = z.output<
+  typeof reportStructuredCostAnalysisSchema
+>;
+export type StructuredCostAnalysisFormFields = z.input<
+  typeof structuredCostAnalysisFormFieldsSchema
+>;
+export type ParsedStructuredCostAnalysisFormFields = z.output<
+  typeof structuredCostAnalysisFormFieldsSchema
+>;
+export type DosageCalculatorBudgetImpact = NonNullable<
+  DosageCalculatorResult["budget_impact"]
 >;
 export type DosageCalculatorJobStatus = z.infer<
   typeof dosageCalculatorJobStatusSchema

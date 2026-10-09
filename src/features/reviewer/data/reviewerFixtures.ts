@@ -43,7 +43,7 @@ const SECTION_OUTLINE = [
     id: "economic",
     title: "Economic Evidence",
     description:
-      "Cost-effectiveness, budget impact, and pharmacoeconomic findings from selected studies.",
+      "Cost-effectiveness, budget impact analysis, and pharmacoeconomic findings from selected studies.",
   },
   {
     id: "comparator",

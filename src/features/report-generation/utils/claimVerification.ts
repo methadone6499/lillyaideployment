@@ -51,7 +51,7 @@ export function getClaimVerificationGroups(
   if (bia) {
     groups.push({
       id: "bia",
-      label: "Budget impact claims",
+      label: "Budget impact analysis claims",
       verification: bia,
     });
   }

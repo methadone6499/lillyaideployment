@@ -15,6 +15,7 @@ import {
   type DosageCalculatorRequest,
   type DosageCalculatorUiRequest,
 } from "../schemas/dosageCalculatorSchemas";
+import { mapStructuredCostAnalysisFormToRequest } from "./structuredCostAnalysis";
 
 export type DosageCalculatorSubmittedInputViewModel = {
   applied: {
@@ -133,6 +134,10 @@ function buildRequestFromParsedForm(
     request.patient_volume = parsed.patientVolume;
   }
 
+  if (parsed.includeCostAnalysis) {
+    request.cost_analysis = mapStructuredCostAnalysisFormToRequest(parsed);
+  }
+
   return dosageCalculatorUiRequestSchema.parse(request);
 }
 
@@ -150,7 +155,7 @@ function buildSubmittedInputViewModel(
       duration: request.duration,
       currency: request.currency,
       unitPrice: request.unit_price,
-      patientVolume: request.patient_volume,
+      patientVolume: request.patient_volume ?? undefined,
       standardWeightKg: DOSAGE_CALCULATOR_CATEGORY_STANDARD_WEIGHT_KG[category],
       standardCategoryWeightsDisclosure:
         DOSAGE_CALCULATOR_CATEGORY_WEIGHT_DISCLOSURE,

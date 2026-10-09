@@ -23,7 +23,7 @@ export const featureCards: FeatureCardContent[] = [
   {
     title: "Pharmacoeconomic Studies",
     description:
-      "Comprehensive cost-effectiveness analysis and pharmacoeconomic evidence for budget impact",
+      "Comprehensive cost-effectiveness analysis and pharmacoeconomic evidence for budget impact analysis",
   },
   {
     title: "GRADE & CASP Assessment",
@@ -90,7 +90,7 @@ export const pricingPlans: PricingPlanContent[] = [
       "All free + paid sources (Scopus, Embase, Clarivate)",
       "AI Clinical Intelligence Engine",
       "PDF, DOCX, PowerPoint + AI presenter",
-      "Budget Impact Analysis",
+      "Dosage calculator",
       "Multi-HTA compliance",
       "Priority support",
     ],

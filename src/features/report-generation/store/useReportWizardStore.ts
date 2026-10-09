@@ -21,10 +21,16 @@ import {
   syncSelectedSectionIdsOnInputChange,
   type SectionSelectionInputs,
 } from "../utils/sectionOrdering";
+import {
+  cloneReportCalculatorDraft,
+  EMPTY_REPORT_CALCULATOR_DRAFT,
+  hasReportCalculatorModules,
+  type ReportCalculatorDraft,
+} from "../utils/reportCalculator";
 
 export { DEFAULT_SECTION_IDS };
 
-export const REPORT_WIZARD_PERSIST_VERSION = 13;
+export const REPORT_WIZARD_PERSIST_VERSION = 15;
 
 export const DEFAULT_FILTERS: FilterState = {
   timeRange: "last-1-year",
@@ -183,6 +189,11 @@ type PersistedWizardState = {
   selectedSectionIds?: string[];
   customSections?: unknown;
   generationJobId?: string | null;
+  activeGenerationSectionIds?: string[];
+  structuredCalculationEnabled?: boolean;
+  structuredCalculationSaved?: boolean;
+  structuredCalculationDraft?: unknown;
+  reportCalculatorDraft?: ReportCalculatorDraft;
   userId?: string | null;
   selectedEvidenceIds?: string[];
   selectedComparatorIds?: string[];
@@ -204,6 +215,8 @@ type ReportWizardState = {
   selectedSectionIds: WizardSectionId[];
   customSections: WizardCustomSection[];
   generationJobId: string | null;
+  activeGenerationSectionIds: string[];
+  reportCalculatorDraft: ReportCalculatorDraft;
   userId: string | null;
   setStep: (step: WizardStep) => void;
   nextStep: () => void;
@@ -240,6 +253,8 @@ type ReportWizardState = {
   ) => void;
   removeCustomSection: (customId: string) => void;
   setGenerationJobId: (jobId: string | null) => void;
+  setActiveGenerationSectionIds: (sectionIds: string[]) => void;
+  setReportCalculatorDraft: (draft: ReportCalculatorDraft) => void;
   setUserId: (userId: string | null) => void;
   resetReportPipeline: () => void;
   resetFilters: () => void;
@@ -268,6 +283,10 @@ const initialState = {
   selectedSectionIds: getDefaultSelectedSectionIds(emptySectionInputs),
   customSections: [] as WizardCustomSection[],
   generationJobId: null as string | null,
+  activeGenerationSectionIds: [] as string[],
+  reportCalculatorDraft: cloneReportCalculatorDraft(
+    EMPTY_REPORT_CALCULATOR_DRAFT,
+  ),
   userId: null as string | null,
 };
 
@@ -276,6 +295,10 @@ const reportPipelineState = {
   platformReportId: null as string | null,
   platformSaveState: "not_started" as PlatformSaveState,
   generationJobId: null as string | null,
+  activeGenerationSectionIds: [] as string[],
+  reportCalculatorDraft: cloneReportCalculatorDraft(
+    EMPTY_REPORT_CALCULATOR_DRAFT,
+  ),
   selectedClinicalArticleIds: [] as string[],
   selectedEconomicArticleIds: [] as string[],
   articleUploads: [] as WizardArticleUpload[],
@@ -290,12 +313,16 @@ function getSectionSelectionInputs(
     | "selectedClinicalArticleIds"
     | "selectedEconomicArticleIds"
     | "selectedComparators"
+    | "reportCalculatorDraft"
   >,
 ): SectionSelectionInputs {
   return {
     selectedClinicalArticleIds: state.selectedClinicalArticleIds,
     selectedEconomicArticleIds: state.selectedEconomicArticleIds,
     selectedComparators: state.selectedComparators,
+    hasReportCalculator: hasReportCalculatorModules(
+      state.reportCalculatorDraft,
+    ),
   };
 }
 
@@ -306,6 +333,7 @@ function withSyncedSectionIdsOnInputChange<
     | "selectedClinicalArticleIds"
     | "selectedEconomicArticleIds"
     | "selectedComparators"
+    | "reportCalculatorDraft"
   >,
 >(state: T, changes: Partial<T>): Partial<T> {
   const nextState = { ...state, ...changes };
@@ -325,6 +353,7 @@ function withReconciledSectionIdsAtStep5<
     | "selectedClinicalArticleIds"
     | "selectedEconomicArticleIds"
     | "selectedComparators"
+    | "reportCalculatorDraft"
   >,
 >(state: T): Pick<T, "selectedSectionIds"> {
   return {
@@ -530,6 +559,29 @@ function migratePersistedState(
     };
   }
 
+  if (version < 14) {
+    state = {
+      ...state,
+      activeGenerationSectionIds: [],
+      structuredCalculationEnabled: false,
+      structuredCalculationSaved: false,
+      structuredCalculationDraft: {},
+    };
+  }
+
+  if (version < 15) {
+    const migrated: PersistedWizardState = {
+      ...state,
+      reportCalculatorDraft: cloneReportCalculatorDraft(
+        EMPTY_REPORT_CALCULATOR_DRAFT,
+      ),
+    };
+    delete migrated.structuredCalculationEnabled;
+    delete migrated.structuredCalculationSaved;
+    delete migrated.structuredCalculationDraft;
+    state = migrated;
+  }
+
   return state;
 }
 
@@ -719,7 +771,9 @@ export const useReportWizardStore = create<ReportWizardState>()(
           const selectedComparators = selected.includes(name)
             ? selected.filter((item) => item !== name)
             : [...selected, name];
-          return withSyncedSectionIdsOnInputChange(state, { selectedComparators });
+          return withSyncedSectionIdsOnInputChange(state, {
+            selectedComparators,
+          });
         }),
       addCustomComparator: (name) =>
         set((state) => {
@@ -744,20 +798,31 @@ export const useReportWizardStore = create<ReportWizardState>()(
           const next = selected.includes(id)
             ? selected.filter((item) => item !== id)
             : [...selected, id];
+          const selectedSectionIds = applyCriticalAppraisalSelectionRule(
+            selected,
+            next,
+          );
           return {
-            selectedSectionIds: applyCriticalAppraisalSelectionRule(
-              selected,
-              next,
+            selectedSectionIds: syncSelectedSectionIdsOnInputChange(
+              selectedSectionIds,
+              inputs,
             ),
           };
         }),
       selectAllSections: (ids) =>
-        set((state) => ({
-          selectedSectionIds: applyCriticalAppraisalSelectionRule(
+        set((state) => {
+          const inputs = getSectionSelectionInputs(state);
+          const selectedSectionIds = applyCriticalAppraisalSelectionRule(
             state.selectedSectionIds,
             ids,
-          ),
-        })),
+          );
+          return {
+            selectedSectionIds: syncSelectedSectionIdsOnInputChange(
+              selectedSectionIds,
+              inputs,
+            ),
+          };
+        }),
       deselectAllSections: () => set({ selectedSectionIds: [] }),
       reconcileSectionsAtStep5: () =>
         set((state) => withReconciledSectionIdsAtStep5(state)),
@@ -782,6 +847,21 @@ export const useReportWizardStore = create<ReportWizardState>()(
           ),
         })),
       setGenerationJobId: (generationJobId) => set({ generationJobId }),
+      setActiveGenerationSectionIds: (activeGenerationSectionIds) =>
+        set({ activeGenerationSectionIds }),
+      setReportCalculatorDraft: (reportCalculatorDraft) =>
+        set((state) => {
+          const nextState = {
+            ...state,
+            reportCalculatorDraft: cloneReportCalculatorDraft(
+              reportCalculatorDraft,
+            ),
+          };
+          return {
+            reportCalculatorDraft: nextState.reportCalculatorDraft,
+            ...withReconciledSectionIdsAtStep5(nextState),
+          };
+        }),
       setUserId: (userId) => set({ userId }),
       resetReportPipeline: () =>
         set((state) =>
@@ -809,6 +889,9 @@ export const useReportWizardStore = create<ReportWizardState>()(
           ...persisted,
           customSections: migrateCustomSections(persisted.customSections),
           articleUploads: migrateArticleUploads(persisted.articleUploads),
+          reportCalculatorDraft: cloneReportCalculatorDraft(
+            persisted.reportCalculatorDraft ?? EMPTY_REPORT_CALCULATOR_DRAFT,
+          ),
         } as ReportWizardState;
       },
       partialize: (state) => ({
@@ -827,6 +910,8 @@ export const useReportWizardStore = create<ReportWizardState>()(
         selectedSectionIds: state.selectedSectionIds,
         customSections: state.customSections,
         generationJobId: state.generationJobId,
+        activeGenerationSectionIds: state.activeGenerationSectionIds,
+        reportCalculatorDraft: state.reportCalculatorDraft,
         userId: state.userId,
       }),
     },

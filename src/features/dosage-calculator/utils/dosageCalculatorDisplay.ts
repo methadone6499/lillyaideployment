@@ -15,7 +15,7 @@ export type DosageSnapshotRow = {
 };
 
 export type DosageIndicationMatchNotice = {
-  tone: "success" | "warning";
+  tone: "success" | "partial" | "warning";
   title: string;
   body: string;
 };
@@ -62,20 +62,44 @@ export function getDosagePhaseLabel(phase: string): string {
 
 export function getIndicationMatchNotice(
   match: DosageCalculatorIndicationMatch,
+  note?: string,
 ): DosageIndicationMatchNotice {
   if (match === "exact") {
     return {
       tone: "success",
       title: "Indication matched",
-      body: "The submitted indication was found on the label.",
+      body: note || "The submitted indication was found on the label.",
+    };
+  }
+
+  if (match === "close") {
+    return {
+      tone: "partial",
+      title: "Close indication match",
+      body:
+        note ||
+        "A closely related labeled indication was found. Review the applied labeled regimen before using the estimate.",
     };
   }
 
   return {
     tone: "warning",
     title: "Indication not on label",
-    body: "The submitted indication was not found on the label. The table uses fallback labeled dosing.",
+    body:
+      note ||
+      "The submitted indication was not found on the label. The table uses fallback labeled dosing.",
   };
+}
+
+export function getIndicationMatchNote(
+  extraction: unknown,
+): string | undefined {
+  if (!extraction || typeof extraction !== "object" || Array.isArray(extraction)) {
+    return undefined;
+  }
+
+  const note = (extraction as Record<string, unknown>).indication_match_note;
+  return typeof note === "string" && note.trim() ? note.trim() : undefined;
 }
 
 export function getAppliedSnapshotRows(

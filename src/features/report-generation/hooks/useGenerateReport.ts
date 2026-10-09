@@ -85,7 +85,10 @@ export function useGenerateReportMutation() {
   });
 }
 
-export function useReportStatus(reportServiceId: string | null) {
+export function useReportStatus(
+  reportServiceId: string | null,
+  activeGenerationJobId?: string | null,
+) {
   const queriesEnabled = useReportQueriesEnabled(Boolean(reportServiceId));
 
   return useQuery({
@@ -101,6 +104,14 @@ export function useReportStatus(reportServiceId: string | null) {
       }
 
       const data = query.state.data;
+      if (
+        activeGenerationJobId &&
+        data?.active_job_id &&
+        data.active_job_id !== activeGenerationJobId
+      ) {
+        return STATUS_POLL_INTERVAL_MS;
+      }
+
       const reportStatus = data?.report_status;
       if (
         reportStatus === "completed" ||

@@ -9,6 +9,8 @@ import type {
   blockSchema,
   builtInSectionTypeSchema,
   calloutBlockSchema,
+  chartBlockSchema,
+  chartSeriesSchema,
   comparatorDiscoveryResponseSchema,
   claimVerificationClaimSchema,
   claimVerificationCountsSchema,
@@ -143,6 +145,8 @@ export type ListBlock = z.infer<typeof listBlockSchema>;
 export type SectionBlock = z.infer<typeof sectionBlockSchema>;
 export type CalloutBlock = z.infer<typeof calloutBlockSchema>;
 export type MarkdownBlock = z.infer<typeof markdownBlockSchema>;
+export type ChartSeries = z.infer<typeof chartSeriesSchema>;
+export type ChartBlock = z.infer<typeof chartBlockSchema>;
 export type ReportSectionContent = z.infer<typeof reportSectionContentSchema>;
 export type ReportSectionResponse = z.infer<typeof reportSectionResponseSchema>;
 
@@ -197,6 +201,7 @@ export type {
   CreateRewritePreviewRequest,
   EditableBlock,
   EditableCalloutBlock,
+  EditableChartBlock,
   EditableDefinitionBlock,
   EditableDocumentPayload,
   EditableDocumentResponse,

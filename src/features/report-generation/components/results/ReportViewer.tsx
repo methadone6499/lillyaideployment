@@ -46,6 +46,10 @@ export type ReportViewerProps = {
   selectedSectionIds: string[];
   /** Ordered fallback titles for `custom:<uuid>` rows (snapshot or wizard). */
   customSectionTitles?: string[];
+  /** Limits live wizard status to the job that was just enqueued. */
+  activeGenerationJobId?: string | null;
+  /** Exact section instances returned by the active generation request. */
+  activeGenerationSectionIds?: string[];
   isEditable?: boolean;
   onEditingDirtyChange?: (dirty: boolean) => void;
   onBack: () => void;
@@ -99,6 +103,8 @@ export function ReportViewer({
   filters,
   selectedSectionIds,
   customSectionTitles,
+  activeGenerationJobId,
+  activeGenerationSectionIds,
   isEditable = true,
   onEditingDirtyChange,
   onBack,
@@ -112,7 +118,7 @@ export function ReportViewer({
   const companyLogoQuery = useCompanyLogoMetadata();
   const companyLogoAvailable = Boolean(companyLogoQuery.data?.logo);
   const { data: reportStatus, isLoading, isError, error } =
-    useReportStatus(reportServiceId);
+    useReportStatus(reportServiceId, activeGenerationJobId);
 
   const { expandedId, toggleSection, expandSection } =
     useSingleExpandedSection();
@@ -136,7 +142,33 @@ export function ReportViewer({
   const [pendingViewerAction, setPendingViewerAction] =
     useState<PendingViewerAction | null>(null);
 
-  const sections = reportStatus?.sections;
+  const isDifferentActiveJob = Boolean(
+    activeGenerationJobId &&
+      reportStatus?.active_job_id &&
+      reportStatus.active_job_id !== activeGenerationJobId,
+  );
+  const activeSectionIdSet = useMemo(
+    () =>
+      activeGenerationSectionIds?.length
+        ? new Set(activeGenerationSectionIds)
+        : null,
+    [activeGenerationSectionIds],
+  );
+  const sections = useMemo(() => {
+    if (isDifferentActiveJob) {
+      return [];
+    }
+
+    const statusSections = reportStatus?.sections ?? [];
+    if (!activeSectionIdSet) {
+      return statusSections;
+    }
+
+    return statusSections.filter(
+      (section) =>
+        section.section_id && activeSectionIdSet.has(section.section_id),
+    );
+  }, [activeSectionIdSet, isDifferentActiveJob, reportStatus?.sections]);
 
   const sectionItems = useMemo(
     () =>
@@ -157,18 +189,22 @@ export function ReportViewer({
     });
   }, [sectionItems]);
 
-  const isCompleted = reportStatus?.report_status === "completed";
+  const isCompleted =
+    !isDifferentActiveJob && reportStatus?.report_status === "completed";
   const isPartiallyCompleted =
+    !isDifferentActiveJob &&
     reportStatus?.report_status === "partially_completed";
   const isJobFailed =
-    reportStatus?.report_status === "failed" ||
-    reportStatus?.job_status === "failed";
+    !isDifferentActiveJob &&
+    (reportStatus?.report_status === "failed" ||
+      reportStatus?.job_status === "failed");
   const isReportReady = isCompleted || isPartiallyCompleted;
   const isGenerating =
-    !isJobFailed &&
-    (reportStatus?.report_status === "queued" ||
-      reportStatus?.report_status === "pending" ||
-      reportStatus?.report_status === "processing");
+    isDifferentActiveJob ||
+    (!isJobFailed &&
+      (reportStatus?.report_status === "queued" ||
+        reportStatus?.report_status === "pending" ||
+        reportStatus?.report_status === "processing"));
 
   const performViewerAction = useCallback(
     (action: ViewerAction) => {
@@ -378,7 +414,7 @@ export function ReportViewer({
             {title}
           </h1>
           <p className="text-body-lg text-text-body">{subtitle}</p>
-          {reportStatus.progress && isGenerating && (
+          {reportStatus.progress && isGenerating && !isDifferentActiveJob && (
             <p className="text-body-lg text-text-muted">
               {reportStatus.progress.completed_sections} of{" "}
               {reportStatus.progress.total_sections} sections complete

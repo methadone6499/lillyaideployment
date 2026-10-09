@@ -38,6 +38,14 @@ async function parseErrorMessage(response: Response): Promise<string> {
             )
             .join("; ");
         }
+        if (
+          typeof detail === "object" &&
+          detail !== null &&
+          "message" in detail &&
+          typeof detail.message === "string"
+        ) {
+          return detail.message;
+        }
       }
       if ("message" in body && typeof body.message === "string") {
         return body.message;

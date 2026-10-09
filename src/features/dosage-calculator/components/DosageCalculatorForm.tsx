@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, Select, TextField } from "@/components/ui";
+import { Button, Card, Select, Switch, TextField } from "@/components/ui";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import {
@@ -23,6 +23,14 @@ import {
   mapDosageCalculatorSubmission,
   type DosageCalculatorSubmission,
 } from "../utils/mapDosageCalculatorRequest";
+import {
+  pickStructuredCostAnalysisFormValues,
+  type StructuredCostAnalysisFormField,
+} from "../utils/structuredCostAnalysis";
+import {
+  StructuredCostAnalysisFields,
+  type StructuredCostAnalysisFieldErrors,
+} from "./StructuredCostAnalysisFields";
 
 const FIELD_IDS = {
   drug: "dosage-drug",
@@ -35,6 +43,25 @@ const FIELD_IDS = {
   customCurrency: "dosage-custom-currency",
   unitPrice: "dosage-unit-price",
   patientVolume: "dosage-patient-volume",
+  costAdministration: "dosage-cost-costAdministration",
+  costMonitoring: "dosage-cost-costMonitoring",
+  costLabDiagnostics: "dosage-cost-costLabDiagnostics",
+  costOutpatientVisits: "dosage-cost-costOutpatientVisits",
+  costAeManagement: "dosage-cost-costAeManagement",
+  costAeRatePercent: "dosage-cost-costAeRatePercent",
+  costHospitalizations: "dosage-cost-costHospitalizations",
+  costOtherDirectCosts: "dosage-cost-costOtherDirectCosts",
+  costHospitalizationAvoidance: "dosage-cost-costHospitalizationAvoidance",
+  costOtherOffsets: "dosage-cost-costOtherOffsets",
+  costComparatorName: "dosage-cost-costComparatorName",
+  costComparatorAnnualDrugCost: "dosage-cost-costComparatorAnnualDrugCost",
+  costComparatorAdministrationAndMonitoring:
+    "dosage-cost-costComparatorAdministrationAndMonitoring",
+  costComparatorOffsets: "dosage-cost-costComparatorOffsets",
+  costEligiblePatients: "dosage-cost-costEligiblePatients",
+  costUptakeYear1Percent: "dosage-cost-costUptakeYear1Percent",
+  costUptakeYear2Percent: "dosage-cost-costUptakeYear2Percent",
+  costUptakeYear3Percent: "dosage-cost-costUptakeYear3Percent",
 } as const satisfies Record<DosageCalculatorTextField, string>;
 
 const FREQUENCY_SUGGESTIONS_ID = `${FIELD_IDS.frequency}-suggestions`;
@@ -54,6 +81,7 @@ export function DosageCalculatorForm({
   isSubmitDisabled = false,
   onSubmitCalculation,
 }: DosageCalculatorFormProps) {
+  const calculatorState = useDosageCalculatorStore();
   const {
     drug,
     indication,
@@ -65,8 +93,13 @@ export function DosageCalculatorForm({
     customCurrency,
     unitPrice,
     patientVolume,
+    includeCostAnalysis,
     setField,
-  } = useDosageCalculatorStore();
+    setIncludeCostAnalysis,
+  } = calculatorState;
+  const structuredCostValues = pickStructuredCostAnalysisFormValues(
+    calculatorState,
+  );
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -89,6 +122,11 @@ export function DosageCalculatorForm({
     clearFieldError(field);
     if (formError) setFormError(null);
   };
+
+  const updateStructuredCostField = (
+    field: StructuredCostAnalysisFormField,
+    value: string,
+  ) => updateField(field, value);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -120,7 +158,12 @@ export function DosageCalculatorForm({
       }
 
       setErrors(nextErrors);
-      setFormError(null);
+      setFormError(
+        firstInvalidField
+          ? null
+          : (parsed.error.issues[0]?.message ??
+              "Check the calculation inputs and try again."),
+      );
 
       if (firstInvalidField) {
         const focusId = FIELD_IDS[firstInvalidField];
@@ -332,6 +375,39 @@ export function DosageCalculatorForm({
             updateField("patientVolume", event.target.value)
           }
         />
+
+        <div className="rounded-card border border-border-default bg-surface-default p-5">
+          <div className="flex items-start justify-between gap-5">
+            <div>
+              <h3 className="text-card-title font-medium text-white">
+                Budget impact analysis
+              </h3>
+              <p className="mt-2 text-helper text-text-muted">
+                Optional. Compare one priced comparator across Year 1–3 using
+                costs and uptake supplied by you.
+              </p>
+            </div>
+            <Switch
+              checked={includeCostAnalysis}
+              onChange={(enabled) => {
+                setIncludeCostAnalysis(enabled);
+                setFormError(null);
+              }}
+              aria-label="Include budget impact analysis"
+            />
+          </div>
+
+          {includeCostAnalysis ? (
+            <div className="mt-6 border-t border-border-default pt-6">
+              <StructuredCostAnalysisFields
+                values={structuredCostValues}
+                errors={errors as StructuredCostAnalysisFieldErrors}
+                onFieldChange={updateStructuredCostField}
+                idPrefix="dosage-cost"
+              />
+            </div>
+          ) : null}
+        </div>
 
         {formError ? (
           <p role="alert" className="text-helper text-status-running">

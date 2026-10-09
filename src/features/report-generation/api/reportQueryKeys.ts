@@ -10,6 +10,7 @@ export const reportQueryKeys = {
   comparators: (reportServiceId: string) =>
     ["report", reportServiceId, "comparators"] as const,
   articleUploadMutation: ["report", "article-upload-mutation"] as const,
+  inputsMutation: ["report", "inputs-mutation"] as const,
   status: (reportServiceId: string) =>
     ["report", reportServiceId, "status"] as const,
   section: (

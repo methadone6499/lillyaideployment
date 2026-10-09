@@ -8,6 +8,7 @@ import { getIndicationMatchNotice } from "../utils/dosageCalculatorDisplay";
 
 type DosageLabelResultCardProps = {
   indicationMatch: DosageCalculatorIndicationMatch;
+  indicationMatchNote?: string;
   rows: readonly DosageCalculatorTableRow[];
 };
 
@@ -22,9 +23,13 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 export function DosageLabelResultCard({
   indicationMatch,
+  indicationMatchNote,
   rows,
 }: DosageLabelResultCardProps) {
-  const notice = getIndicationMatchNotice(indicationMatch);
+  const notice = getIndicationMatchNotice(
+    indicationMatch,
+    indicationMatchNote,
+  );
 
   return (
     <Card className="w-full overflow-hidden rounded-button">
@@ -43,7 +48,9 @@ export function DosageLabelResultCard({
             "shrink-0 rounded-card px-2.5 py-2 text-input font-medium",
             notice.tone === "success"
               ? "bg-brand-badge text-brand"
-              : "bg-status-running/[0.12] text-status-running",
+              : notice.tone === "partial"
+                ? "bg-status-partial/[0.12] text-status-partial"
+                : "bg-status-running/[0.12] text-status-running",
           )}
         >
           {notice.title}
@@ -55,9 +62,11 @@ export function DosageLabelResultCard({
           "mx-6 mt-4 rounded-card border p-4",
           notice.tone === "success"
             ? "border-brand-border bg-brand-bg"
-            : "border-status-running/[0.12] bg-status-running/[0.08]",
+            : notice.tone === "partial"
+              ? "border-status-partial/[0.18] bg-status-partial/[0.08]"
+              : "border-status-running/[0.12] bg-status-running/[0.08]",
         )}
-        role={notice.tone === "warning" ? "status" : undefined}
+        role={notice.tone === "success" ? undefined : "status"}
       >
         <p className="text-helper leading-normal text-white">{notice.body}</p>
       </div>

@@ -56,7 +56,7 @@ export const editableTableBlockSchema = z.looseObject({
   block_id: z.string().min(1),
   type: z.literal("table"),
   columns: z.array(z.string()),
-  rows: z.array(z.array(z.string())),
+  rows: z.array(z.array(z.union([z.string(), z.number().finite()]))),
 });
 
 export const editableDefinitionBlockSchema = z.looseObject({
@@ -86,6 +86,21 @@ export const editableMarkdownBlockSchema = z.looseObject({
   text: z.string(),
 });
 
+export const editableChartBlockSchema = z.looseObject({
+  block_id: z.string().min(1),
+  type: z.literal("chart"),
+  chart_type: z.string().min(1),
+  title: z.string(),
+  categories: z.array(z.string()),
+  series: z.array(
+    z.object({
+      name: z.string(),
+      values: z.array(z.number().finite()),
+    }),
+  ),
+  currency: z.string().trim().min(1).optional(),
+});
+
 export type EditableHeadingBlock = z.infer<typeof editableHeadingBlockSchema>;
 export type EditableParagraphBlock = z.infer<typeof editableParagraphBlockSchema>;
 export type EditableTableBlock = z.infer<typeof editableTableBlockSchema>;
@@ -95,6 +110,7 @@ export type EditableDefinitionBlock = z.infer<
 export type EditableListBlock = z.infer<typeof editableListBlockSchema>;
 export type EditableCalloutBlock = z.infer<typeof editableCalloutBlockSchema>;
 export type EditableMarkdownBlock = z.infer<typeof editableMarkdownBlockSchema>;
+export type EditableChartBlock = z.infer<typeof editableChartBlockSchema>;
 
 export type EditableBlock =
   | EditableHeadingBlock
@@ -104,6 +120,7 @@ export type EditableBlock =
   | EditableListBlock
   | EditableCalloutBlock
   | EditableMarkdownBlock
+  | EditableChartBlock
   | {
       block_id: string;
       type: "section";
@@ -121,6 +138,7 @@ export const editableBlockSchema: z.ZodType<EditableBlock> = z.lazy(() =>
     editableListBlockSchema,
     editableCalloutBlockSchema,
     editableMarkdownBlockSchema,
+    editableChartBlockSchema,
     z.looseObject({
       block_id: z.string().min(1),
       type: z.literal("section"),

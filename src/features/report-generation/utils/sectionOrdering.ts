@@ -210,6 +210,7 @@ export type SectionSelectionInputs = {
   selectedClinicalArticleIds: readonly string[];
   selectedEconomicArticleIds: readonly string[];
   selectedComparators: readonly string[];
+  hasReportCalculator?: boolean;
 };
 
 const INPUT_DEPENDENT_SECTION_IDS = [
@@ -237,7 +238,10 @@ export function isSectionAvailable(
     return inputs.selectedClinicalArticleIds.length > 0;
   }
   if (id === "economic") {
-    return inputs.selectedEconomicArticleIds.length > 0;
+    return (
+      inputs.selectedEconomicArticleIds.length > 0 ||
+      inputs.hasReportCalculator === true
+    );
   }
   if (id === "comparator") {
     return inputs.selectedComparators.length > 0;
@@ -283,14 +287,25 @@ export function syncSelectedSectionIdsOnInputChange(
   if (inputs.selectedClinicalArticleIds.length === 0) {
     next.delete("clinical");
   }
-  if (inputs.selectedEconomicArticleIds.length === 0) {
+  if (
+    inputs.selectedEconomicArticleIds.length === 0 &&
+    !inputs.hasReportCalculator
+  ) {
     next.delete("economic");
   }
   if (inputs.selectedComparators.length === 0) {
     next.delete("comparator");
   }
 
-  return applyCriticalAppraisalSelectionRule(selectedSectionIds, [...next]);
+  const synced = applyCriticalAppraisalSelectionRule(
+    selectedSectionIds,
+    [...next],
+  );
+
+  return inputs.selectedClinicalArticleIds.length === 0 &&
+    inputs.selectedEconomicArticleIds.length === 0
+    ? synced.filter((id) => id !== "critical_appraisal")
+    : synced;
 }
 
 /** Align input-dependent sections with current evidence/comparator selections. */
@@ -307,7 +322,10 @@ export function reconcileSelectedSectionIdsWithInputs(
     next.add("clinical");
   }
 
-  if (inputs.selectedEconomicArticleIds.length === 0) {
+  if (
+    inputs.selectedEconomicArticleIds.length === 0 &&
+    !inputs.hasReportCalculator
+  ) {
     next.delete("economic");
   } else {
     next.add("economic");
@@ -319,5 +337,13 @@ export function reconcileSelectedSectionIdsWithInputs(
     next.add("comparator");
   }
 
-  return applyCriticalAppraisalSelectionRule(selectedSectionIds, [...next]);
+  const reconciled = applyCriticalAppraisalSelectionRule(
+    selectedSectionIds,
+    [...next],
+  );
+
+  return inputs.selectedClinicalArticleIds.length === 0 &&
+    inputs.selectedEconomicArticleIds.length === 0
+    ? reconciled.filter((id) => id !== "critical_appraisal")
+    : reconciled;
 }

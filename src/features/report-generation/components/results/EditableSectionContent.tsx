@@ -29,6 +29,7 @@ import {
   REWRITE_PREVIEW_APPLY_FAILED_MESSAGE,
 } from "../../utils/rewritePreview";
 import { stripTrailingEditableSourceBlocks } from "../../utils/viewerSectionContent";
+import { ReportChart } from "./ReportChart";
 import { RewriteWithAiPopover } from "./RewriteWithAiPopover";
 
 type SelectionHighlightRect = {
@@ -412,6 +413,8 @@ function RenderEditableBlocks({
                 </table>
               </div>
             );
+          case "chart":
+            return <ReportChart key={block.block_id} chart={block} />;
           case "section":
             return (
               <div

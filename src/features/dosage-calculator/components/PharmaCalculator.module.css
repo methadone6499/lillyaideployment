@@ -1,0 +1,139 @@
+.calculatorFrame {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+}
+
+.calculatorUi {
+  font-family: var(--font-inter), var(--font-geist-sans), sans-serif;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.inputPanel {
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: 14px;
+  background: #111;
+}
+
+.resultCard {
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  background: var(--surface-subtle);
+}
+
+.metricCard {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 13px;
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  background: var(--surface-subtle);
+}
+
+.metricCard::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--brand-emerald);
+  content: "";
+}
+
+.metricLabel {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  margin-top: 6px;
+  color: var(--text-heading);
+  font-family: var(--font-inter), var(--font-geist-sans), sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.metricDetail {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.cardHeading {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.sectionLabel {
+  color: var(--brand-emerald);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.workspaceGrid {
+  display: grid;
+  min-height: calc(100vh - 260px);
+  align-items: start;
+  gap: 24px;
+}
+
+.doseScheduleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metricGridFive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.metricGridWide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 10px;
+}
+
+.tableHeaderCell {
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tableCell {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+@media (min-width: 64rem) {
+  .workspaceGrid {
+    grid-template-columns: 360px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 39.999rem) {
+  .doseScheduleGrid {
+    grid-template-columns: 1fr;
+  }
+
+}

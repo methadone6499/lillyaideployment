@@ -13,6 +13,7 @@ import {
   reportSectionResponseSchema,
   reportStatusResponseSchema,
   updateReportSelectionsResponseSchema,
+  updateReportSelectionsInputSchema,
 } from "../schemas/reportSchemas";
 import type {
   CreateCustomSectionInput,
@@ -191,7 +192,7 @@ export async function updateReportSelections(
 ): Promise<UpdateReportSelectionsResponse> {
   return reportFetch(`/reports/${reportServiceId}/selections`, {
     method: "PUT",
-    body: input,
+    body: updateReportSelectionsInputSchema.parse(input),
     schema: updateReportSelectionsResponseSchema,
     signal,
   });

@@ -223,6 +223,15 @@ export const reportSelectionsSchema = z.object({
   economic_pmcids: z.array(z.string()),
   article_uploads: z.array(articleUploadSelectionSchema).optional().default([]),
   section_types: z.array(sectionTypeSchema),
+  dosing: z.lazy(() => reportDosingSelectionSchema).nullable().optional(),
+  cost_analysis: z
+    .lazy(() => reportCostAnalysisSelectionSchema)
+    .nullable()
+    .optional(),
+  budget_impact: z
+    .lazy(() => reportBudgetImpactSelectionSchema)
+    .nullable()
+    .optional(),
 });
 
 export const reportDiscoveryStateSchema = z.object({
@@ -242,19 +251,246 @@ export const createReportResponseSchema = z.object({
   storage_root: z.string().optional(),
 });
 
-export const updateReportSelectionsInputSchema = z.object({
-  comparators: z.array(z.string()),
-  custom_comparators: z.array(z.string()),
-  clinical_pmcids: z.array(z.string()),
-  economic_pmcids: z.array(z.string()),
-  article_uploads: z.array(articleUploadSelectionSchema),
-  section_types: z.array(sectionTypeSchema),
-});
+const reportCurrencySchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z]{3}$/, "Use a three-letter currency code")
+  .transform((value) => value.toUpperCase());
+
+const nonNegativeFiniteNumberSchema = z.number().finite().nonnegative();
+const positiveFiniteNumberSchema = z.number().finite().positive();
+const percentageSchema = z.number().finite().min(0).max(100);
+
+export const reportDosingSelectionSchema = z
+  .object({
+    unit_cost: nonNegativeFiniteNumberSchema,
+    unit_size: positiveFiniteNumberSchema,
+    dose: positiveFiniteNumberSchema,
+    times_per_day: positiveFiniteNumberSchema,
+    days_per_year: positiveFiniteNumberSchema.max(366),
+    dose_type: z.enum(["fixed", "weight_based"]),
+    patient_weight: positiveFiniteNumberSchema.nullable().optional(),
+    wastage_percent: percentageSchema,
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.dose_type === "weight_based" && value.patient_weight == null) {
+      context.addIssue({
+        code: "custom",
+        path: ["patient_weight"],
+        message: "Patient weight is required for weight-based dosing",
+      });
+    }
+  });
+
+const reportAnnualCostsSelectionSchema = z
+  .object({
+    drug_acquisition: nonNegativeFiniteNumberSchema.nullable(),
+    administration: nonNegativeFiniteNumberSchema,
+    monitoring: nonNegativeFiniteNumberSchema,
+    laboratory_diagnostics: nonNegativeFiniteNumberSchema,
+    outpatient_visits: nonNegativeFiniteNumberSchema,
+    adverse_event_management: nonNegativeFiniteNumberSchema,
+    adverse_event_rate_percent: percentageSchema,
+    hospitalizations: nonNegativeFiniteNumberSchema,
+    other_direct_costs: nonNegativeFiniteNumberSchema,
+  })
+  .strict();
+
+const reportOffsetsSelectionSchema = z
+  .object({
+    hospitalization_avoidance: nonNegativeFiniteNumberSchema,
+    other_offsets: nonNegativeFiniteNumberSchema,
+  })
+  .strict();
+
+const reportComparatorSelectionSchema = z
+  .object({
+    name: z.string().trim().min(1),
+    annual_drug_cost: nonNegativeFiniteNumberSchema,
+    administration_and_monitoring: nonNegativeFiniteNumberSchema,
+    offsets: nonNegativeFiniteNumberSchema,
+    patient_count: z.number().finite().int().nonnegative(),
+  })
+  .strict();
+
+export const reportCostAnalysisSelectionSchema = z
+  .object({
+    currency: reportCurrencySchema,
+    annual_costs: reportAnnualCostsSelectionSchema,
+    offsets: reportOffsetsSelectionSchema,
+    new_drug_patient_count: z.number().finite().int().positive(),
+    comparator: reportComparatorSelectionSchema.nullable().optional(),
+  })
+  .strict();
+
+const reportCurrentTreatmentSelectionSchema = z
+  .object({
+    name: z.string().trim().min(1),
+    drug_price: nonNegativeFiniteNumberSchema,
+    extra_care_cost: nonNegativeFiniteNumberSchema,
+    savings: nonNegativeFiniteNumberSchema,
+  })
+  .strict();
+
+export const reportBudgetImpactSelectionSchema = z
+  .object({
+    perspective: z.string().trim().min(1),
+    time_horizon: z.union([z.literal(3), z.literal(5)]),
+    currency: reportCurrencySchema,
+    annual_drug_cost_per_patient: nonNegativeFiniteNumberSchema.nullable(),
+    administration_and_monitoring: nonNegativeFiniteNumberSchema.nullable(),
+    expected_ae_cost: nonNegativeFiniteNumberSchema.nullable(),
+    offsets: nonNegativeFiniteNumberSchema.nullable(),
+    wastage_percent: percentageSchema,
+    current_treatment: reportCurrentTreatmentSelectionSchema,
+    hospital_beds: z.number().finite().int().positive(),
+    bed_occupancy_percent: percentageSchema,
+    prevalence_percent: percentageSchema,
+    diagnosis_rate_percent: percentageSchema,
+    eligibility_percent: percentageSchema,
+    average_length_of_stay_days: positiveFiniteNumberSchema,
+    annual_population_growth_percent: z.number().finite().min(-100).max(100),
+    annual_inflation_percent: z.number().finite().min(-100).max(100),
+    uptake_percent: z.array(percentageSchema),
+    conservative_uptake_multiplier: nonNegativeFiniteNumberSchema,
+    optimistic_uptake_multiplier: nonNegativeFiniteNumberSchema,
+    conservative_cost_increase_percent: percentageSchema,
+    optimistic_cost_decrease_percent: percentageSchema,
+    notes: z.string(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.uptake_percent.length !== value.time_horizon) {
+      context.addIssue({
+        code: "custom",
+        path: ["uptake_percent"],
+        message: `Enter exactly ${value.time_horizon} annual uptake values`,
+      });
+    }
+  });
+
+export const updateReportSelectionsInputSchema = z
+  .object({
+    comparators: z.array(z.string()),
+    custom_comparators: z.array(z.string()),
+    clinical_pmcids: z.array(z.string()),
+    economic_pmcids: z.array(z.string()),
+    article_uploads: z.array(articleUploadSelectionSchema),
+    section_types: z.array(sectionTypeSchema),
+    dosing: reportDosingSelectionSchema.optional(),
+    cost_analysis: reportCostAnalysisSelectionSchema.optional(),
+    budget_impact: reportBudgetImpactSelectionSchema.optional(),
+  })
+  .strict();
+
+const reportSelectionResponseNumberFields = new Set([
+  "unit_cost",
+  "unit_size",
+  "dose",
+  "times_per_day",
+  "days_per_year",
+  "patient_weight",
+  "wastage_percent",
+  "drug_acquisition",
+  "administration",
+  "monitoring",
+  "laboratory_diagnostics",
+  "outpatient_visits",
+  "adverse_event_management",
+  "adverse_event_rate_percent",
+  "hospitalizations",
+  "other_direct_costs",
+  "hospitalization_avoidance",
+  "other_offsets",
+  "new_drug_patient_count",
+  "annual_drug_cost",
+  "administration_and_monitoring",
+  "offsets",
+  "patient_count",
+  "time_horizon",
+  "annual_drug_cost_per_patient",
+  "expected_ae_cost",
+  "drug_price",
+  "extra_care_cost",
+  "savings",
+  "hospital_beds",
+  "bed_occupancy_percent",
+  "prevalence_percent",
+  "diagnosis_rate_percent",
+  "eligibility_percent",
+  "average_length_of_stay_days",
+  "annual_population_growth_percent",
+  "annual_inflation_percent",
+  "uptake_percent",
+  "conservative_uptake_multiplier",
+  "optimistic_uptake_multiplier",
+  "conservative_cost_increase_percent",
+  "optimistic_cost_decrease_percent",
+]);
+
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeReportSelectionResponseValue(
+  value: unknown,
+  fieldName?: string,
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) =>
+      normalizeReportSelectionResponseValue(item, fieldName),
+    );
+  }
+
+  if (isUnknownRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        normalizeReportSelectionResponseValue(nestedValue, key),
+      ]),
+    );
+  }
+
+  if (
+    typeof value === "string" &&
+    fieldName !== undefined &&
+    reportSelectionResponseNumberFields.has(fieldName) &&
+    value.trim() !== ""
+  ) {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : value;
+  }
+
+  return value;
+}
+
+function normalizeReportSelectionsResponse(value: unknown): unknown {
+  const normalized = normalizeReportSelectionResponseValue(value);
+  if (!isUnknownRecord(normalized)) return normalized;
+
+  const selections = { ...normalized };
+  delete selections.custom_sections;
+
+  if (isUnknownRecord(selections.cost_analysis)) {
+    const costAnalysis = { ...selections.cost_analysis };
+    delete costAnalysis.dosage_form;
+    delete costAnalysis.drug_class;
+    selections.cost_analysis = costAnalysis;
+  }
+
+  return selections;
+}
+
+const updateReportSelectionsResponseSelectionsSchema = z.preprocess(
+  normalizeReportSelectionsResponse,
+  updateReportSelectionsInputSchema,
+);
 
 export const updateReportSelectionsResponseSchema = z.object({
   report_id: z.string(),
   status: reportMutationStatusSchema,
-  selections: updateReportSelectionsInputSchema,
+  selections: updateReportSelectionsResponseSelectionsSchema,
   warnings: z.array(z.string()),
 });
 
@@ -339,10 +575,12 @@ export const paragraphBlockSchema = z.object({
   text: z.string(),
 });
 
+export const tableCellSchema = z.union([z.string(), z.number().finite()]);
+
 export const tableBlockSchema = z.object({
   type: z.literal("table"),
   columns: z.array(z.string()),
-  rows: z.array(z.array(z.string())),
+  rows: z.array(z.array(tableCellSchema)),
 });
 
 export const definitionBlockSchema = z.object({
@@ -368,6 +606,20 @@ export const markdownBlockSchema = z.object({
   text: z.string(),
 });
 
+export const chartSeriesSchema = z.object({
+  name: z.string(),
+  values: z.array(z.number().finite()),
+});
+
+export const chartBlockSchema = z.object({
+  type: z.literal("chart"),
+  chart_type: z.string().min(1),
+  title: z.string(),
+  categories: z.array(z.string()),
+  series: z.array(chartSeriesSchema),
+  currency: z.string().trim().min(1).optional(),
+});
+
 export type Block =
   | z.infer<typeof headingBlockSchema>
   | z.infer<typeof paragraphBlockSchema>
@@ -376,6 +628,7 @@ export type Block =
   | z.infer<typeof listBlockSchema>
   | z.infer<typeof calloutBlockSchema>
   | z.infer<typeof markdownBlockSchema>
+  | z.infer<typeof chartBlockSchema>
   | {
       type: "section";
       heading: string;
@@ -392,6 +645,7 @@ export const blockSchema: z.ZodType<Block> = z.lazy(() =>
     listBlockSchema,
     calloutBlockSchema,
     markdownBlockSchema,
+    chartBlockSchema,
     z.object({
       type: z.literal("section"),
       heading: z.string(),

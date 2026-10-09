@@ -29,7 +29,7 @@ export const REPORT_SECTION_DEFINITIONS: ReportSectionDefinition[] = [
     id: "economic",
     title: "Economic Evidence",
     description:
-      "Cost-effectiveness, budget impact, and pharmacoeconomic findings from selected studies.",
+      "Cost-effectiveness, budget impact analysis, and pharmacoeconomic findings from selected studies.",
   },
   {
     id: "critical_appraisal",

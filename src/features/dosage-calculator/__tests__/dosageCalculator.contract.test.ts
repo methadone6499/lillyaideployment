@@ -27,6 +27,7 @@ import {
   DOSAGE_SNAPSHOT_NOT_SENT,
   getAppliedSnapshotRows,
   getCategoryWeightHelper,
+  getIndicationMatchNote,
   getDosagePhaseLabel,
   getIndicationMatchNotice,
 } from "../utils/dosageCalculatorDisplay";
@@ -727,6 +728,21 @@ const mismatchNotice = getIndicationMatchNotice(mismatchResult.indication_match)
 assert.equal(mismatchNotice.tone, "warning");
 assert.match(mismatchNotice.body, /fallback labeled dosing/i);
 
+const closeMatchNotice = getIndicationMatchNotice(
+  "close",
+  "The requested indication closely matches a labeled use.",
+);
+assert.equal(closeMatchNotice.tone, "partial");
+assert.equal(closeMatchNotice.title, "Close indication match");
+assert.match(closeMatchNotice.body, /closely matches/);
+assert.equal(
+  getIndicationMatchNote({
+    indication_match_note: "  Backend-provided match explanation.  ",
+  }),
+  "Backend-provided match explanation.",
+);
+assert.equal(getIndicationMatchNote({}), undefined);
+
 const { warnings: emptyWarnings, ...resultWithoutWarnings } = buildResult();
 assert.deepEqual(emptyWarnings, []);
 assert.equal(
@@ -744,6 +760,12 @@ assert.equal(
     buildResult({ indication_match: "partial" }),
   ).success,
   false,
+);
+assert.equal(
+  dosageCalculatorResultSchema.safeParse(
+    buildResult({ indication_match: "close" }),
+  ).success,
+  true,
 );
 assert.equal(
   dosageCalculatorResultSchema.safeParse(

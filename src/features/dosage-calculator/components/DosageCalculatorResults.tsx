@@ -2,6 +2,8 @@ import { Button, Card } from "@/components/ui";
 import type { Ref } from "react";
 import type { DosageCalculatorResult } from "../schemas/dosageCalculatorSchemas";
 import type { DosageCalculatorErrorState } from "../utils/classifyDosageCalculatorError";
+import { getIndicationMatchNote } from "../utils/dosageCalculatorDisplay";
+import { BudgetImpactResultCard } from "./BudgetImpactResultCard";
 import { DosageJobProgressCard, type DosageJobProgress } from "./DosageJobProgressCard";
 import { DosageLabelResultCard } from "./DosageLabelResultCard";
 import { DosageWarningsCard } from "./DosageWarningsCard";
@@ -81,8 +83,12 @@ export function DosageCalculatorResults({
         <>
           <DosageLabelResultCard
             indicationMatch={result.indication_match}
+            indicationMatchNote={getIndicationMatchNote(result.extraction)}
             rows={result.table}
           />
+          {result.budget_impact ? (
+            <BudgetImpactResultCard budgetImpact={result.budget_impact} />
+          ) : null}
           <DosageWarningsCard warnings={result.warnings} />
         </>
       ) : null}

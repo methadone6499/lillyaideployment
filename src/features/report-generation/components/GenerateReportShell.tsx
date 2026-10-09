@@ -47,6 +47,7 @@ import { useReportWizardStore } from "../store/useReportWizardStore";
 import { enabledCustomSectionTitles } from "../utils/customSections";
 import { buildSelectedArticleUploads } from "../utils/articleUploads";
 import { mapFiltersToBackend } from "../utils/mapFiltersToBackend";
+import { mapReportCalculatorDraft } from "../utils/reportCalculator";
 import { buildApiSectionTypes } from "../utils/sectionOrdering";
 import { ReportResults } from "./results/ReportResults";
 import { Stepper } from "./Stepper";
@@ -146,6 +147,9 @@ export function GenerateReportShell() {
     (s) => s.selectedSectionIds,
   );
   const customSections = useReportWizardStore((s) => s.customSections);
+  const reportCalculatorDraft = useReportWizardStore(
+    (s) => s.reportCalculatorDraft,
+  );
   const nextStep = useReportWizardStore((s) => s.nextStep);
   const prevStep = useReportWizardStore((s) => s.prevStep);
   const resetReportPipeline = useReportWizardStore((s) => s.resetReportPipeline);
@@ -154,6 +158,9 @@ export function GenerateReportShell() {
   const setReportServiceId = useReportWizardStore((s) => s.setReportServiceId);
   const setGenerationJobId = useReportWizardStore(
     (s) => s.setGenerationJobId,
+  );
+  const setActiveGenerationSectionIds = useReportWizardStore(
+    (s) => s.setActiveGenerationSectionIds,
   );
   const setPlatformSaveState = useReportWizardStore(
     (s) => s.setPlatformSaveState,
@@ -267,6 +274,11 @@ export function GenerateReportShell() {
       return;
     }
 
+    if (currentStep === 4) {
+      nextStep();
+      return;
+    }
+
     if (currentStep === 5) {
       setStep5Error(null);
 
@@ -292,6 +304,9 @@ export function GenerateReportShell() {
       }
 
       try {
+        const calculatorSelections = mapReportCalculatorDraft(
+          reportCalculatorDraft,
+        );
         await saveSelectionsMutation.mutateAsync({
           reportServiceId,
           input: {
@@ -308,6 +323,7 @@ export function GenerateReportShell() {
               selectedSectionIds,
               customSections,
             ),
+            ...calculatorSelections,
           },
         });
       } catch (error) {
@@ -317,7 +333,11 @@ export function GenerateReportShell() {
           return;
         }
 
-        setStep5Error(getErrorMessage(error));
+        setStep5Error(
+          error instanceof ZodError
+            ? formatValidationDiagnostic(error)
+            : getErrorMessage(error),
+        );
         return;
       }
 
@@ -340,6 +360,9 @@ export function GenerateReportShell() {
         const generationJobId = result.job_id;
         const originatingReportServiceId = result.report_id;
         setGenerationJobId(generationJobId);
+        setActiveGenerationSectionIds(
+          result.sections.map((section) => section.section_id),
+        );
         setReportServiceId(originatingReportServiceId);
 
         const wizard = useReportWizardStore.getState();

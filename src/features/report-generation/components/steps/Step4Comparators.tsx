@@ -15,7 +15,6 @@ export function Step4Comparators() {
   const addCustomComparator = useReportWizardStore(
     (s) => s.addCustomComparator,
   );
-
   const [draftName, setDraftName] = useState("");
 
   const {
@@ -28,7 +27,6 @@ export function Step4Comparators() {
   const customOnly = customComparators.filter(
     (name) => !suggestions.includes(name),
   );
-
   const allComparators = [
     ...suggestions.map((name) => ({ name, isCustom: false as const })),
     ...customOnly.map((name) => ({ name, isCustom: true as const })),
@@ -50,9 +48,7 @@ export function Step4Comparators() {
   }
 
   if (isLoading) {
-    return (
-      <p className="text-body-lg text-text-muted">Loading comparators…</p>
-    );
+    return <p className="text-body-lg text-text-muted">Loading comparators…</p>;
   }
 
   return (
@@ -64,20 +60,20 @@ export function Step4Comparators() {
         </p>
       </div>
 
-      {isError && (
+      {isError ? (
         <p className="text-body-lg text-amber-300" role="status">
           {error instanceof Error
             ? error.message
             : "Failed to load comparator suggestions. You can add comparators manually."}
         </p>
-      )}
+      ) : null}
 
-      {allComparators.length === 0 && (
+      {allComparators.length === 0 ? (
         <p className="text-body-lg text-text-muted">
           No comparator suggestions were returned. Add comparators manually
           below.
         </p>
-      )}
+      ) : null}
 
       <div className="flex flex-col gap-6">
         {allComparators.map((comparator) => {
@@ -86,7 +82,7 @@ export function Step4Comparators() {
             <Card
               key={comparator.name}
               variant={selected ? "accent" : "default"}
-              className="flex h-[88px] items-center gap-5 px-7"
+              className="flex min-h-[88px] items-center gap-5 px-7 py-5"
             >
               <RadioCircle
                 selected={selected}
@@ -112,12 +108,12 @@ export function Step4Comparators() {
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
             <TextField
               value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
+              onChange={(event) => setDraftName(event.target.value)}
               placeholder="e.g. Rybelsus (semaglutide oral)"
               containerClassName="flex-1"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
                   handleAdd();
                 }
               }}

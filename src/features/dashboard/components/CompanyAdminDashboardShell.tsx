@@ -70,9 +70,9 @@ export function CompanyAdminDashboardShell() {
           />
 
           <DashboardActionCard
-            title="Budget Impact Analysis"
-            description="Quickly verify dosage assumptions and dosing rationale for HTA submissions."
-            ctaLabel="Use Budget Impact Analysis"
+            title="Budget Impact Calculator"
+            description="Model dosing, treatment costs, and multi-year budget impact analysis for HTA submissions."
+            ctaLabel="Open Calculator"
             href={resolvePaidFeatureDestination({
               overview: paidAccess.overview,
               me: authMe,

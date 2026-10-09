@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import type { Block, ReportSectionContent } from "../../types";
 import { stripTrailingSourceBlocks } from "../../utils/viewerSectionContent";
 import { MarkdownRenderer } from "./MarkdownRenderer";
+import { ReportChart } from "./ReportChart";
 
 type SectionContentRendererProps = {
   content: ReportSectionContent;
@@ -31,6 +32,16 @@ function renderWithFootnotes(text: string): ReactNode {
   }
 
   return nodes.length === 1 ? nodes[0] : nodes;
+}
+
+function renderTableCell(cell: string | number): ReactNode {
+  if (typeof cell === "number") {
+    return new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: 20,
+    }).format(cell);
+  }
+
+  return renderWithFootnotes(cell);
 }
 
 function headingClassName(level: number): string {
@@ -117,7 +128,7 @@ function renderBlock(block: Block, key: number, depth: number): ReactNode {
                         cellIndex === 0 && "font-medium text-text-heading",
                       )}
                     >
-                      {renderWithFootnotes(cell)}
+                      {renderTableCell(cell)}
                     </td>
                   ))}
                 </tr>
@@ -183,6 +194,9 @@ function renderBlock(block: Block, key: number, depth: number): ReactNode {
           <MarkdownRenderer markdown={block.text} />
         </div>
       );
+
+    case "chart":
+      return <ReportChart key={key} chart={block} />;
 
     default:
       return null;

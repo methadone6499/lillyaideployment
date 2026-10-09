@@ -61,6 +61,15 @@ function cloneEditableBlock(block: EditableBlock): EditableBlock {
       };
     case "list":
       return { ...block, items: [...block.items] };
+    case "chart":
+      return {
+        ...block,
+        categories: [...block.categories],
+        series: block.series.map((series) => ({
+          ...series,
+          values: [...series.values],
+        })),
+      };
     case "section":
       return { ...block, blocks: block.blocks.map(cloneEditableBlock) };
   }
@@ -110,7 +119,7 @@ export function editableTargetKey(target: EditableTextTarget): string {
 }
 
 export function isReadOnlyEditableBlock(block: EditableBlock): boolean {
-  return block.type === "table";
+  return block.type === "table" || block.type === "chart";
 }
 
 export function canEditEditableBlock(block: EditableBlock): boolean {
@@ -374,6 +383,7 @@ function applyReplacementText(
       return replaceListItems(block, items) ?? block;
     }
     case "table":
+    case "chart":
     case "section":
       return block;
   }
@@ -437,6 +447,18 @@ function toGeneratedBlock(block: EditableBlock): Block {
       return { type: "callout", level: block.level, text: block.text };
     case "markdown":
       return { type: "markdown", text: block.text };
+    case "chart":
+      return {
+        type: "chart",
+        chart_type: block.chart_type,
+        title: block.title,
+        categories: [...block.categories],
+        series: block.series.map((series) => ({
+          name: series.name,
+          values: [...series.values],
+        })),
+        ...(block.currency !== undefined ? { currency: block.currency } : {}),
+      };
     case "section":
       return {
         type: "section",

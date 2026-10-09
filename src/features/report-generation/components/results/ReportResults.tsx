@@ -28,9 +28,16 @@ export function ReportResults() {
   const filters = useReportWizardStore((s) => s.filters);
   const selectedSectionIds = useReportWizardStore((s) => s.selectedSectionIds);
   const customSections = useReportWizardStore((s) => s.customSections);
+  const generationJobId = useReportWizardStore((s) => s.generationJobId);
+  const activeGenerationSectionIds = useReportWizardStore(
+    (s) => s.activeGenerationSectionIds,
+  );
   const setStep = useReportWizardStore((s) => s.setStep);
   const resetWizard = useReportWizardStore((s) => s.resetWizard);
   const setGenerationJobId = useReportWizardStore((s) => s.setGenerationJobId);
+  const setActiveGenerationSectionIds = useReportWizardStore(
+    (s) => s.setActiveGenerationSectionIds,
+  );
 
   const retryMutation = useGenerateReportMutation();
 
@@ -56,7 +63,15 @@ export function ReportResults() {
         idempotency_key: crypto.randomUUID(),
       },
     });
+    if (result.report_id !== reportServiceId) {
+      throw new Error(
+        `Report Service ID mismatch: expected ${reportServiceId}, got ${result.report_id}.`,
+      );
+    }
     setGenerationJobId(result.job_id);
+    setActiveGenerationSectionIds(
+      result.sections.map((section) => section.section_id),
+    );
     await queryClient.invalidateQueries({
       queryKey: reportQueryKeys.status(reportServiceId),
     });
@@ -72,6 +87,8 @@ export function ReportResults() {
         customSections,
       )}
       customSectionTitles={enabledCustomSectionTitles(customSections)}
+      activeGenerationJobId={generationJobId}
+      activeGenerationSectionIds={activeGenerationSectionIds}
       onBack={handleBack}
       onRegenerate={handleRegenerate}
     />

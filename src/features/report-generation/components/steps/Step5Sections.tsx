@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { Card, Switch, TextLink } from "@/components/ui";
+import { useEffect, useState } from "react";
+import { Button, Card, Switch, TextLink } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { REPORT_SECTION_DEFINITIONS } from "../../constants/reportSections";
 import { useListCustomSections } from "../../hooks/useGenerateReport";
@@ -16,6 +16,11 @@ import {
 } from "../../utils/sectionOrdering";
 import { AddCustomSectionCard } from "./AddCustomSectionCard";
 import { CustomSectionCard } from "./CustomSectionCard";
+import { ReportCalculatorModal } from "../ReportCalculatorModal";
+import {
+  getReportCalculatorModuleLabels,
+  hasReportCalculatorModules,
+} from "../../utils/reportCalculator";
 
 export function Step5Sections() {
   const selectedSectionIds = useReportWizardStore(
@@ -30,6 +35,12 @@ export function Step5Sections() {
   const selectedComparators = useReportWizardStore(
     (s) => s.selectedComparators,
   );
+  const reportCalculatorDraft = useReportWizardStore(
+    (s) => s.reportCalculatorDraft,
+  );
+  const setReportCalculatorDraft = useReportWizardStore(
+    (s) => s.setReportCalculatorDraft,
+  );
   const toggleSectionId = useReportWizardStore((s) => s.toggleSectionId);
   const selectAllSections = useReportWizardStore((s) => s.selectAllSections);
   const deselectAllSections = useReportWizardStore(
@@ -41,6 +52,7 @@ export function Step5Sections() {
   const reportServiceId = useReportWizardStore((s) => s.reportServiceId);
   const customSections = useReportWizardStore((s) => s.customSections);
   const setCustomSections = useReportWizardStore((s) => s.setCustomSections);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   const {
     data: listedCustomSections,
@@ -52,7 +64,11 @@ export function Step5Sections() {
     selectedClinicalArticleIds,
     selectedEconomicArticleIds,
     selectedComparators,
+    hasReportCalculator: hasReportCalculatorModules(reportCalculatorDraft),
   };
+  const calculatorModuleLabels = getReportCalculatorModuleLabels(
+    reportCalculatorDraft,
+  );
 
   useEffect(() => {
     reconcileSectionsAtStep5();
@@ -92,6 +108,7 @@ export function Step5Sections() {
         {REPORT_SECTION_DEFINITIONS.filter(
           (section) => section.id !== "compliance",
         ).map((section) => {
+          const isEconomic = section.id === "economic";
           const available = isSectionAvailable(
             section.id,
             sectionInputs,
@@ -105,29 +122,57 @@ export function Step5Sections() {
               key={section.id}
               variant={selected ? "accent" : "default"}
               className={cn(
-                "flex items-center justify-between px-9 py-6",
-                !available && "opacity-60",
+                "px-9 py-6",
+                !available && !isEconomic && "opacity-60",
               )}
             >
-              <div className="flex flex-col gap-4">
-                <h3 className="text-card-title font-medium text-white">
-                  {section.title}
-                </h3>
-                <p className="text-helper text-text-muted">
-                  {section.description}
-                </p>
-              </div>
-              <Switch
-                checked={selected}
-                disabled={!available}
-                onChange={() => {
-                  if (available) {
-                    toggleSectionId(section.id);
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-card-title font-medium text-white">
+                    {section.title}
+                  </h3>
+                  <p className="text-helper text-text-muted">
+                    {section.description}
+                  </p>
+                </div>
+                <Switch
+                  checked={selected}
+                  disabled={
+                    !available ||
+                    (isEconomic && sectionInputs.hasReportCalculator)
                   }
-                }}
-                className={cn(!available && "cursor-not-allowed opacity-50")}
-                aria-label={`Toggle ${section.title}`}
-              />
+                  onChange={() => {
+                    if (available) {
+                      toggleSectionId(section.id);
+                    }
+                  }}
+                  className={cn(!available && "cursor-not-allowed opacity-50")}
+                  aria-label={`Toggle ${section.title}`}
+                />
+              </div>
+              {isEconomic ? (
+                <div className="mt-6 flex flex-col gap-4 border-t border-border-subtle pt-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-label font-medium text-text-heading">
+                      Calculated analysis
+                    </p>
+                    <p className="mt-1 text-helper leading-5 text-text-muted">
+                      {calculatorModuleLabels.length > 0
+                        ? `${calculatorModuleLabels.join(", ")} configured for this report.`
+                        : "Optional. Add dosing, cost, or budget-impact calculations."}
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    className="h-11 shrink-0"
+                    onClick={() => setCalculatorOpen(true)}
+                  >
+                    {calculatorModuleLabels.length > 0
+                      ? "Edit calculation inputs"
+                      : "Add calculation inputs"}
+                  </Button>
+                </div>
+              ) : null}
             </Card>
           );
         })}
@@ -146,6 +191,15 @@ export function Step5Sections() {
         ))}
         <AddCustomSectionCard />
       </div>
+
+      {calculatorOpen ? (
+        <ReportCalculatorModal
+          draft={reportCalculatorDraft}
+          comparators={selectedComparators}
+          onClose={() => setCalculatorOpen(false)}
+          onSave={setReportCalculatorDraft}
+        />
+      ) : null}
     </div>
   );
 }

@@ -119,6 +119,7 @@ function collectEditableTextFields(
         collectEditableTextFields(block.blocks, fields);
         break;
       case "table":
+      case "chart":
         break;
     }
   }
