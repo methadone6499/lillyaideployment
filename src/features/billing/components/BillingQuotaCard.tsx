@@ -1,6 +1,7 @@
+import { formatDisplayCount } from "@/lib/formatDisplay";
 import { Card } from "@/components/ui";
 
-import { formatUtcDate } from "../utils/formatBilling";
+import { formatLocalDate } from "../utils/formatBilling";
 import type { BillingQuotaView } from "../utils/selectBillingCapabilities";
 
 type BillingQuotaCardProps = {
@@ -9,7 +10,7 @@ type BillingQuotaCardProps = {
 
 export function BillingQuotaCard({ quotaView }: BillingQuotaCardProps) {
   return (
-    <Card className="flex min-h-[247px] flex-col rounded-button p-6">
+    <Card className="flex min-h-[247px] flex-col p-6">
       <h2 className="text-card-title font-medium text-white">Report quota</h2>
 
       {quotaView.kind === "unlimited" ? (
@@ -36,18 +37,18 @@ export function BillingQuotaCard({ quotaView }: BillingQuotaCardProps) {
 
       {quotaView.kind === "known" ? (
         <>
-          <p className="mt-4 flex items-baseline font-medium leading-none">
+          <p className="mt-4 flex items-baseline tabular-nums font-medium leading-none">
             <span className="text-[42px] text-brand">
-              {quotaView.quota.quota_used}
+              {formatDisplayCount(quotaView.quota.quota_used)}
             </span>
             <span className="text-card-title text-brand/40">
-              /{quotaView.quota.quota_total}
+              /{formatDisplayCount(quotaView.quota.quota_total)}
             </span>
           </p>
           <p className="mt-3 text-input font-medium text-text-body">
-            {quotaView.quota.quota_remaining} remaining · period{" "}
-            {formatUtcDate(quotaView.quota.period_start)} to{" "}
-            {formatUtcDate(quotaView.quota.period_end)}
+            {formatDisplayCount(quotaView.quota.quota_remaining)} remaining · period{" "}
+            {formatLocalDate(quotaView.quota.period_start)} to{" "}
+            {formatLocalDate(quotaView.quota.period_end)}
           </p>
           <p className="mt-2 text-helper text-text-muted">
             Remaining quota is informational. Report generation is still

@@ -13,7 +13,10 @@ import {
 export const CUSTOM_TEXT_MAX_LENGTH = 4000;
 export const CUSTOM_SEARCH_MAX_LENGTH = 100;
 
-const INTERNATIONAL_PHONE_PATTERN = /^\+[1-9]\d{6,14}$/;
+export const CONTACT_PHONE_ERROR_MESSAGE =
+  "Enter an international phone number with + and 8–15 digits, e.g. +14155552671.";
+
+const INTERNATIONAL_PHONE_PATTERN = /^\+[1-9]\d{7,14}$/;
 const PHONE_SEPARATOR_PATTERN = /[\s.\-()]/g;
 
 export const customRequestStatusSchema = z.enum([
@@ -270,14 +273,15 @@ export function normalizeContactPhone(value: string): string {
 
 export const contactPhoneSchema = z
   .string()
-  .transform(normalizeContactPhone)
+  .nullable()
+  .transform((value) =>
+    value === null || !value.trim() ? null : normalizeContactPhone(value),
+  )
   .pipe(
     z
       .string()
-      .regex(
-        INTERNATIONAL_PHONE_PATTERN,
-        "Use an international number such as +14155552671.",
-      ),
+      .regex(INTERNATIONAL_PHONE_PATTERN, CONTACT_PHONE_ERROR_MESSAGE)
+      .nullable(),
   );
 
 export const createCustomRequestBodySchema = z
@@ -296,7 +300,7 @@ export const updateCustomRequestBodySchema = z
     expected_revision: revisionSchema,
     company_name: companyNameSchema.optional(),
     billing_email: z.email().optional(),
-    contact_phone: contactPhoneSchema.nullable().optional(),
+    contact_phone: contactPhoneSchema.optional(),
     requested_seats: positiveCountSchema.optional(),
     requested_reports: positiveCountSchema.optional(),
     notes: z.string().trim().max(CUSTOM_TEXT_MAX_LENGTH).nullable().optional(),

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useConfirmedUserId } from "@/features/auth";
+import { invalidateBillingOverview } from "@/features/billing";
 import {
   createOrReplaceCustomSection,
   deleteCustomSection,
@@ -72,6 +74,8 @@ export function useUpdateReportSelectionsMutation() {
 }
 
 export function useGenerateReportMutation() {
+  const queryClient = useQueryClient();
+  const userId = useConfirmedUserId();
   return useMutation({
     mutationFn: ({
       reportServiceId,
@@ -82,6 +86,9 @@ export function useGenerateReportMutation() {
       input: GenerateReportInput;
       signal?: AbortSignal;
     }) => generateReport(reportServiceId, input, signal),
+    onSuccess: () => {
+      void invalidateBillingOverview(queryClient, userId);
+    },
   });
 }
 
@@ -90,10 +97,30 @@ export function useReportStatus(
   activeGenerationJobId?: string | null,
 ) {
   const queriesEnabled = useReportQueriesEnabled(Boolean(reportServiceId));
+  const queryClient = useQueryClient();
+  const userId = useConfirmedUserId();
+  const queryKey = reportQueryKeys.status(reportServiceId ?? "");
 
   return useQuery({
-    queryKey: reportQueryKeys.status(reportServiceId ?? ""),
-    queryFn: ({ signal }) => fetchReportStatus(reportServiceId!, signal),
+    queryKey,
+    queryFn: async ({ signal }) => {
+      const status = await fetchReportStatus(reportServiceId!, signal);
+      const previous = queryClient.getQueryData<Awaited<ReturnType<typeof fetchReportStatus>>>(
+        queryKey,
+      );
+      const isTerminal = status.report_status === "completed"
+        || status.report_status === "partially_completed"
+        || status.report_status === "failed"
+        || status.job_status === "failed";
+      if (isTerminal && (
+        previous?.report_status !== status.report_status
+        || previous?.job_status !== status.job_status
+        || previous?.active_job_id !== status.active_job_id
+      )) {
+        void invalidateBillingOverview(queryClient, userId);
+      }
+      return status;
+    },
     enabled: queriesEnabled,
     staleTime: 0,
     refetchOnWindowFocus: "always",

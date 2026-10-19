@@ -623,7 +623,7 @@ export function ReportChart({ chart }: ReportChartProps) {
     chart.series.some((series) => series.values.length > 0);
 
   return (
-    <figure className="rounded-card border border-border-default bg-surface-subtle p-4 sm:p-6">
+    <figure className="rounded-surface border border-border-default bg-surface-subtle p-4 sm:p-6">
       <figcaption className="flex flex-wrap items-start justify-between gap-3">
         <span className="text-label font-medium text-text-heading">{chart.title}</span>
         {chart.currency ? (

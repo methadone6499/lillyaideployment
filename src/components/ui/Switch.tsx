@@ -48,7 +48,7 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative flex shrink-0 items-center rounded-toggle-track transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "relative flex shrink-0 items-center rounded-toggle-track transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle",
         sizeClasses.track,
         checked ? "justify-end" : "justify-start",
         checked && tone === "brand" && "bg-brand-badge",
@@ -64,6 +64,7 @@ export function Switch({
           checked && tone === "brand" && "bg-brand",
           checked && tone === "danger" && "bg-[#fb4141]",
           !checked && "bg-white/80",
+          disabled && "bg-text-muted shadow-none",
         )}
       >
         {checked ? checkedIcon : uncheckedIcon}

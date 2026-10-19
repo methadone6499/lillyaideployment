@@ -105,7 +105,7 @@ assert.equal(failedJobError?.message, "DailyMed download failed");
 const classifiedFailure = classifyDosageCalculatorError(failedJobError);
 assert.equal(classifiedFailure?.kind, "job_failed");
 assert.equal(classifiedFailure?.retryable, true);
-assert.equal(classifiedFailure?.message, "DailyMed download failed");
+assert.equal(classifiedFailure?.message, "We could not retrieve dosing information. Check the drug name and indication, then try again.");
 
 assert.equal(
   getDosageCalculatorFailedJobError(

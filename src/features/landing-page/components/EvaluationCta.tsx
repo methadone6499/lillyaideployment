@@ -18,16 +18,16 @@ export function EvaluationCta() {
       </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-(--layout-landing-cta-panel-width) flex-col items-center gap-[clamp(28px,2.083vw,40px)] rounded-panel border border-white/20 bg-landing-surface-panel px-[23px] py-[clamp(32px,2.135vw,41px)] text-center">
-        <h2 className="text-landing-cta-size leading-landing-cta-line font-medium text-text-heading">
-          Start Your Evaluation
+        <h2 className="text-landing-cta-size leading-landing-cta-line font-medium tracking-[-0.01em] text-balance text-text-heading">
+          Start your evaluation
         </h2>
-        <p className="max-w-[779px] text-landing-body-size leading-landing-body-line text-landing-text-subtle">
+        <p className="max-w-[779px] text-body-lg leading-8 text-landing-text-subtle">
           Built for HTA committees and formulary decision-makers to generate
           comprehensive clinical, economic, and technical evaluation dossiers for
           therapies under consideration.
         </p>
-        <LandingCtaButton href="/reports/new" fullWidth className="max-w-none">
-          Generate Evidence Report
+        <LandingCtaButton href="/reports/new" fullWidth size="hero">
+          Generate evidence report
         </LandingCtaButton>
       </div>
     </LandingSection>

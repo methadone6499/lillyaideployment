@@ -216,10 +216,11 @@ export function Select({
           aria-required={required || undefined}
           aria-labelledby={label ? labelId : undefined}
           className={cn(
-            "h-12 w-full rounded-card border border-border-default bg-surface-default px-[17px] pr-10 text-left text-input font-medium outline-none focus:border-brand-chip-border",
+            "h-12 w-full rounded-field border border-border-default bg-surface-default px-[17px] pr-10 text-left text-input font-medium outline-none transition-[border-color,box-shadow] focus-visible:border-brand-chip-border focus-visible:ring-2 focus-visible:ring-brand/35",
             value ? "text-white" : "text-text-muted",
-            hasError && "border-status-running",
-            disabled && "cursor-not-allowed opacity-50",
+            hasError && "border-status-danger",
+            disabled &&
+              "cursor-not-allowed border-border-subtle bg-surface-subtle text-text-muted",
             className,
           )}
           onClick={() => {
@@ -247,7 +248,7 @@ export function Select({
             role="listbox"
             aria-labelledby={label ? labelId : id}
             className={cn(
-              "absolute left-0 right-0 z-50 overflow-hidden rounded-card border border-border-default bg-input-fill",
+              "absolute left-0 right-0 z-50 overflow-hidden rounded-surface border border-border-default bg-input-fill",
               menuPlacement === "top"
                 ? "bottom-full mb-1"
                 : "top-full mt-1",
@@ -282,7 +283,7 @@ export function Select({
         </p>
       ) : null}
       {error ? (
-        <p id={errorId} role="alert" className="text-helper text-status-running">
+        <p id={errorId} role="alert" className="text-helper text-status-danger">
           {error}
         </p>
       ) : null}

@@ -19,7 +19,11 @@ import {
   type AdminCustomRequestTabId,
 } from "../utils/adminCustomRequestQueue";
 import { classifyCustomSubscriptionError } from "../utils/classifyCustomSubscriptionError";
-import { formatIdentity } from "../utils/formatCustomSubscription";
+import {
+  formatIdentity,
+  formatReportCount,
+  formatSeatCount,
+} from "../utils/formatCustomSubscription";
 import { CustomRequestStatusPill } from "./CustomStatusPill";
 
 const ROWS_PER_PAGE = 20;
@@ -129,7 +133,7 @@ export function AdminCustomRequestQueue() {
         ))}
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="mt-6 overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-card-title font-medium text-white">{tab.label}</h2>
           <DashboardSearchInput
@@ -210,8 +214,8 @@ export function AdminCustomRequestQueue() {
                     {formatIdentity(request.billing_owner)}
                   </span>
                   <span className="min-w-0 truncate text-label text-white">
-                    {request.requested_seats} seats · {request.requested_reports}{" "}
-                    reports
+                    {formatSeatCount(request.requested_seats)} ·{" "}
+                    {formatReportCount(request.requested_reports)}
                   </span>
                   <span className="min-w-0 truncate text-label text-white">
                     {request.current_plan_type

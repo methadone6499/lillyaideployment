@@ -1,3 +1,4 @@
+import { formatDisplayCount } from "@/lib/formatDisplay";
 import { formatAmountMinor } from "@/features/billing";
 
 import type {
@@ -48,6 +49,18 @@ export function formatUsdAmount(amountMinor: number): string {
 
 export function formatMonthlyPrice(amountMinor: number): string {
   return `${formatUsdAmount(amountMinor)} / month`;
+}
+
+function formatCount(value: number, singular: string, plural: string): string {
+  return `${formatDisplayCount(value)} ${value === 1 ? singular : plural}`;
+}
+
+export function formatSeatCount(value: number): string {
+  return formatCount(value, "seat", "seats");
+}
+
+export function formatReportCount(value: number): string {
+  return formatCount(value, "report", "reports");
 }
 
 /**

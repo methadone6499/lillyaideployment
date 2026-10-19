@@ -23,13 +23,17 @@ import {
   classifyCustomSubscriptionError,
   type ClassifiedCustomSubscriptionError,
 } from "../utils/classifyCustomSubscriptionError";
-import { formatMonthlyPrice } from "../utils/formatCustomSubscription";
+import {
+  formatMonthlyPrice,
+  formatReportCount,
+  formatSeatCount,
+} from "../utils/formatCustomSubscription";
 import { selectCustomPaymentLink } from "../utils/selectCustomRequestView";
 import { CustomConfirmDialog } from "./CustomOfferDialogs";
 import { CustomSubscriptionAlert } from "./CustomSubscriptionAlert";
 
 const INVOICE_LINK_CLASS_NAME =
-  "inline-flex h-12 items-center justify-center rounded-button border border-transparent bg-brand px-5 text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+  "inline-flex h-12 items-center justify-center rounded-button border border-transparent bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
 type CustomPaymentPanelProps = {
   request: CustomRequest;
@@ -158,15 +162,15 @@ export function CustomPaymentPanel({
   };
 
   return (
-    <Card className="flex flex-col gap-5 rounded-button p-6">
+    <Card className="flex flex-col gap-5 p-6">
       <div className="flex flex-col gap-2">
         <h2 className="text-card-title font-medium text-white">
           Payment in progress
         </h2>
         {offer ? (
           <p className="text-input font-medium text-text-body">
-            {formatMonthlyPrice(offer.amount_minor)} · {offer.seats} seats ·{" "}
-            {offer.reports} reports per month
+            {formatMonthlyPrice(offer.amount_minor)} · {formatSeatCount(offer.seats)} ·{" "}
+            {formatReportCount(offer.reports)} per month
           </p>
         ) : null}
         <p className="text-label text-text-muted">
@@ -211,7 +215,7 @@ export function CustomPaymentPanel({
         {paymentLink?.kind === "checkout" || !invoiceUrl ? (
           <Button
             type="button"
-            className="h-12 text-label"
+            size="table" className="text-label"
             disabled={isBusy || !offer}
             onClick={() => {
               void handleResume();
@@ -223,7 +227,7 @@ export function CustomPaymentPanel({
           <Button
             type="button"
             variant="secondary"
-            className="h-12 text-label"
+            size="table" className="text-label"
             disabled={isBusy || !offer}
             onClick={() => {
               void handleResume();
@@ -235,7 +239,7 @@ export function CustomPaymentPanel({
         <Button
           type="button"
           variant="secondary"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={isBusy || !offer || cancelRetry.isCoolingDown}
           onClick={() => {
             setDialogError(null);
@@ -249,7 +253,7 @@ export function CustomPaymentPanel({
         <Button
           type="button"
           variant="secondary"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={isRefreshing}
           onClick={onRefresh}
         >

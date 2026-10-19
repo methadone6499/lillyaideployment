@@ -80,7 +80,7 @@ export function SectionVerificationPanel({
   if (groups.length === 0) return null;
 
   return (
-    <section className="mt-10 rounded-card border border-border-default bg-surface-default p-5 sm:p-6">
+    <section className="mt-10 rounded-surface border border-border-default bg-surface-default p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -133,7 +133,7 @@ export function SectionVerificationPanel({
             onClick={() => setFilter(status)}
             disabled={counts[status] === 0}
             className={cn(
-              "rounded-card border px-3 py-2 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40",
+              "rounded-field border px-3 py-2 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted",
               filter === status
                 ? STATUS_META[status].badgeClass
                 : "border-border-default bg-surface-subtle text-text-body hover:bg-surface-elevated",
@@ -167,7 +167,7 @@ export function SectionVerificationPanel({
                   return (
                     <details
                       key={claim.claim_id}
-                      className="group rounded-card border border-border-default bg-surface-subtle px-4 py-3"
+                      className="group rounded-surface border border-border-default bg-surface-subtle px-4 py-3"
                     >
                       <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                         <span className="min-w-0 flex-1">

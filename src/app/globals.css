@@ -7,6 +7,7 @@
   /* Report / dark design tokens */
   --base-black: #040404;
   --brand-emerald: #10b981;
+  --brand-on-emerald: #0a0a0a;
   --brand-emerald-bg: rgba(16, 185, 129, 0.08);
   --brand-emerald-border: rgba(16, 185, 129, 0.12);
   --brand-emerald-badge: rgba(16, 185, 129, 0.16);
@@ -26,10 +27,14 @@
   --text-primary: rgba(255, 255, 255, 0.8);
   --text-body: rgba(255, 255, 255, 0.56);
   --text-muted: rgba(255, 255, 255, 0.48);
-  --text-step: rgba(255, 255, 255, 0.42);
+  --text-step: rgba(255, 255, 255, 0.48);
+  --text-placeholder: rgba(255, 255, 255, 0.48);
 
   --status-success: #10b981;
   --status-running: #ffc85c;
+  --status-info: #4b8fff;
+  --status-danger: #f0627d;
+  --status-reviewed: #a593e0;
   --status-in-queue: #ffffff;
   --status-blocked: #d4a574;
   --status-partial: #6ee7b7;
@@ -103,7 +108,7 @@
   );
   --layout-auth-main-bottom: clamp(40px, min(3.333vw, 5.926vh), 64px);
   --layout-auth-footer-bottom: clamp(20px, min(2.5vw, 4.444vh), 48px);
-  --text-auth-title: clamp(24px, min(1.875vw, 3.333vh), 36px);
+  --text-auth-title: 40px;
   --text-auth-label: clamp(14px, min(0.938vw, 1.667vh), 18px);
   --text-auth-footer: clamp(12px, min(0.833vw, 1.481vh), 16px);
   --layout-auth-field-height: clamp(40px, min(2.917vw, 5.185vh), 56px);
@@ -170,6 +175,7 @@
   /* Report / dark palette */
   --color-base-black: var(--base-black);
   --color-brand: var(--brand-emerald);
+  --color-brand-foreground: var(--brand-on-emerald);
   --color-brand-bg: var(--brand-emerald-bg);
   --color-brand-border: var(--brand-emerald-border);
   --color-brand-badge: var(--brand-emerald-badge);
@@ -190,9 +196,13 @@
   --color-text-body: var(--text-body);
   --color-text-muted: var(--text-muted);
   --color-text-step: var(--text-step);
+  --color-text-placeholder: var(--text-placeholder);
 
   --color-status-success: var(--status-success);
   --color-status-running: var(--status-running);
+  --color-status-info: var(--status-info);
+  --color-status-danger: var(--status-danger);
+  --color-status-reviewed: var(--status-reviewed);
   --color-status-in-queue: var(--status-in-queue);
   --color-status-blocked: var(--status-blocked);
   --color-status-partial: var(--status-partial);
@@ -207,10 +217,14 @@
   --text-page-title: 40px;
   --text-section-heading: 24px;
   --text-card-title: 20px;
+  --text-dashboard-card-title: 32px;
   --text-body-lg: 18px;
   --text-label: 16px;
   --text-input: 14px;
   --text-helper: 12px;
+  --text-kpi: 64px;
+  --text-quota: 72px;
+  --text-quota-suffix: 36px;
 
   --leading-report: 26px;
   --leading-report-lg: 28px;
@@ -232,9 +246,12 @@
   /* Border radius — Figma 10.5px field/button radius rounded to 10px */
   --radius-step-badge: 4px;
   --radius-card: 8px;
+  --radius-surface: 12px;
   --radius-toggle-track: 9px;
-  --radius-field: 10px;
-  --radius-button: 12px;
+  --radius-field: 8px;
+  --radius-button: 4px;
+  --radius-header-control: 10px;
+  --radius-row-index: 6px;
   --radius-panel: 28px;
   --radius-radio: 16px;
   --radius-page: 36px;
@@ -301,4 +318,51 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Preserve calculator geometry while its visual migration is deferred. */
+[data-visual-scope="calculator"].rounded-button,
+[data-visual-scope="calculator"] .rounded-button {
+  border-radius: 12px;
+}
+
+[data-visual-scope="calculator"].rounded-field,
+[data-visual-scope="calculator"] .rounded-field {
+  border-radius: 10px;
+}
+
+input,
+textarea,
+select {
+  color-scheme: dark;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--autofill-text, var(--text-heading));
+  caret-color: var(--autofill-text, var(--text-heading));
+  -webkit-box-shadow: 0 0 0 1000px
+    var(--autofill-background, var(--input-fill)) inset;
+  box-shadow: 0 0 0 1000px
+    var(--autofill-background, var(--input-fill)) inset;
+}
+
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--autofill-text, var(--text-heading));
+  caret-color: var(--autofill-text, var(--text-heading));
+  -webkit-box-shadow:
+    0 0 0 1000px var(--autofill-background, var(--input-fill)) inset,
+    0 0 0 2px rgba(16, 185, 129, 0.35);
+  box-shadow:
+    0 0 0 1000px var(--autofill-background, var(--input-fill)) inset,
+    0 0 0 2px rgba(16, 185, 129, 0.35);
 }

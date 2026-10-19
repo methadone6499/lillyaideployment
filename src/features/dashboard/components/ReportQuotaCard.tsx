@@ -1,3 +1,5 @@
+import { formatDisplayCount } from "@/lib/formatDisplay";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { additionalReportPrice } from "../data/dashboardData";
 import type { DashboardQuotaView } from "../types";
@@ -8,10 +10,6 @@ type ReportQuotaCardProps = {
   onRetry?: () => void;
   showBuyAdditional?: boolean;
 };
-
-function formatQuotaValue(value: number): string {
-  return String(value);
-}
 
 export function ReportQuotaCard({
   view,
@@ -24,13 +22,13 @@ export function ReportQuotaCard({
   return (
     <Card
       aria-busy={isLoading}
-      className="flex min-h-[231px] flex-col rounded-button p-6"
+      className="flex min-h-[231px] min-w-0 flex-col p-6"
     >
       <p className="text-card-title font-medium text-text-heading">Report quota</p>
 
       {view.kind === "unlimited" ? (
         <>
-          <p className="mt-4 text-[72px] font-medium leading-none tracking-[-0.02em] text-brand">
+          <p className="mt-4 break-words text-dashboard-card-title font-medium leading-10 tracking-[-0.02em] text-brand">
             Unlimited
           </p>
           <p className="mt-4 text-helper text-text-muted">
@@ -41,7 +39,7 @@ export function ReportQuotaCard({
 
       {view.kind === "unavailable" ? (
         <>
-          <p className="mt-4 text-[72px] font-medium leading-none tracking-[-0.02em] text-brand">
+          <p className="mt-4 break-words text-dashboard-card-title font-medium leading-10 tracking-[-0.02em] text-brand">
             Unavailable
           </p>
           {errorMessage ? null : (
@@ -54,29 +52,22 @@ export function ReportQuotaCard({
       ) : null}
 
       {view.kind === "loading" ? (
-        <p className="mt-4 flex items-baseline font-medium leading-none">
-          <span className="text-[72px] tracking-[-0.02em] text-brand">—</span>
-          <span className="text-[36px] tracking-[0.1em] text-text-step">/</span>
-          <span className="text-[36px] text-text-step">—</span>
+        <p className="mt-4 flex items-baseline tabular-nums font-medium leading-none">
+          <span className="text-quota tracking-[-0.02em] text-brand">—</span>
+          <span className="text-quota-suffix tracking-[0.1em] text-text-step">/</span>
+          <span className="text-quota-suffix text-text-step">—</span>
         </p>
       ) : null}
 
       {view.kind === "known" ? (
-        <p className="mt-4 flex items-baseline font-medium leading-none">
-          <span className="text-[72px] tracking-[-0.02em] text-brand">
-            {formatQuotaValue(view.used)}
+        <p className="mt-4 flex items-baseline tabular-nums font-medium leading-none">
+          <span className="text-quota tracking-[-0.02em] text-brand">
+            {formatDisplayCount(view.used)}
           </span>
-          <span className="text-[36px] tracking-[0.1em] text-text-step">/</span>
-          <span className="text-[36px] text-text-step">
-            {formatQuotaValue(view.total)}
+          <span className="text-quota-suffix tracking-[0.1em] text-text-step">/</span>
+          <span className="text-quota-suffix text-text-step">
+            {formatDisplayCount(view.total)}
           </span>
-        </p>
-      ) : null}
-
-      {view.kind === "known" ? (
-        <p className="mt-4 text-helper text-text-muted">
-          {view.remaining} remaining. Remaining quota is informational; report
-          generation is confirmed by the server.
         </p>
       ) : null}
 
@@ -87,24 +78,21 @@ export function ReportQuotaCard({
         >
           <p>{errorMessage}</p>
           {onRetry ? (
-            <button
-              type="button"
-              className="self-start rounded-button border border-border-default px-3 py-1.5 text-label font-medium text-white transition-colors hover:bg-surface-elevated"
-              onClick={onRetry}
-            >
+            <Button variant="table" size="table" onClick={onRetry}>
               Try again
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
 
       {showBuyAdditional && view.kind === "known" ? (
-        <button
+        <Button
           type="button"
-          className="mt-auto flex w-full items-center rounded-step-badge border border-dashed border-brand-chip-border bg-brand-bg px-5 py-5 text-left text-label font-medium text-brand transition-colors hover:bg-brand-bg/80"
+          variant="secondary"
+          className="mt-auto w-full justify-start"
         >
           + Buy additional reports ({additionalReportPrice} each)
-        </button>
+        </Button>
       ) : null}
     </Card>
   );

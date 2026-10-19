@@ -21,6 +21,7 @@ export class ReportApiError extends Error {
     message: string,
     code: string | null = null,
     details: unknown = null,
+    public readonly rawCause?: unknown,
   ) {
     super(message);
     this.name = "ReportApiError";

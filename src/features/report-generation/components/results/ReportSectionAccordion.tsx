@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { HistoryIcon, StatusPill } from "@/components/ui";
+import { HistoryIcon, RequestErrorState, StatusPill } from "@/components/ui";
 import { useAuthUser } from "@/features/auth";
-import { ReportApiError } from "../../api/reportFetch";
 import { useEditableSectionDraft } from "../../hooks/useEditableSectionDraft";
 import { useReportSection } from "../../hooks/useGenerateReport";
 import { useSaveEditableDocumentMutation } from "../../hooks/useReportEditing";
@@ -17,6 +16,7 @@ import { toReportSectionContent } from "../../utils/reportBlockEditing";
 import { toDisplayVersion } from "../../utils/revisionHistory";
 import { getClaimVerificationGroups } from "../../utils/claimVerification";
 import { isTrailingSourceHeading } from "../../utils/viewerSectionContent";
+import { getReportRequestErrorMessage } from "../../utils/getReportRequestErrorMessage";
 import {
   createSaveEditableDocumentInput,
   getSaveEditableDocumentConflictAction,
@@ -37,6 +37,7 @@ type ReportSectionAccordionProps = {
   reportStatus: string;
   allowEditing?: boolean;
   hideTrailingSources?: boolean;
+  showSaveConfirmation?: boolean;
   item: ReportSectionAccordionItem;
   expanded: boolean;
   isEditing: boolean;
@@ -52,21 +53,12 @@ type ReportSectionAccordionProps = {
   afterContent?: ReactNode;
 };
 
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof ReportApiError) {
-    return error.message;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return fallback;
-}
-
 export function ReportSectionAccordion({
   reportServiceId,
   reportStatus,
   allowEditing = true,
   hideTrailingSources = false,
+  showSaveConfirmation = false,
   item,
   expanded,
   isEditing,
@@ -93,6 +85,8 @@ export function ReportSectionAccordion({
     isLoading: isContentLoading,
     isError: isContentError,
     error: contentError,
+    isFetching: isContentFetching,
+    refetch: retrySection,
   } = useReportSection(
     reportServiceId,
     section.section_id,
@@ -105,6 +99,7 @@ export function ReportSectionAccordion({
     null,
   );
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [saveConflictAction, setSaveConflictAction] =
     useState<SaveEditableDocumentConflictAction>("none");
@@ -121,6 +116,8 @@ export function ReportSectionAccordion({
     isPersistedDocumentLoading,
     isPersistedDocumentError,
     error: documentError,
+    isFetching: isDocumentFetching,
+    retryLoad: retryDocument,
     setDraftBlocks,
     acceptRewriteId,
     applyPersistedDocument,
@@ -150,7 +147,7 @@ export function ReportSectionAccordion({
   const isReadOnlyContentLoading =
     isContentLoading || isPersistedDocumentLoading;
   const isReadOnlyContentError =
-    isContentError && (!canEdit || isPersistedDocumentError);
+    isContentError || isPersistedDocumentError;
   const hasSavedChanges = (persistedDocument?.revision ?? 0) > 0;
   const shouldHideTrailingSources =
     hideTrailingSources && !isTrailingSourceHeading(title);
@@ -166,8 +163,15 @@ export function ReportSectionAccordion({
     [accordionKey, onDirtyChange],
   );
 
+  useEffect(() => {
+    if (!saved) return;
+    const timer = window.setTimeout(() => setSaved(false), 4_000);
+    return () => window.clearTimeout(timer);
+  }, [saved]);
+
   const startEditing = () => {
     if (rootRef.current && canEdit) {
+      setSaved(false);
       onRequestEdit(rootRef.current);
     }
   };
@@ -181,6 +185,7 @@ export function ReportSectionAccordion({
   };
 
   const discardUnsavedDraft = () => {
+    setSaved(false);
     discardDraft();
     setSaveError(null);
     setSaveConflictAction("none");
@@ -190,6 +195,7 @@ export function ReportSectionAccordion({
   };
 
   const handleDraftBlocks = (blocks: EditableBlock[]) => {
+    setSaved(false);
     setSaveError(null);
     setSaveConflictAction("none");
     setDraftBlocks(blocks);
@@ -200,6 +206,7 @@ export function ReportSectionAccordion({
       return;
     }
 
+    setSaved(false);
     const request = createSaveEditableDocumentInput({
       document: draft,
       acceptedRewriteIds,
@@ -226,6 +233,7 @@ export function ReportSectionAccordion({
       setConfirmation(null);
       onDirtyChange(accordionKey, false);
       onStopEditing();
+      setSaved(showSaveConfirmation);
     } catch (error) {
       setSaveError(getSaveEditableDocumentFailureMessage(error));
       setSaveConflictAction(getSaveEditableDocumentConflictAction(error));
@@ -238,6 +246,7 @@ export function ReportSectionAccordion({
       return;
     }
 
+    setSaved(false);
     try {
       const refreshed = await refreshFromServer();
       if (!refreshed) {
@@ -254,6 +263,7 @@ export function ReportSectionAccordion({
   };
 
   const handleRevisionRestored = (document: EditableDocumentResponse) => {
+    setSaved(false);
     applyPersistedDocument(document);
     onDocumentSaved(accordionKey, document);
     setSaveError(null);
@@ -274,11 +284,16 @@ export function ReportSectionAccordion({
         onToggle={onToggle}
         headerTrailing={
           <>
+            {showSaveConfirmation && saved ? (
+              <span className="text-label font-medium text-brand" role="status">
+                Saved
+              </span>
+            ) : null}
             {hasSavedChanges && !isEditing && persistedDocument && (
               <button
                 type="button"
                 onClick={() => setIsHistoryOpen(true)}
-                className="inline-flex h-10 items-center gap-2 rounded-button border border-border-default bg-surface-default px-3 text-label font-medium text-white transition-colors hover:border-brand-border hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                className="inline-flex h-12 items-center gap-2 rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:border-brand-border hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 aria-label={`View revision history, current version ${toDisplayVersion(persistedDocument.revision)}`}
                 title="View revision history"
               >
@@ -292,7 +307,7 @@ export function ReportSectionAccordion({
                   type="button"
                   onClick={stopEditing}
                   disabled={isSaving}
-                  className="text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-12 items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
                 >
                   Cancel
                 </button>
@@ -301,7 +316,7 @@ export function ReportSectionAccordion({
                     type="button"
                     onClick={() => setConfirmation("save")}
                     disabled={isSaving}
-                    className="inline-flex h-10 items-center rounded-button bg-brand px-4 text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-12 items-center rounded-button bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted"
                   >
                     Save changes
                   </button>
@@ -312,7 +327,7 @@ export function ReportSectionAccordion({
                 <button
                   type="button"
                   onClick={startEditing}
-                  className="inline-flex h-10 items-center rounded-button border border-border-default bg-surface-default px-4 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="inline-flex h-12 items-center rounded-button border border-border-default bg-surface-subtle px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   Edit
                 </button>
@@ -326,23 +341,23 @@ export function ReportSectionAccordion({
           <p className="text-body-lg text-text-muted">Loading editor…</p>
         )}
         {isEditing && isDocumentError && (
-          <p className="text-body-lg text-red-400" role="alert">
-            {getErrorMessage(
-              documentError,
-              "Unable to load the editable document.",
-            )}
-          </p>
+          <RequestErrorState
+            title="Couldn’t load the editor"
+            message={getReportRequestErrorMessage(documentError, "Try loading this section’s editor again. Your report has not been changed.")}
+            onRetry={() => void retryDocument()}
+            retryPending={isDocumentFetching}
+          />
         )}
         {isEditing && draft && sectionId ? (
           <div className="text-body-lg">
-            <p className="mb-8 rounded-card border border-brand-border bg-brand-bg px-4 py-3 text-helper text-text-muted">
+            <p className="mb-8 rounded-surface border border-brand-border bg-brand-bg px-4 py-3 text-helper text-text-muted">
               Edit text directly. Highlight text inside one editable field to
               open Rewrite with AI. Tables, labels, and other compiler-owned
               structure cannot be edited.
             </p>
             {saveError && (
               <div
-                className="mb-8 rounded-card border border-red-400/30 bg-red-400/10 px-4 py-3"
+                className="mb-8 rounded-surface border border-red-400/30 bg-red-400/10 px-4 py-3"
                 role="alert"
               >
                 <p className="text-helper text-red-400">{saveError}</p>
@@ -375,17 +390,29 @@ export function ReportSectionAccordion({
         ) : (
           !isEditing && (
             <>
-              {isReadOnlyContentLoading && !renderedContent && (
+              {isReadOnlyContentLoading && !isReadOnlyContentError && !renderedContent && (
                 <p className="text-body-lg text-text-muted">Loading section…</p>
               )}
               {isReadOnlyContentError && !renderedContent && (
-                <p className="text-body-lg text-red-400" role="alert">
-                  {getErrorMessage(
-                    contentError,
-                    "Unable to load section content.",
-                  )}
-                </p>
+                <RequestErrorState
+                  title="Couldn’t load this section"
+                  message={getReportRequestErrorMessage(contentError ?? documentError, "Try loading this section again. You can still open other report sections.")}
+                  onRetry={() => {
+                    if (isContentError) void retrySection();
+                    if (isPersistedDocumentError) void retryDocument();
+                  }}
+                  retryPending={isContentFetching || isDocumentFetching}
+                />
               )}
+              {isPersistedDocumentError && renderedContent ? (
+                <RequestErrorState
+                  className="mb-6"
+                  title="Couldn’t load saved edits"
+                  message={getReportRequestErrorMessage(documentError, "The original section is shown below. Try again to load its saved edits.")}
+                  onRetry={() => void retryDocument()}
+                  retryPending={isDocumentFetching}
+                />
+              ) : null}
               {renderedContent && (
                 <div className="text-body-lg">
                   <SectionContentRenderer

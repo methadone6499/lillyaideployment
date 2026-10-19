@@ -62,7 +62,7 @@ export function SuperAdminManagementPageShell({
 
         <div className="mt-11 flex flex-col gap-6 lg:mt-12 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <h1 className="text-[32px] leading-tight font-medium text-white sm:text-page-title">
+            <h1 className="text-page-title leading-tight font-medium text-white">
               {title}
             </h1>
           </div>

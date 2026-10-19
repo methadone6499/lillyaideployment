@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CloseIcon, Switch, TextField } from "@/components/ui";
-import { cn } from "@/lib/cn";
 import { useState } from "react";
 import {
   useDeleteCustomSectionMutation,
@@ -102,7 +101,7 @@ export function CustomSectionCard({
       });
       removeCustomSection(section.customId);
     } catch (deleteError) {
-      setError(getCustomSectionErrorMessage(deleteError));
+      setError(getCustomSectionErrorMessage(deleteError, "remove"));
     }
   };
 
@@ -131,7 +130,7 @@ export function CustomSectionCard({
             }}
             disabled={busy}
             aria-label={`Remove ${section.title}`}
-            className="inline-flex size-10 items-center justify-center rounded-button text-text-muted transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex size-10 items-center justify-center rounded-field text-text-muted transition-colors hover:bg-surface-elevated hover:text-white disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
           >
             <CloseIcon />
           </button>
@@ -141,7 +140,6 @@ export function CustomSectionCard({
               void handleEnabledChange(checked);
             }}
             disabled={busy}
-            className={cn(busy && "cursor-not-allowed opacity-50")}
             aria-label={`Toggle ${section.title}`}
           />
         </div>

@@ -2,6 +2,7 @@ import { companyNameSchema } from "@/features/billing";
 import type { FieldErrors } from "@/services/ApiRequestError";
 
 import {
+  CONTACT_PHONE_ERROR_MESSAGE,
   contactPhoneSchema,
   CUSTOM_TEXT_MAX_LENGTH,
   normalizeContactPhone,
@@ -79,8 +80,7 @@ function parseFormValues(
     if (parsed.success) {
       contactPhone = parsed.data;
     } else {
-      fieldErrors.contact_phone =
-        "Use an international number such as +14155552671.";
+      fieldErrors.contact_phone = CONTACT_PHONE_ERROR_MESSAGE;
     }
   }
 

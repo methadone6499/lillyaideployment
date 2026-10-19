@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDisplayDateTime as formatUpdatedAt } from "@/lib/formatDisplay";
+
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
@@ -26,13 +28,6 @@ function formatFileSize(sizeBytes: number): string {
   }
 
   return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatUpdatedAt(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
 
 type CompanyLogoPreviewProps = {
@@ -196,17 +191,17 @@ export function CompanyBrandingCard() {
         ) : metadataError ? (
           <div className="mt-6 flex flex-wrap items-center gap-3" role="alert">
             <p className="text-label text-status-running">{metadataError}</p>
-            <button
-              type="button"
-              className="rounded-button border border-border-default px-3 py-1.5 text-label font-medium text-white transition-colors hover:bg-surface-elevated"
+            <Button
+              variant="table"
+              size="table"
               onClick={() => void logoQuery.refetch()}
             >
               Try again
-            </button>
+            </Button>
           </div>
         ) : metadata ? (
-          <div className="mt-6 flex flex-col gap-5 rounded-button border border-border-default bg-base-black/30 p-5 sm:flex-row sm:items-center">
-            <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-button border border-border-default bg-white p-4 sm:w-56">
+          <div className="mt-6 flex flex-col gap-5 rounded-surface border border-border-default bg-base-black/30 p-5 sm:flex-row sm:items-center">
+            <div className="flex h-32 w-full items-center justify-center overflow-hidden rounded-surface border border-border-default bg-white p-4 sm:w-56">
               {contentQuery.data ? (
                 <CompanyLogoPreview
                   key={metadata.version}
@@ -244,39 +239,37 @@ export function CompanyBrandingCard() {
                       <span className="text-helper text-text-body">
                         Remove this logo?
                       </span>
-                      <button
-                        type="button"
+                      <Button
+                        variant="destructiveSolid"
                         disabled={isMutating}
-                        className="text-helper font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
                         onClick={() => void handleDelete()}
                       >
                         {deleteMutation.isPending ? "Removing…" : "Confirm"}
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        variant="secondary"
                         disabled={isMutating}
-                        className="text-helper font-medium text-text-body hover:text-white disabled:opacity-50"
                         onClick={() => setConfirmingDelete(false)}
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </>
                   ) : (
-                    <button
-                      type="button"
+                    <Button
+                      variant="destructive"
+                      size="table"
                       disabled={isMutating}
-                      className="text-helper font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
                       onClick={() => setConfirmingDelete(true)}
                     >
                       Remove logo
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : null}
             </div>
           </div>
         ) : (
-          <div className="mt-6 rounded-button border border-dashed border-border-default px-5 py-6">
+          <div className="mt-6 rounded-surface border border-dashed border-border-default px-5 py-6">
             <p className="text-label text-text-body">
               No company logo has been uploaded.
             </p>

@@ -21,14 +21,14 @@ export function SectionHeading({
   return (
     <div
       className={cn(
-        "flex flex-col gap-[clamp(28px,2.5vw,48px)]",
+        "flex flex-col gap-4",
         align === "center" ? "items-center text-center" : "items-start text-left",
         className,
       )}
     >
       <h2
         className={cn(
-          "text-landing-section-size leading-landing-section-line text-landing-text-heading",
+          "text-landing-section-size leading-landing-section-line font-medium tracking-[-0.01em] text-balance text-landing-text-heading",
           titleClassName,
         )}
       >
@@ -37,7 +37,7 @@ export function SectionHeading({
       {subtitle && (
         <p
           className={cn(
-            "max-w-[894px] text-landing-body-lg-size leading-landing-body-lg-line text-text-body",
+            "max-w-[70ch] text-landing-body-lg-size leading-landing-body-lg-line text-landing-text-subtle",
             subtitleClassName,
           )}
         >

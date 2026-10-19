@@ -20,7 +20,7 @@ function getGreeting(): string {
 
 export function DashboardGreeting({ user }: DashboardGreetingProps) {
   return (
-    <h1 className="flex flex-wrap items-center gap-2.5 text-page-title leading-none">
+    <h1 className="flex flex-wrap items-center gap-2.5 text-[29px] leading-[29px]">
       <span className="font-medium text-text-body">{getGreeting()}</span>
       <span className="font-semibold text-brand">{user.displayName}</span>
     </h1>

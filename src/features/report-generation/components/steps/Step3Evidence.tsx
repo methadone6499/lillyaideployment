@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, PlusIcon, Tabs } from "@/components/ui";
+import { Button, PlusIcon, RequestErrorState, Tabs } from "@/components/ui";
 import { useCallback, useMemo, useState } from "react";
 import { ArticleUploadDialog } from "../ArticleUploadDialog";
 import { EvidenceTable } from "../EvidenceTable";
@@ -15,6 +15,7 @@ import type {
 import { getArticleUploadSelectionId } from "../../utils/articleUploads";
 import { getArticleSelectionId } from "../../utils/getArticleSelectionId";
 import { matchesTextAvailabilityFilter } from "../../utils/getTextAvailability";
+import { getReportRequestErrorMessage } from "../../utils/getReportRequestErrorMessage";
 
 const EVIDENCE_TABS = [
   { id: "clinical" as const, label: "Clinical Evidence" },
@@ -71,6 +72,8 @@ export function Step3Evidence() {
     isLoading,
     isError,
     error,
+    isFetching,
+    refetch,
   } = useEvidenceDiscovery(reportServiceId, activeTab);
 
   const filteredItems = useMemo(
@@ -133,7 +136,7 @@ export function Step3Evidence() {
           />
           <Button
             variant="secondary"
-            className="h-12"
+            size="table"
             leadingIcon={<PlusIcon />}
             onClick={() => setUploadTarget("manual")}
           >
@@ -142,11 +145,12 @@ export function Step3Evidence() {
         </div>
       </div>
       {isError && (
-        <p className="text-body-lg text-amber-300" role="status">
-          {error instanceof Error
-            ? error.message
-            : "Failed to load evidence. You can continue with manual selections later."}
-        </p>
+        <RequestErrorState
+          title={`Couldn’t load ${isClinical ? "clinical" : "economic"} evidence`}
+          message={getReportRequestErrorMessage(error, "Try loading these articles again. Your selected evidence and uploaded PDFs have been kept.")}
+          onRetry={() => void refetch()}
+          retryPending={isFetching}
+        />
       )}
       {items.length === 0 && !isError && (
         <p className="text-body-lg text-text-muted">
@@ -160,7 +164,7 @@ export function Step3Evidence() {
         </p>
       )}
       {visibleUploads.length > 0 ? (
-        <div className="rounded-card border border-brand-border bg-brand-bg px-6 py-5">
+        <div className="rounded-surface border border-brand-border bg-brand-bg px-6 py-5">
           <h3 className="text-card-title font-medium text-text-heading">
             Uploaded article PDFs
           </h3>
@@ -171,7 +175,7 @@ export function Step3Evidence() {
               return (
                 <div
                   key={upload.upload_id}
-                  className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border-default bg-surface-subtle px-4 py-3"
+                  className="flex flex-wrap items-center justify-between gap-4 rounded-surface border border-border-default bg-surface-subtle px-4 py-3"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-label font-medium text-white">

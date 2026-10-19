@@ -11,6 +11,8 @@ type TokenPayload = {
 
 type AuthStoreState = {
   status: AuthStatus;
+  companyAccess: "available" | "disabled" | "transitioning";
+  companyContextVersion: number;
   accessToken: string | null;
   expiresAt: number | null;
   confirmedUserId: string | null;
@@ -18,6 +20,7 @@ type AuthStoreState = {
 };
 
 type AuthStoreActions = {
+  setCompanyAccess: (generation: number, access: AuthStoreState["companyAccess"]) => boolean;
   beginInitializing: () => void;
   incrementSessionGeneration: () => number;
   isGenerationCurrent: (generation: number) => boolean;
@@ -31,6 +34,8 @@ export type AuthStore = AuthStoreState & AuthStoreActions;
 
 const clearedSessionState = {
   status: "unauthenticated" as const,
+  companyAccess: "available" as const,
+  companyContextVersion: 0,
   accessToken: null,
   expiresAt: null,
   confirmedUserId: null,
@@ -43,6 +48,13 @@ const initialState: AuthStoreState = {
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   ...initialState,
+
+  setCompanyAccess: (generation, companyAccess) => {
+    if (!get().isGenerationCurrent(generation)) return false;
+    const changed = companyAccess !== get().companyAccess && companyAccess !== "available";
+    set({ companyAccess, status: "authenticated", companyContextVersion: get().companyContextVersion + (changed ? 1 : 0) });
+    return true;
+  },
 
   beginInitializing: () => {
     set({ status: "initializing" });

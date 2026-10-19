@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDisplayCount } from "@/lib/formatDisplay";
+
 import Link from "next/link";
 import { useState } from "react";
 
@@ -35,6 +37,8 @@ import {
 } from "../utils/classifyCustomSubscriptionError";
 import {
   formatMonthlyPrice,
+  formatReportCount,
+  formatSeatCount,
   formatTimeRemaining,
 } from "../utils/formatCustomSubscription";
 import {
@@ -201,7 +205,7 @@ export function CustomOfferPanel({
   };
 
   return (
-    <Card className="flex flex-col gap-6 rounded-button p-6">
+    <Card className="flex flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
         <h2 className="text-card-title font-medium text-white">
           Offer for {offer.company_name}
@@ -210,8 +214,7 @@ export function CustomOfferPanel({
           <span className="text-[42px]">{formatMonthlyPrice(offer.amount_minor)}</span>
         </p>
         <p className="text-input font-medium text-text-body">
-          {offer.seats} {offer.seats === 1 ? "seat" : "seats"} · {offer.reports}{" "}
-          reports per month
+          {formatSeatCount(offer.seats)} · {formatReportCount(offer.reports)} per month
         </p>
         {expiry ? (
           <p
@@ -244,7 +247,7 @@ export function CustomOfferPanel({
       {seatsOverOffer > 0 ? (
         <p className="text-label text-status-running" role="status">
           Your company uses {occupiedSeats} seats including pending invitations,
-          but this offer includes {offer.seats}. Free {seatsOverOffer}{" "}
+          but this offer includes {formatDisplayCount(offer.seats)}. Free {formatDisplayCount(seatsOverOffer)}{" "}
           {seatsOverOffer === 1 ? "seat" : "seats"} before accepting.{" "}
           <Link
             href={BILLING_PATHS.companySeats}
@@ -268,7 +271,7 @@ export function CustomOfferPanel({
           <Button
             type="button"
             variant="secondary"
-            className="h-11 text-label"
+            size="small" className="text-label"
             onClick={() => setOpenDialog("changes")}
           >
             Request changes
@@ -285,7 +288,7 @@ export function CustomOfferPanel({
       <div className="flex flex-wrap gap-3">
         <Button
           type="button"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={isBusy || expiry?.isExpired}
           onClick={() => {
             setDialogError(null);
@@ -297,7 +300,7 @@ export function CustomOfferPanel({
         <Button
           type="button"
           variant="secondary"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={isBusy}
           onClick={() => {
             setDialogError(null);
@@ -309,7 +312,7 @@ export function CustomOfferPanel({
         <Button
           type="button"
           variant="secondary"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={isBusy}
           onClick={() => {
             setDialogError(null);
@@ -321,7 +324,7 @@ export function CustomOfferPanel({
         <Button
           type="button"
           variant="secondary"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={
             resendMutation.isPending ||
             resendCooldown.isCoolingDown ||

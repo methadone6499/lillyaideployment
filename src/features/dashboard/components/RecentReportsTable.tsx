@@ -23,7 +23,7 @@ const ROWS_PER_PAGE = 6;
 const SEARCH_DEBOUNCE_MS = 300;
 
 const reportRowClass =
-  "grid min-w-[860px] grid-cols-[minmax(260px,1fr)_240px_160px_24px] items-center gap-x-12 px-6";
+  "grid min-w-[860px] grid-cols-[minmax(260px,1fr)_240px_160px_24px] items-center gap-x-6 px-6";
 
 function getListErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -143,7 +143,7 @@ export function RecentReportsTable() {
       aria-label="Recent reports"
       aria-busy={reportsQuery.isFetching}
     >
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-card-title font-medium text-white">
             Recent reports
@@ -157,6 +157,7 @@ export function RecentReportsTable() {
 
             <DashboardStatusFilter
               value={statusFilter}
+              showSelectedLabel
               onChange={handleStatusFilterChange}
             />
           </div>
@@ -209,7 +210,7 @@ export function RecentReportsTable() {
                   href={`/reports/${report.id}`}
                   className={cn(
                     reportRowClass,
-                    "h-[86px] border-b border-border-subtle text-left transition-colors last:border-b-0 hover:bg-brand-bg",
+                    "min-h-[86px] border-b border-border-subtle py-3 text-left transition-colors last:border-b-0 hover:bg-brand-bg",
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-4">
@@ -221,7 +222,7 @@ export function RecentReportsTable() {
                     </span>
                   </span>
 
-                  <span className="text-label font-medium whitespace-nowrap text-white">
+                  <span className="min-w-0 break-words whitespace-normal text-label font-medium text-white">
                     {formatReportDateTime(report.created_at)}
                   </span>
 
@@ -233,7 +234,7 @@ export function RecentReportsTable() {
                           : report.generation_status
                       }
                     />
-                    {canSeeReviewState && report.is_overdue ? <span className="rounded-card bg-red-400/10 px-3 py-2 text-label font-medium text-red-400">Overdue</span> : null}
+                    {canSeeReviewState && report.is_overdue ? <span className="rounded-field bg-[rgba(217,34,68,0.12)] px-3 py-2 text-label font-medium text-status-danger">Overdue</span> : null}
                   </span>
 
                   <ChevronRightIcon className="justify-self-end text-white" />

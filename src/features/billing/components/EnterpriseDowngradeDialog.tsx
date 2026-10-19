@@ -67,7 +67,7 @@ export function EnterpriseDowngradeDialog({
       aria-describedby="enterprise-downgrade-description"
       aria-busy={isPending}
       tabIndex={-1}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-2xl overflow-y-auto rounded-button border border-border-default bg-[#171717] p-6 font-[family-name:var(--font-inter)] text-white shadow-2xl backdrop:bg-black/60"
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-2xl overflow-y-auto rounded-surface border border-border-default bg-[#171717] p-6 font-[family-name:var(--font-inter)] text-white shadow-2xl backdrop:bg-black/60"
       onCancel={(event) => {
         event.preventDefault();
         if (!isPending) {
@@ -100,7 +100,7 @@ export function EnterpriseDowngradeDialog({
         <button
           type="button"
           aria-label="Close Enterprise downgrade"
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-card text-text-muted transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-field text-text-muted transition-colors hover:bg-surface-elevated hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
           disabled={isPending}
           onClick={onCancel}
         >
@@ -139,13 +139,13 @@ export function EnterpriseDowngradeDialog({
       </div>
       {feedback ? <div className="mt-4">{feedback}</div> : null}
       <form className="mt-6 flex flex-col gap-4" noValidate onSubmit={handleSubmit}>
-        <Button type="submit" className="h-12 text-label" disabled={isPending}>
+        <Button type="submit" size="table" className="text-label" disabled={isPending}>
           {isPending ? "Scheduling..." : "Schedule downgrade"}
         </Button>
         <Button
           type="button"
           variant="secondary"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={isPending}
           onClick={onCancel}
         >

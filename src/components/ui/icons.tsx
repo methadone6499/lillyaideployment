@@ -4,6 +4,71 @@ type IconProps = {
   className?: string;
 };
 
+export function EyeIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={cn("size-5", className)}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M1.667 10S4.583 4.167 10 4.167 18.333 10 18.333 10 15.417 15.833 10 15.833 1.667 10 1.667 10Z"
+        stroke="currentColor"
+        strokeWidth="1.667"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.667" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={cn("size-5", className)}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M2.5 2.5 17.5 17.5M8.233 4.383A8.24 8.24 0 0 1 10 4.167C15.417 4.167 18.333 10 18.333 10a14.17 14.17 0 0 1-2.633 3.45M5.15 5.15A14.15 14.15 0 0 0 1.667 10S4.583 15.833 10 15.833a8.287 8.287 0 0 0 4.85-1.65M8.233 8.233a2.5 2.5 0 0 0 3.534 3.534"
+        stroke="currentColor"
+        strokeWidth="1.667"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function SpinnerIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={cn("size-5 animate-spin motion-reduce:animate-none", className)}
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden
+    >
+      <circle
+        cx="10"
+        cy="10"
+        r="7.5"
+        stroke="currentColor"
+        strokeWidth="1.667"
+        opacity="0.25"
+      />
+      <path
+        d="M10 2.5A7.5 7.5 0 0 1 17.5 10"
+        stroke="currentColor"
+        strokeWidth="1.667"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function ArrowNarrowLeftIcon({ className }: IconProps) {
   return (
     <svg
@@ -130,25 +195,6 @@ export function ChevronRightIcon({ className }: IconProps) {
         d="M9 18L15 12L9 6"
         stroke="currentColor"
         strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function BellIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={cn("size-6", className)}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M14 21H10M18 8C18 6.4087 17.3679 4.8826 16.2426 3.7574C15.1174 2.6321 13.5913 2 12 2C10.4087 2 8.8826 2.6321 7.7574 3.7574C6.6321 4.8826 6 6.4087 6 8C6 11.0902 5.2205 13.206 4.3497 14.6054C3.6151 15.7859 3.2479 16.3761 3.2613 16.5408C3.2762 16.7231 3.3149 16.7926 3.4618 16.9016C3.5945 17 4.1926 17 5.3889 17H18.6111C19.8074 17 20.4055 17 20.5382 16.9016C20.6851 16.7926 20.7238 16.7231 20.7387 16.5408C20.7521 16.3761 20.3849 15.7859 19.6503 14.6054C18.7795 13.206 18 11.0902 18 8Z"
-        stroke="currentColor"
-        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

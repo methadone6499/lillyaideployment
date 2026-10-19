@@ -27,7 +27,7 @@ export function Stepper({ currentStep }: StepperProps) {
                 className={cn(
                   "flex size-7 items-center justify-center rounded-step-badge text-label",
                   isActive || isPast
-                    ? "bg-brand-badge text-white"
+                    ? "bg-brand text-brand-foreground"
                     : "bg-surface-default text-white",
                 )}
               >

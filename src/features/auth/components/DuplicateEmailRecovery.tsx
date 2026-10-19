@@ -51,7 +51,7 @@ export function DuplicateEmailRecovery({
         onClick={() => {
           void onResendVerification?.();
         }}
-        className="!h-[var(--layout-auth-button-height)] w-full !rounded-[10.5px] border-[1.75px] border-[rgba(1,176,89,0.72)] !bg-landing-emerald-gradient px-6 !text-[16px] !font-medium text-white shadow-landing-emerald-glow hover:!bg-landing-emerald-gradient hover:!opacity-95"
+        className="w-full !rounded-button border-[1.75px] border-[rgba(1,176,89,0.72)] !bg-landing-emerald-gradient px-6 !text-[16px] !font-medium !text-brand-foreground shadow-landing-emerald-glow hover:!bg-landing-emerald-gradient hover:!opacity-95"
       >
         {isSubmitting
           ? "Sending Verification Email..."

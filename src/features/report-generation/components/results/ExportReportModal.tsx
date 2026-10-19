@@ -227,7 +227,7 @@ export function ExportReportModal({
         aria-describedby={descriptionIds}
         aria-busy={isExporting}
         tabIndex={-1}
-        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-button border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-surface border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white"
       >
         <header className="flex h-[67px] shrink-0 items-center justify-between border-b border-border-default px-6">
           <h2
@@ -240,7 +240,7 @@ export function ExportReportModal({
             type="button"
             onClick={requestClose}
             disabled={isExporting}
-            className="inline-flex size-6 items-center justify-center text-white transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex size-10 items-center justify-center rounded-field text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
             aria-label="Close export report"
           >
             <CloseIcon className="size-5" />
@@ -268,7 +268,7 @@ export function ExportReportModal({
                 <label
                   key={format.id}
                   className={cn(
-                    "relative flex min-h-[123px] flex-col rounded-button border p-[15px] transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand",
+                    "relative flex min-h-[123px] flex-col rounded-surface border p-[15px] transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand",
                     isSelected
                       ? "border-brand/20 bg-[rgba(16,185,129,0.12)]"
                       : "border-border-default bg-surface-default",
@@ -321,7 +321,7 @@ export function ExportReportModal({
               Checking company branding…
             </p>
           ) : effectiveFormat === "pdf" && companyLogoAvailable ? (
-            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-button border border-border-default bg-surface-default px-4 py-3.5">
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-surface border border-border-default bg-surface-default px-4 py-3.5">
               <input
                 type="checkbox"
                 checked={includeCompanyLogo}
@@ -368,7 +368,7 @@ export function ExportReportModal({
               type="button"
               onClick={requestClose}
               disabled={isExporting}
-              className="inline-flex h-[42px] items-center justify-center text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-[52px] items-center justify-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
             >
               Cancel
             </button>
@@ -376,7 +376,7 @@ export function ExportReportModal({
               type="button"
               onClick={() => void handleExport()}
               disabled={isExporting || !canExport}
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-button bg-brand pl-[18px] pr-3 text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-[52px] items-center justify-center gap-2 rounded-button bg-brand pr-4 pl-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted"
             >
               {isExporting ? "Exporting…" : "Export"}
               <span className="relative size-[18px]" aria-hidden>
@@ -385,7 +385,7 @@ export function ExportReportModal({
                   alt=""
                   width={12}
                   height={12}
-                  className="absolute left-0.75 top-0.75 size-3"
+                  className="absolute left-0.75 top-0.75 size-3 brightness-0"
                 />
               </span>
             </button>

@@ -1,3 +1,4 @@
+import { formatDisplayCount } from "@/lib/formatDisplay";
 import type {
   BillingInterval,
   PlanType,
@@ -74,24 +75,10 @@ export function formatUtcDateTime(isoTimestamp: string): string {
   return `${formatUtcDate(isoTimestamp)} ${padUtcPart(date.getUTCHours())}:${padUtcPart(date.getUTCMinutes())} UTC`;
 }
 
-const localDateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "long",
-});
-
-const localDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
-export function formatLocalDate(isoTimestamp: string): string {
-  const date = parseIsoTimestamp(isoTimestamp);
-  return date ? localDateFormatter.format(date) : isoTimestamp;
-}
-
-export function formatLocalDateTime(isoTimestamp: string): string {
-  const date = parseIsoTimestamp(isoTimestamp);
-  return date ? localDateTimeFormatter.format(date) : isoTimestamp;
-}
+export {
+  formatDisplayDate as formatLocalDate,
+  formatDisplayDateTime as formatLocalDateTime,
+} from "@/lib/formatDisplay";
 
 export function formatPlanName(planType: PlanType): string {
   return `${planType.charAt(0).toUpperCase()}${planType.slice(1)}`;
@@ -107,4 +94,12 @@ export function formatBillingIntervalSuffix(interval: BillingInterval): string {
 
 export function formatBillingIntervalCopy(interval: BillingInterval): string {
   return interval === "month" ? "monthly" : interval;
+}
+
+export function formatCountLabel(
+  value: number,
+  singular: string,
+  plural = `${singular}s`,
+): string {
+  return `${formatDisplayCount(value)} ${value === 1 ? singular : plural}`;
 }

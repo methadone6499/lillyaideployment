@@ -33,6 +33,13 @@ function cacheAuthMe(me: AuthMeResponse): void {
   requireAuthQueryClient().setQueryData(authQueryKeys.me, me);
 }
 
+export function markCompanyAccessDisabled(error: unknown, generation: number): boolean {
+  if (!(error instanceof ApiRequestError) || error.status !== 403 || error.code !== "company_access_disabled") return false;
+  if (!useAuthStore.getState().isGenerationCurrent(generation)) return false;
+  if (useAuthStore.getState().companyAccess === "transitioning") return true;
+  return useAuthStore.getState().setCompanyAccess(generation, "disabled");
+}
+
 function isAbortError(error: unknown): boolean {
   if (error instanceof DOMException && error.name === "AbortError") {
     return true;
@@ -72,11 +79,18 @@ async function applyTokenAndMe(
     return;
   }
 
+  // Disabled memberships can rotate credentials without repeatedly resolving company permissions.
+  if (store.companyAccess === "disabled") {
+    store.setCompanyAccess(generation, "disabled");
+    return;
+  }
+
   let me: AuthMeResponse;
 
   try {
     me = await getMe(token.access_token, signal);
   } catch (error) {
+    if (markCompanyAccessDisabled(error, generation)) return;
     if (
       isClosedSessionAuthError(error) &&
       useAuthStore.getState().isGenerationCurrent(generation)
@@ -277,6 +291,8 @@ export async function establishAuthenticatedSession(
 
   const me = queryClient.getQueryData<AuthMeResponse>(authQueryKeys.me);
 
+  if (useAuthStore.getState().companyAccess === "disabled") return null;
+
   if (!me) {
     if (!useAuthStore.getState().isGenerationCurrent(generation)) {
       return null;
@@ -314,6 +330,7 @@ export function getCachedAuthMe(
 
 export async function refetchAuthMe(
   signal?: AbortSignal,
+  requirePersonalContext = false,
 ): Promise<AuthMeResponse> {
   const queryClient = requireAuthQueryClient();
   const generation = useAuthStore.getState().sessionGeneration;
@@ -326,9 +343,14 @@ export async function refetchAuthMe(
       throw new AuthSessionError();
     }
 
+    if (requirePersonalContext && (me.active_context.type !== "personal" || me.active_context.role !== "standard_user")) {
+      throw new Error("Your company departure succeeded, but your personal workspace is not ready yet. Please retry.");
+    }
     cacheAuthMe(me);
+    useAuthStore.getState().confirmUserId(generation, me.user.id);
     return me;
   } catch (error) {
+    markCompanyAccessDisabled(error, generation);
     if (isClosedSessionAuthError(error)) {
       performTerminalAuthCleanup(queryClient, generation);
       throw new AuthSessionError();

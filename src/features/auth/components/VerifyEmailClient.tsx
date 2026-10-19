@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { ArrowNarrowRightIcon } from "@/components/ui";
+import { BRAND } from "@/lib/brand";
 import { ApiRequestError } from "@/services/ApiRequestError";
 
 import {
@@ -220,7 +221,7 @@ export function VerifyEmailClient({ token }: VerifyEmailClientProps) {
         <div
           role="status"
           aria-live="polite"
-          className="flex flex-col items-center gap-6 rounded-2xl border border-brand/25 bg-landing-surface-card px-6 py-8 text-center"
+          className="flex flex-col items-center gap-6 rounded-surface border border-brand/25 bg-landing-surface-card px-6 py-8 text-center"
         >
           <div
             aria-hidden
@@ -246,14 +247,14 @@ export function VerifyEmailClient({ token }: VerifyEmailClientProps) {
               Your email has been verified
             </p>
             <p className="text-label leading-normal text-landing-text-subtle">
-              Your LillyAI account is ready. Sign in to continue.
+              Your {BRAND.name} account is ready. Sign in to continue.
             </p>
             <span className="sr-only">{resolvedViewState.message}</span>
           </div>
 
           <Link
             href="/login"
-            className="inline-flex h-[var(--layout-auth-button-height)] w-full items-center justify-center gap-1.5 rounded-[10.5px] border-[1.75px] border-[rgba(1,176,89,0.72)] bg-landing-emerald-gradient px-6 text-[16px] font-medium text-white shadow-landing-emerald-glow transition-opacity hover:opacity-95"
+            className="inline-flex h-[52px] w-full items-center justify-center gap-1.5 rounded-button border-[1.75px] border-[rgba(1,176,89,0.72)] bg-landing-emerald-gradient px-6 text-[16px] font-medium text-brand-foreground shadow-landing-emerald-glow transition-opacity hover:opacity-95"
           >
             Continue to Login
             <ArrowNarrowRightIcon className="size-[18px]" />

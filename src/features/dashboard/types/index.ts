@@ -25,10 +25,3 @@ export type DashboardQuotaView =
   | { kind: "unlimited" }
   | { kind: "unavailable" }
   | { kind: "known"; used: number; total: number; remaining: number };
-
-export type DashboardNotification = {
-  id: string;
-  message: string;
-  reportName?: string;
-  timestamp: string;
-};

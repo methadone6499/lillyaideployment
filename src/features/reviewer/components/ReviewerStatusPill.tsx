@@ -20,7 +20,7 @@ const statusConfig: Record<
   },
   overdue: {
     label: "Overdue",
-    className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+    className: "bg-[rgba(217,34,68,0.12)] text-status-danger",
   },
   pending: {
     label: "Pending",
@@ -41,7 +41,7 @@ export function ReviewerStatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-card p-2.5 text-input font-medium whitespace-nowrap",
+        "inline-flex items-center justify-center rounded-field p-2.5 text-input font-medium whitespace-nowrap",
         config.className,
         className,
       )}

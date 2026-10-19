@@ -53,6 +53,7 @@ import {
   type SaveReviewSectionNoteRequest,
   type UpdateReviewerAssignmentSettingsRequest,
 } from "../schemas/reviewerSchemas";
+import { appendReviewerAssignmentStatuses } from "../utils/appendReviewerAssignmentStatuses";
 
 const REVIEWER_PREFIX = "/api/v1/reviewer";
 const PUBLIC_INVITATIONS_PREFIX = "/api/v1/reviewer-invitations";
@@ -113,7 +114,7 @@ function buildReviewerDashboardUrl(params: ReviewerDashboardFilters): string {
   query.set("limit", String(boundedLimit(params.limit ?? DEFAULT_DASHBOARD_LIMIT)));
   setCursor(query, params.cursor);
 
-  if (params.status) query.set("status", params.status);
+  appendReviewerAssignmentStatuses(query, params.status);
   if (params.overdue !== undefined) query.set("overdue", String(params.overdue));
   if (params.search?.trim()) {
     query.set("search", params.search.trim().slice(0, MAX_SEARCH_LENGTH));
@@ -173,7 +174,7 @@ export function listReviewerAssignments(
   const query = new URLSearchParams();
   query.set("limit", String(boundedLimit(params.limit)));
   setCursor(query, params.cursor);
-  if (params.status) query.set("status", params.status);
+  appendReviewerAssignmentStatuses(query, params.status);
   if (params.overdue !== undefined) query.set("overdue", String(params.overdue));
   return authenticatedRequest(
     `${REVIEWER_PREFIX}/assignments?${query.toString()}`,

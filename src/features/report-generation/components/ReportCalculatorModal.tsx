@@ -288,6 +288,7 @@ export function ReportCalculatorModal({
     >
       <div
         ref={dialogRef}
+        data-visual-scope="calculator"
         role="dialog"
         aria-modal="true"
         aria-labelledby="report-calculator-title"

@@ -82,7 +82,7 @@ export function AddCustomSectionCard() {
       setSelectedFile(null);
       resetFileInput();
     } catch (submitError) {
-      setError(getCustomSectionErrorMessage(submitError));
+      setError(getCustomSectionErrorMessage(submitError, "add"));
     }
   };
 
@@ -131,7 +131,7 @@ export function AddCustomSectionCard() {
           <Button
             variant={isPromptOpen ? "primary" : "secondary"}
             leadingIcon={<PlusIcon />}
-            className="h-12 pl-3 pr-5"
+            size="table" className="pl-3 pr-5"
             disabled={busy}
             onClick={() => setIsPromptOpen((open) => !open)}
           >
@@ -140,7 +140,7 @@ export function AddCustomSectionCard() {
           <Button
             variant="secondary"
             leadingIcon={<PlusIcon />}
-            className="h-12 pl-3 pr-5"
+            size="table" className="pl-3 pr-5"
             disabled={busy}
             onClick={handleUploadClick}
           >
@@ -162,7 +162,7 @@ export function AddCustomSectionCard() {
         label="Section title"
         required
         containerClassName="max-w-xl"
-        className="border-border-default bg-surface-default placeholder:text-text-step"
+        className="border-border-default bg-surface-default placeholder:text-text-muted"
         placeholder="GCC Reimbursement Landscape"
         value={title}
             onChange={(event) => {
@@ -178,7 +178,7 @@ export function AddCustomSectionCard() {
         <div className="flex gap-4">
           <TextField
             containerClassName="flex-1"
-            className="border-border-default bg-surface-default placeholder:text-text-step"
+            className="border-border-default bg-surface-default placeholder:text-text-muted"
             placeholder="Generate a reimbursement landscape section focused on GCC payer systems."
             value={prompt}
             onChange={(event) => {
@@ -191,7 +191,7 @@ export function AddCustomSectionCard() {
           <Button
             variant="secondary"
             trailingIcon={<ArrowNarrowRightIcon />}
-            className="h-12 pl-5 pr-3"
+            size="table" className="pl-5 pr-3"
             disabled={busy}
             onClick={() => {
               void submit();

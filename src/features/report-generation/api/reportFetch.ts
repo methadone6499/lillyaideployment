@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import { ensureAuthenticatedSession } from "@/features/auth";
 import { getReportApiBaseUrl } from "@/lib/reportApiBaseUrl";
-import { createReportApiError } from "./reportApiError";
+import { createReportApiError, ReportApiError } from "./reportApiError";
 
 export {
   ReportApiError,
@@ -102,7 +102,18 @@ export async function reportFetch<TSchema extends z.ZodType>(
     return;
   }
 
-  const json: unknown = await response.json();
   const schema = (options as ReportFetchOptions<TSchema>).schema;
-  return schema.parse(json);
+  try {
+    const json: unknown = await response.json();
+    return schema.parse(json);
+  } catch (error) {
+    if (options.signal?.aborted || (error instanceof Error && error.name === "AbortError")) throw error;
+    throw new ReportApiError(
+      response.status,
+      "We could not read the information returned by the report service. Try again. If this continues, contact support.",
+      "invalid_response",
+      null,
+      error,
+    );
+  }
 }

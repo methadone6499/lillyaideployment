@@ -1,3 +1,5 @@
+import { ReportApiError } from "../api/reportApiError";
+import { getReportRequestErrorMessage } from "./getReportRequestErrorMessage";
 import type {
   CustomSectionMode,
   CustomSectionSpec,
@@ -74,9 +76,12 @@ export function specToWizardCustomSection(
   };
 }
 
-export function getCustomSectionErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
+export function getCustomSectionErrorMessage(error: unknown, action: "load" | "add" | "update" | "remove" = "update"): string {
+  if (error instanceof ReportApiError) {
+    if (error.status === 413) return "This file is larger than the 20 MB limit. Choose a smaller PDF or Word document.";
+    if (error.status === 409) return "The custom section could not be changed in the report's current state. Refresh the report and try again.";
+    if (error.status === 422 && error.message.includes("lack of structured outline")) return "We could not find a clear section outline in this template. Upload a file with headings or add instructions describing the section you need.";
+    if ((error.status === 400 || error.status === 422) && action !== "load") return "Check the section title, instructions, and uploaded file, then try again.";
   }
-  return "Something went wrong. Please try again.";
+  return getReportRequestErrorMessage(error, `We could not ${action} the custom section${action === "load" ? "s" : ""}. Try again. If this continues, contact support.`);
 }

@@ -1,6 +1,12 @@
 import { authenticatedAuthRequest } from "@/features/auth";
 import { apiRequest } from "@/services/apiRequest";
 
+export function leaveCompany(signal?: AbortSignal) {
+  return authenticatedAuthRequest((token, requestSignal) => apiRequest("/api/v1/companies/me/membership", {
+    method: "DELETE", headers: { Authorization: `Bearer ${token}` }, expectEmpty: true, signal: requestSignal,
+  }), signal, { allowBlockedCompanyAccess: true });
+}
+
 import {
   seatListResponseSchema,
   seatSchema,

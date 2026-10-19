@@ -2,10 +2,10 @@ export { CompanyAdminDashboardShell } from "./components/CompanyAdminDashboardSh
 export { SuperAdminDashboardShell } from "./components/SuperAdminDashboardShell";
 export { SuperAdminReportsTable } from "./components/SuperAdminReportsTable";
 export { DashboardGreeting } from "./components/DashboardGreeting";
+export { DashboardPageFrame } from "./components/DashboardPageFrame";
 export {
   DashboardHeaderActions,
   type AccountMenuVariant,
-  type DashboardHeaderActionsProps,
 } from "./components/DashboardHeaderActions";
 export { DashboardPagination } from "./components/DashboardPagination";
 export {
@@ -20,6 +20,5 @@ export {
 } from "./components/DashboardStatusFilter";
 export { DashboardStatusPill } from "./components/DashboardStatusPill";
 export type {
-  DashboardNotification,
   DashboardStatusPillStatus,
 } from "./types";

@@ -22,7 +22,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-card border",
+        "rounded-surface border",
         variantClasses[variant],
         className,
       )}

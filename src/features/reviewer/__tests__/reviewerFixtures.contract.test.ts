@@ -102,27 +102,6 @@ assert.deepEqual(
 );
 
 assert.deepEqual(
-  dashboard.notifications.map((notification) => ({
-    message: notification.message,
-    timestamp: notification.timestamp,
-  })),
-  [
-    {
-      message: "New report Panadol - Mild Fever is assigned",
-      timestamp: "24 mins ago",
-    },
-    {
-      message: "Metformin - Diabetes review is overdue",
-      timestamp: "1 hour ago",
-    },
-    {
-      message: "Dupilumab - Atopic Dermatitis review submitted",
-      timestamp: "2 hour ago",
-    },
-  ],
-);
-
-assert.deepEqual(
   REVIEWER_STATUS_FILTER_OPTIONS.map((option) => option.value),
   ["all", "completed", "in_review", "overdue", "in_queue"],
 );
@@ -197,7 +176,6 @@ assert.deepEqual(
   [0, 0, 0, 0, 0],
 );
 assert.deepEqual(emptyDashboard.reports, []);
-assert.deepEqual(emptyDashboard.notifications, []);
 assert.equal(
   await emptyFixtureReviewerDataSource.getReport(panadol.platformReportId),
   null,

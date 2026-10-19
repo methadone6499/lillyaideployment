@@ -1,6 +1,7 @@
 "use client";
 
 import type { GenerationFilters } from "@/features/reports";
+import { BRAND } from "@/lib/brand";
 import { useEffect } from "react";
 import { Chip, CloseIcon } from "@/components/ui";
 import { getAppliedSearchFilters } from "../../utils/getAppliedSearchFilters";
@@ -43,7 +44,7 @@ export function SearchFiltersModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="search-filters-modal-title"
-        className="flex max-h-[min(90vh,820px)] w-full max-w-[1000px] flex-col overflow-hidden rounded-button border border-border-default bg-[#171717]"
+        className="flex max-h-[min(90vh,820px)] w-full max-w-[1000px] flex-col overflow-hidden rounded-surface border border-border-default bg-[#171717]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between px-6 pb-4 pt-[25px]">
@@ -51,12 +52,12 @@ export function SearchFiltersModal({
             id="search-filters-modal-title"
             className="text-card-title font-medium text-white"
           >
-            LillyAI Search Filters
+            {BRAND.name} search filters
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex size-6 items-center justify-center text-white transition-opacity hover:opacity-80"
+            className="inline-flex size-6 items-center justify-center text-white transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             aria-label="Close search filters"
           >
             <CloseIcon className="size-5" />
@@ -76,7 +77,7 @@ export function SearchFiltersModal({
               {groups.map((group) => (
                 <section
                   key={group.title}
-                  className="flex flex-col gap-8 rounded-card border border-border-default bg-surface-default p-6"
+                  className="flex flex-col gap-8 rounded-surface border border-border-default bg-surface-default p-6"
                 >
                   <h3 className="text-base font-medium text-white">
                     {group.title}

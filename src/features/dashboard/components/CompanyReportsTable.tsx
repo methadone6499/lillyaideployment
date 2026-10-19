@@ -31,7 +31,7 @@ const MAX_SEARCH_LENGTH = 100;
 type CompanyReportStatusFilterValue = GenerationStatus | ReviewStatus | "all";
 
 const COMPANY_STATUS_FILTER_OPTIONS = [
-  { value: "all", label: "All Status" },
+  { value: "all", label: "All statuses" },
   { value: "completed", label: "Completed" },
   { value: "generating", label: "In Progress" },
   { value: "failed", label: "Failed" },
@@ -43,7 +43,7 @@ const COMPANY_STATUS_FILTER_OPTIONS = [
 ] as const satisfies readonly DashboardStatusFilterOption<CompanyReportStatusFilterValue>[];
 
 const companyReportRowClass =
-  "grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(148px,180px)_140px_24px] items-center gap-x-6 px-6";
+  "grid min-w-[1120px] grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)_240px_140px_24px] items-center gap-x-6 px-6";
 
 function getListErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -174,7 +174,7 @@ export function CompanyReportsTable() {
 
   return (
     <section aria-label="Company reports" aria-busy={reportsQuery.isFetching}>
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-card-title font-medium text-white">Reports</h2>
 
@@ -269,13 +269,13 @@ export function CompanyReportsTable() {
                     {report.creator.email}
                   </span>
 
-                  <span className="text-label font-medium whitespace-nowrap text-white">
+                  <span className="min-w-0 break-words whitespace-normal text-label font-medium text-white">
                     {formatReportDateTime(report.updated_at)}
                   </span>
 
                   <span className="flex flex-wrap gap-2 justify-self-start">
                     <DashboardStatusPill status={getReportDisplayStatus(report)} />
-                    {report.is_overdue ? <span className="rounded-card bg-red-400/10 px-3 py-2 text-label font-medium text-red-400">Overdue</span> : null}
+                    {report.is_overdue ? <span className="rounded-field bg-[rgba(217,34,68,0.12)] px-3 py-2 text-label font-medium text-status-danger">Overdue</span> : null}
                   </span>
 
                   <ChevronRightIcon className="justify-self-end text-white" />

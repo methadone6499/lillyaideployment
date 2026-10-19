@@ -174,6 +174,7 @@ export function selectBillingOwnerCapabilities(
   const subscription = overview.subscription;
   const context = getActiveContext(me);
   const owner = isBillingOwner(overview, me);
+  const purchasesAllowed = !overview.purchase_restriction;
   const isPersonalStandardOwner =
     owner &&
     context?.type === "personal" &&
@@ -182,7 +183,7 @@ export function selectBillingOwnerCapabilities(
     subscription.plan_type === "standard" &&
     overview.can_use_paid_features;
   const requiresPortalBeforeUpgrade = Boolean(
-    isPersonalStandardOwner && subscription?.cancel_at_period_end,
+    purchasesAllowed && isPersonalStandardOwner && subscription?.cancel_at_period_end,
   );
   const isCustomCompanyAdmin =
     owner &&
@@ -197,22 +198,22 @@ export function selectBillingOwnerCapabilities(
 
   return {
     isOwner: owner,
-    canOpenPortal: owner,
+    canOpenPortal: owner && purchasesAllowed,
     canUpgradeToEnterprise: Boolean(
-      isPersonalStandardOwner &&
+      purchasesAllowed && isPersonalStandardOwner &&
         !subscription?.cancel_at_period_end &&
         overview.plan_change === null,
     ),
     requiresPortalBeforeUpgrade,
     canDowngradeToStandard: false,
-    canRequestCustom: canRequestCustomPlan(me),
+    canRequestCustom: purchasesAllowed && canRequestCustomPlan(me),
     canScheduleEnterpriseDowngrade: Boolean(
-      hasChangeableCustomPlan &&
+      purchasesAllowed && hasChangeableCustomPlan &&
         !hasOpenPlanChange(overview) &&
         overview.operation_lock === null,
     ),
     canCancelEnterpriseDowngrade: Boolean(
-      isCustomCompanyAdmin && hasScheduledEnterpriseDowngrade(overview),
+      purchasesAllowed && isCustomCompanyAdmin && hasScheduledEnterpriseDowngrade(overview),
     ),
   };
 }

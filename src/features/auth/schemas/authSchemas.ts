@@ -31,6 +31,7 @@ export const permissionSchema = z.enum([
   "admin:reports_read",
   "admin:reviewers_manage",
   "admin:subscriptions_manage",
+  "admin:subscriptions_read",
   "admin:users_read",
   "admin:users_manage",
   "company:read",
@@ -54,10 +55,10 @@ export const permissionSchema = z.enum([
 ]);
 
 export const signupRequestSchema = z.object({
-  full_name: z.string().trim().min(1).max(200),
-  institution_name: z.string().trim().min(1).max(200),
-  email: z.string().email(),
-  password: z.string().min(12).max(128),
+  full_name: z.string({ error: "Enter your full name." }).trim().min(1, "Enter your full name.").max(200, "Use 200 characters or fewer for your full name."),
+  institution_name: z.string({ error: "Enter your institution name." }).trim().min(1, "Enter your institution name.").max(200, "Use 200 characters or fewer for your institution name."),
+  email: z.string({ error: "Enter your email address." }).email("Enter a valid email address, such as name@example.com."),
+  password: z.string({ error: "Enter a password." }).min(12, "Use at least 12 characters for your password.").max(128, "Use 128 characters or fewer for your password."),
 });
 
 export const signupResponseSchema = z.object({

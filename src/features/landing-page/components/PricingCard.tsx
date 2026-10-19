@@ -16,17 +16,17 @@ type PricingCardProps = {
 
 function PlanBadge() {
   return (
-    <span className="shrink-0 rounded-card bg-brand-badge p-[clamp(8px,0.5208vw,10px)] text-[clamp(12px,0.7292vw,14px)] leading-none font-medium text-brand">
-      Most Popular
+    <span className="inline-flex h-[30px] shrink-0 items-center rounded-[var(--landing-radius-badge)] bg-brand-badge px-2.5 text-input leading-5 font-medium text-brand">
+      Most popular
     </span>
   );
 }
 
 function ChecklistItem({ label }: { label: string }) {
   return (
-    <li className="flex items-start gap-[clamp(8px,0.5208vw,10px)]">
-      <CheckIcon className="size-[clamp(16px,0.9375vw,18px)]" />
-      <span className="text-[clamp(12px,0.7292vw,14px)] leading-[18px] text-white">
+    <li className="flex items-start gap-2.5">
+      <CheckIcon className="mt-0.5 size-5" />
+      <span className="text-label leading-6 text-white">
         {label}
       </span>
     </li>
@@ -41,33 +41,33 @@ export function PricingCard({ plan }: PricingCardProps) {
   return (
     <article
       className={cn(
-        "flex w-full min-w-0 flex-col gap-[clamp(32px,2.0833vw,40px)] overflow-hidden rounded-button border p-[clamp(18px,1.25vw,24px)] lg:min-h-[clamp(480px,31.1979vw,599px)]",
+        "flex w-full min-w-0 flex-col gap-8 rounded-[var(--landing-radius-card)] border p-6 lg:min-h-[512px]",
         plan.featured
           ? "border-brand-border bg-brand-bg"
           : "border-border-default bg-surface-default",
       )}
     >
-      <div className="flex flex-col gap-[clamp(18px,1.25vw,24px)]">
-        <div className="flex size-[clamp(40px,2.5vw,48px)] items-center justify-center rounded-[clamp(8px,0.5208vw,10px)] bg-surface-elevated">
+      <div className="flex flex-col gap-6">
+        <div className="flex size-12 items-center justify-center rounded-field bg-surface-elevated">
           <Image
             src={plan.iconSrc}
             alt=""
             width={24}
             height={24}
-            className="size-[clamp(20px,1.25vw,24px)]"
+            className="size-6"
           />
         </div>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-[clamp(15px,1.0417vw,20px)]">
-            <div className="flex flex-col gap-[clamp(12px,0.8333vw,16px)]">
-              <h3 className="text-label leading-3 font-medium text-white">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-card-title leading-7 font-medium text-white">
                 {plan.name}
               </h3>
-              <p className="text-helper leading-[9px] text-text-muted">
+              <p className="text-helper leading-4 text-text-muted">
                 {plan.audience}
               </p>
             </div>
-            <p className="text-helper leading-[9px] text-brand">
+            <p className="text-helper leading-4 text-brand">
               {plan.highlight}
             </p>
           </div>
@@ -75,21 +75,21 @@ export function PricingCard({ plan }: PricingCardProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-[clamp(22px,1.4583vw,28px)]">
+      <div className="flex flex-col gap-6">
         {plan.priceLabel ? (
-          <p className="text-landing-price-size leading-[clamp(27px,1.6146vw,31px)] font-medium tracking-[-0.01em] text-brand">
+          <p className="text-landing-price-size leading-[48px] font-medium tracking-[-0.01em] text-brand">
             {plan.priceLabel}
           </p>
         ) : (
-          <p className="leading-[clamp(27px,1.6146vw,31px)] font-medium text-brand">
+          <p className="flex flex-wrap items-baseline gap-1 leading-[48px] font-medium tabular-nums text-brand">
             <span className="text-landing-price-size">{plan.price}</span>
-            <span className="text-landing-price-suffix-size text-brand/40">
+            <span className="text-landing-price-suffix-size leading-7 text-text-muted">
               {plan.priceSuffix}
             </span>
           </p>
         )}
 
-        <ul className="flex flex-col gap-[clamp(12px,0.8333vw,16px)]">
+        <ul className="flex flex-col gap-4">
           {plan.features.map((feature) => (
             <ChecklistItem key={feature} label={feature} />
           ))}
@@ -102,16 +102,17 @@ export function PricingCard({ plan }: PricingCardProps) {
           onClick={persistPlanIntent}
           fullWidth
           showArrow={false}
-          className="mt-auto h-[clamp(44px,2.7083vw,52px)] rounded-button shadow-landing-emerald-glow"
+          className="mt-auto"
         >
           {plan.ctaLabel}
         </LandingCtaButton>
       ) : (
         <LandingSecondaryButton
+          variant="pricing"
           href={plan.ctaHref}
           onClick={persistPlanIntent}
           fullWidth
-          className="mt-auto h-[clamp(44px,2.7083vw,52px)]"
+          className="mt-auto"
         >
           {plan.ctaLabel}
         </LandingSecondaryButton>

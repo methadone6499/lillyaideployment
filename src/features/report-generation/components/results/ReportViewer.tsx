@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDisplayCount, formatDisplayDate } from "@/lib/formatDisplay";
+
 import {
   ArrowNarrowLeftIcon,
   ArrowNarrowRightIcon,
@@ -21,7 +23,6 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import {
   downloadPdfWhenReady,
   downloadPptxWhenReady,
-  ReportApiError,
 } from "../../api/reportApi";
 import { PDF_EXPORT_DEFAULT_PROGRESS_LABEL } from "../../constants/pdfExport";
 import { useReportStatus } from "../../hooks/useGenerateReport";
@@ -29,6 +30,7 @@ import { useSingleExpandedSection } from "../../hooks/useSingleExpandedSection";
 import type { EditableDocumentResponse } from "../../types";
 import { buildReportSectionItems } from "../../utils/buildReportSectionItems";
 import { formatPptxExportProgress } from "../../utils/pptxExportProgress";
+import { getReportRequestErrorMessage } from "../../utils/getReportRequestErrorMessage";
 import { ReportSectionAccordion } from "./ReportSectionAccordion";
 import { ReportSectionPresentation } from "./ReportSectionPresentation";
 import {
@@ -77,16 +79,6 @@ type PendingViewerAction = {
   action: ViewerAction;
   dirtyKey: string;
 };
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof ReportApiError) {
-    return error.message;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "Something went wrong. Please try again.";
-}
 
 function triggerBlobDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -298,9 +290,9 @@ export function ReportViewer({
   }, [dirtySectionKeys, onEditingDirtyChange]);
 
   const subtitle = isCompleted
-    ? `Evidence Report - Generated on ${new Date().toLocaleDateString()}`
+    ? `Evidence Report - Generated on ${formatDisplayDate(new Date())}`
     : isPartiallyCompleted
-      ? `Evidence Report - Partially generated on ${new Date().toLocaleDateString()}`
+      ? `Evidence Report - Partially generated on ${formatDisplayDate(new Date())}`
       : isJobFailed
         ? "Evidence Report - Generation failed"
         : "Evidence Report - Generation in progress";
@@ -316,7 +308,7 @@ export function ReportViewer({
     try {
       await onRegenerate();
     } catch (retryFailure) {
-      setRetryError(getErrorMessage(retryFailure));
+      setRetryError(getReportRequestErrorMessage(retryFailure, "We could not restart report generation. Try again. If this continues, contact support."));
     } finally {
       setIsRetrying(false);
     }
@@ -379,7 +371,7 @@ export function ReportViewer({
         router.replace(paidFailurePath);
       }
 
-      setExportError(getErrorMessage(exportFailure));
+      setExportError(getReportRequestErrorMessage(exportFailure, "We could not prepare your download. Try exporting the report again. If this continues, contact support."));
       throw exportFailure;
     } finally {
       setIsExporting(false);
@@ -395,7 +387,7 @@ export function ReportViewer({
   if (isError) {
     return (
       <p className="text-body-lg text-red-400" role="alert">
-        {getErrorMessage(error)}
+        {getReportRequestErrorMessage(error, "We could not load the report. Refresh the page and try again. If this continues, contact support.")}
       </p>
     );
   }
@@ -415,9 +407,9 @@ export function ReportViewer({
           </h1>
           <p className="text-body-lg text-text-body">{subtitle}</p>
           {reportStatus.progress && isGenerating && !isDifferentActiveJob && (
-            <p className="text-body-lg text-text-muted">
-              {reportStatus.progress.completed_sections} of{" "}
-              {reportStatus.progress.total_sections} sections complete
+            <p className="text-body-lg tabular-nums text-text-muted">
+              {formatDisplayCount(reportStatus.progress.completed_sections)} of{" "}
+              {formatDisplayCount(reportStatus.progress.total_sections)} sections complete
             </p>
           )}
         </div>
@@ -455,7 +447,7 @@ export function ReportViewer({
 
       {isJobFailed && (
         <div
-          className="rounded-card border border-red-400/30 bg-red-400/10 px-8 py-6"
+          className="rounded-surface border border-red-400/30 bg-red-400/10 px-8 py-6"
           role="alert"
         >
           <p className="text-body-lg text-red-400">
@@ -481,7 +473,7 @@ export function ReportViewer({
 
       {isPartiallyCompleted && onRegenerate && (
         <div
-          className="rounded-card border border-status-partial/30 bg-status-partial/10 px-8 py-6"
+          className="rounded-surface border border-status-partial/30 bg-status-partial/10 px-8 py-6"
           role="status"
         >
           <p className="text-body-lg text-status-partial">
@@ -505,7 +497,7 @@ export function ReportViewer({
 
       {isPartiallyCompleted && !onRegenerate && (
         <div
-          className="rounded-card border border-status-partial/30 bg-status-partial/10 px-8 py-6"
+          className="rounded-surface border border-status-partial/30 bg-status-partial/10 px-8 py-6"
           role="status"
         >
           <p className="text-body-lg text-status-partial">

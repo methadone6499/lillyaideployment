@@ -11,6 +11,7 @@ import {
   mapCustomSpecsToWizard,
 } from "../../utils/customSections";
 import {
+  getSectionUnavailableReason,
   getToggleableSectionIds,
   isSectionAvailable,
 } from "../../utils/sectionOrdering";
@@ -116,22 +117,24 @@ export function Step5Sections() {
           );
           const selected =
             available && selectedSectionIds.includes(section.id);
+          const unavailableReason = getSectionUnavailableReason(
+            section.id,
+            sectionInputs,
+            selectedSectionIds,
+          );
 
           return (
             <Card
               key={section.id}
               variant={selected ? "accent" : "default"}
-              className={cn(
-                "px-9 py-6",
-                !available && !isEconomic && "opacity-60",
-              )}
+              className="px-9 py-6"
             >
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-card-title font-medium text-white">
+              <div className="flex min-h-16 items-center justify-between gap-6">
+                <div className="flex min-w-0 flex-col gap-2">
+                  <h3 className="text-card-title leading-7 font-medium text-white">
                     {section.title}
                   </h3>
-                  <p className="text-helper text-text-muted">
+                  <p className="text-helper leading-5 text-text-muted">
                     {section.description}
                   </p>
                 </div>
@@ -146,10 +149,15 @@ export function Step5Sections() {
                       toggleSectionId(section.id);
                     }
                   }}
-                  className={cn(!available && "cursor-not-allowed opacity-50")}
+                  className={cn(!available && "cursor-not-allowed")}
                   aria-label={`Toggle ${section.title}`}
                 />
               </div>
+              {unavailableReason ? (
+                <p className="mt-4 text-helper leading-5 text-text-muted">
+                  {unavailableReason}
+                </p>
+              ) : null}
               {isEconomic ? (
                 <div className="mt-6 flex flex-col gap-4 border-t border-border-subtle pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -164,7 +172,7 @@ export function Step5Sections() {
                   </div>
                   <Button
                     variant="secondary"
-                    className="h-11 shrink-0"
+                    size="small" className="shrink-0"
                     onClick={() => setCalculatorOpen(true)}
                   >
                     {calculatorModuleLabels.length > 0
@@ -178,7 +186,7 @@ export function Step5Sections() {
         })}
         {isCustomSectionsError && (
           <p className="text-helper text-amber-300" role="status">
-            {getCustomSectionErrorMessage(customSectionsError)}
+            {getCustomSectionErrorMessage(customSectionsError, "load")}
           </p>
         )}
         {customSections.map((section, index) => (

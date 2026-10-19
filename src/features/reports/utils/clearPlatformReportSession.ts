@@ -23,6 +23,11 @@ async function cancelAndRemovePlatformReportQueries(
   });
 }
 
+/** Discard cached workspace data without deleting the account's pending saves. */
+export async function clearCompanyReportContext(queryClient: QueryClient): Promise<void> {
+  await cancelAndRemovePlatformReportQueries(queryClient);
+}
+
 /**
  * Clears Platform report React Query caches and the owner-scoped pending-save
  * queue (in-memory + persisted). Used on logout / authenticated-user change.

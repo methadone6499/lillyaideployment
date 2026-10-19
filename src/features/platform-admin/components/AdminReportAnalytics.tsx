@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/formatDisplay";
+
 import { Button } from "@/components/ui";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import {
@@ -12,14 +14,6 @@ import { ApiRequestError } from "@/services/ApiRequestError";
 import { useMemo } from "react";
 import { AdminReportLeaderboardCard } from "./AdminReportLeaderboardCard";
 import { AdminReportTotalsCards } from "./AdminReportTotalsCards";
-
-const lastUpdatedFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});
 
 const UNKNOWN_COMPANY_LABEL = "Unknown company";
 const ACCESS_DENIED_MESSAGE =
@@ -66,7 +60,7 @@ function formatLastUpdated(isoTimestamp: string): string | null {
     return null;
   }
 
-  return lastUpdatedFormatter.format(date);
+  return formatDisplayDateTime(date);
 }
 
 export function AdminReportAnalytics() {
@@ -165,6 +159,7 @@ export function AdminReportAnalytics() {
 
         <Button
           variant="secondary"
+          size="table"
           disabled={!queriesEnabled || isRefreshing}
           className="w-full shrink-0 sm:w-auto"
           onClick={handleRefresh}

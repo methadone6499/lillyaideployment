@@ -124,7 +124,7 @@ export function AdminUserStatusDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         onSubmit={handleSubmit}
-        className="w-full max-w-[680px] overflow-hidden rounded-button border border-border-default bg-[#171717] text-white shadow-2xl"
+        className="w-full max-w-[680px] overflow-hidden rounded-surface border border-border-default bg-[#171717] text-white shadow-2xl"
       >
         <header className="border-b border-border-default px-6 py-4">
           <h2 id={titleId} className="text-card-title font-medium">
@@ -147,7 +147,7 @@ export function AdminUserStatusDialog({
                 or change company status.
               </p>
               {isCompanyAdmin ? (
-                <p className="rounded-card border border-status-running/40 bg-status-running/10 p-4 text-status-running">
+                <p className="rounded-surface border border-status-running/40 bg-status-running/10 p-4 text-status-running">
                   This user is a Company Admin. Disabling the account can leave the
                   company without a functioning administrator.
                 </p>
@@ -174,15 +174,15 @@ export function AdminUserStatusDialog({
             data-autofocus
             disabled={isPending}
             onClick={onClose}
-            className="inline-flex h-[42px] items-center justify-center rounded-button border border-border-default px-[18px] text-label font-medium disabled:opacity-50"
+            className="inline-flex h-[52px] items-center justify-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isPending}
-            className={`inline-flex h-[42px] items-center justify-center rounded-button px-[18px] text-label font-medium text-white disabled:opacity-50 ${
-              isDisable ? "bg-[#d92244]" : "bg-brand"
+            className={`inline-flex h-[52px] items-center justify-center rounded-button px-5 text-label font-medium disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted ${
+              isDisable ? "bg-[#d92244] text-white" : "bg-brand text-brand-foreground"
             }`}
           >
             {isPending

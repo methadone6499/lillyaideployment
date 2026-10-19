@@ -523,7 +523,7 @@ export function SeatManagementContent() {
     <>
       <div className="mt-11 flex flex-col gap-6 lg:mt-12 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-[32px] leading-tight font-medium text-white sm:text-page-title">
+          <h1 className="text-page-title leading-tight font-medium text-white">
             Seat Management
           </h1>
           <p className="mt-4 max-w-[760px] text-label leading-relaxed text-text-body sm:mt-6 sm:text-body-lg">

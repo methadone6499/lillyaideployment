@@ -1,9 +1,10 @@
 "use client";
 
-import { Button, Card, PlusIcon, RadioCircle, TextField } from "@/components/ui";
+import { Button, Card, PlusIcon, RadioCircle, RequestErrorState, TextField } from "@/components/ui";
 import { useState } from "react";
 import { useComparatorDiscovery } from "../../hooks/useComparatorDiscovery";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
+import { getReportRequestErrorMessage } from "../../utils/getReportRequestErrorMessage";
 
 export function Step4Comparators() {
   const reportServiceId = useReportWizardStore((s) => s.reportServiceId);
@@ -22,6 +23,8 @@ export function Step4Comparators() {
     isLoading,
     isError,
     error,
+    isFetching,
+    refetch,
   } = useComparatorDiscovery(reportServiceId);
 
   const customOnly = customComparators.filter(
@@ -61,14 +64,15 @@ export function Step4Comparators() {
       </div>
 
       {isError ? (
-        <p className="text-body-lg text-amber-300" role="status">
-          {error instanceof Error
-            ? error.message
-            : "Failed to load comparator suggestions. You can add comparators manually."}
-        </p>
+        <RequestErrorState
+          title="Couldn’t load comparator suggestions"
+          message={getReportRequestErrorMessage(error, "Try loading suggestions again, or add a comparator manually. Your existing selections have been kept.")}
+          onRetry={() => void refetch()}
+          retryPending={isFetching}
+        />
       ) : null}
 
-      {allComparators.length === 0 ? (
+      {allComparators.length === 0 && !isError ? (
         <p className="text-body-lg text-text-muted">
           No comparator suggestions were returned. Add comparators manually
           below.

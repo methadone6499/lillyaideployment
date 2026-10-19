@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDisplayCount } from "@/lib/formatDisplay";
+
 import { Button, Card } from "@/components/ui";
 
 import type { SubscriptionSummary } from "../schemas/billingSchemas";
@@ -7,19 +9,21 @@ import {
   formatAmountMinor,
   formatBillingIntervalCopy,
   formatBillingIntervalSuffix,
+  formatCountLabel,
   formatPlanName,
   formatStatusLabel,
-  formatUtcDate,
+  formatLocalDate,
 } from "../utils/formatBilling";
-import type {
-  BillingOwnerCapabilities,
-  BillingQuotaView,
-} from "../utils/selectBillingCapabilities";
+import type { BillingOwnerCapabilities } from "../utils/selectBillingCapabilities";
+import type { BillingPageQuotaView } from "../utils/selectBillingPageQuota";
+import { ResumeSubscriptionAction } from "./ResumeSubscriptionAction";
 
 type CurrentSubscriptionCardProps = {
   subscription: SubscriptionSummary;
   canUsePaidFeatures: boolean;
-  quotaView: BillingQuotaView;
+  quotaView: BillingPageQuotaView;
+  isQuotaFetching?: boolean;
+  onRetryQuota?: () => void;
   capabilities: BillingOwnerCapabilities;
   disabled: boolean;
   isPortalPending: boolean;
@@ -32,6 +36,8 @@ export function CurrentSubscriptionCard({
   subscription,
   canUsePaidFeatures,
   quotaView,
+  isQuotaFetching = false,
+  onRetryQuota,
   capabilities,
   disabled,
   isPortalPending,
@@ -40,9 +46,11 @@ export function CurrentSubscriptionCard({
   onRequestCustom,
 }: CurrentSubscriptionCardProps) {
   const periodLabel = subscription.cancel_at_period_end
-    ? `Cancels on ${formatUtcDate(subscription.current_period_end)}`
-    : `Renews on ${formatUtcDate(subscription.current_period_end)}`;
-  const seatLabel = subscription.limits.seats === 1 ? "seat" : "seats";
+    ? `Cancels on ${formatLocalDate(subscription.current_period_end)}`
+    : `Renews on ${formatLocalDate(subscription.current_period_end)}`;
+  const quotaLabel = subscription.scope_type === "company"
+    ? "Company report quota"
+    : "Report quota";
   const showSalesAction =
     subscription.plan_type !== "standard" && capabilities.canRequestCustom;
   const primaryLabel = isPortalPending
@@ -53,9 +61,7 @@ export function CurrentSubscriptionCard({
         ? subscription.plan_type === "custom"
           ? "Request new terms"
           : "Request Custom plan"
-        : subscription.cancel_at_period_end
-          ? "Resume plan"
-          : "Manage billing";
+        : "Manage billing";
   const primaryAction = capabilities.canUpgradeToEnterprise
     ? onUpgrade
     : showSalesAction
@@ -63,10 +69,10 @@ export function CurrentSubscriptionCard({
       : onOpenPortal;
 
   return (
-    <Card className="flex min-h-[247px] flex-col rounded-button p-6">
+    <Card className="flex min-h-[247px] flex-col p-6">
       <h2 className="sr-only">Current subscription</h2>
       <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-card bg-brand/12 px-2.5 py-2 text-input font-medium leading-none text-brand">
+        <span className="rounded-field bg-brand/12 px-2.5 py-2 text-input font-medium leading-none text-brand">
           {formatPlanName(subscription.plan_type)}
         </span>
         <span className="text-input font-medium text-white">{periodLabel}</span>
@@ -86,20 +92,39 @@ export function CurrentSubscriptionCard({
 
       <p className="mt-3 text-input font-medium text-text-body">
         Billed {formatBillingIntervalCopy(subscription.billing_interval)} ·{" "}
-        {subscription.limits.seats} {seatLabel} · {subscription.limits.reports}{" "}
-        reports / period
+        {formatCountLabel(subscription.limits.seats, "seat")} ·{" "}
+        {formatCountLabel(subscription.limits.reports, "report")} / period
       </p>
-      <p className="mt-2 text-input text-text-muted">
+      <p
+        className="mt-2 text-input tabular-nums text-text-muted"
+        role={quotaView.kind === "error" ? "alert" : quotaView.kind === "loading" ? "status" : undefined}
+      >
+        {quotaLabel}:{" "}
         {quotaView.kind === "known"
-          ? `${quotaView.quota.quota_remaining} of ${quotaView.quota.quota_total} reports remaining · ${quotaView.quota.quota_used} used`
+          ? `${formatDisplayCount(quotaView.quota.quota_remaining)} of ${formatCountLabel(quotaView.quota.quota_total, "report")} remaining · ${formatDisplayCount(quotaView.quota.quota_used)} used`
           : quotaView.kind === "unlimited"
             ? "Unlimited report quota"
-            : "Report quota is currently unavailable"}
+            : quotaView.kind === "loading"
+              ? "Loading…"
+              : quotaView.kind === "error"
+                ? quotaView.message
+                : "Currently unavailable"}
       </p>
+      {onRetryQuota && (quotaView.kind === "error" || quotaView.kind === "unavailable") ? (
+        <Button
+          variant="table"
+          size="table"
+          className="mt-2 w-fit"
+          disabled={isQuotaFetching}
+          onClick={onRetryQuota}
+        >
+          {isQuotaFetching ? "Refreshing…" : "Retry quota"}
+        </Button>
+      ) : null}
       {quotaView.kind === "known" ? (
         <p className="mt-2 text-helper text-text-muted">
-          Quota period: {formatUtcDate(quotaView.quota.period_start)} to{" "}
-          {formatUtcDate(quotaView.quota.period_end)}
+          Quota period: {formatLocalDate(quotaView.quota.period_start)} to{" "}
+          {formatLocalDate(quotaView.quota.period_end)}
         </p>
       ) : null}
       {!canUsePaidFeatures ? (
@@ -111,9 +136,9 @@ export function CurrentSubscriptionCard({
         </p>
       ) : null}
       {capabilities.canOpenPortal ? (
-        <div className="mt-5 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <ResumeSubscriptionAction key={`${subscription.id}:${subscription.current_period_end}`} subscription={subscription} disabled={disabled} />
           <Button
-            className="h-12 text-label"
             disabled={disabled}
             onClick={primaryAction}
           >
@@ -122,12 +147,11 @@ export function CurrentSubscriptionCard({
           {showSalesAction || capabilities.canUpgradeToEnterprise ? (
             <Button
               variant="secondary"
-              className="h-12 text-label"
               disabled={disabled}
               onClick={onOpenPortal}
             >
               {subscription.cancel_at_period_end
-                ? "Resume plan"
+                ? "Manage billing"
                 : canUsePaidFeatures
                   ? "Cancel plan"
                   : "Manage billing"}

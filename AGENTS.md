@@ -8,6 +8,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project Rules
 
+## Product identity
+- The app name is **Formulary HTA**. This user-confirmed name overrides naming recommendations in the design-system PDF and UI/UX audit. Do not rename it to FormularyAI.
+
+## Button styling
+- User/auditor clarification: retain the original gradient and glow on green buttons; gray buttons should have neither. This overrides earlier interpretations that removed effects from green buttons. Preserve button geometry and page layout unless a change is requested.
+
 ## Stack
 - TypeScript strict mode
 - Tailwind for styling

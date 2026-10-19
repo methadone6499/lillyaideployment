@@ -1,3 +1,4 @@
+import { formatDisplayCount } from "@/lib/formatDisplay";
 import { cn } from "@/lib/cn";
 
 type FooterStat = {
@@ -15,14 +16,6 @@ type UsageProgressCardProps = {
   footerStats: FooterStat[];
   className?: string;
 };
-
-function formatCount(value: number | null): string {
-  if (value === null) {
-    return "—";
-  }
-
-  return String(value);
-}
 
 function getFillPercent(used: number | null, total: number | null): number {
   if (used == null || total == null || total <= 0) {
@@ -49,7 +42,7 @@ export function UsageProgressCard({
   return (
     <article
       className={cn(
-        "rounded-button border border-border-default bg-surface-default p-6",
+        "rounded-surface border border-border-default bg-surface-default p-6",
         className,
       )}
     >
@@ -58,12 +51,12 @@ export function UsageProgressCard({
       </h2>
 
       <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-        <p className="text-body-lg font-medium text-white">
-          {formatCount(used)} / {formatCount(total)}
+        <p className="text-body-lg tabular-nums font-medium text-white">
+          {formatDisplayCount(used)} / {formatDisplayCount(total)}
           <span className="ml-2 font-normal text-text-body">{usedSuffix}</span>
         </p>
-        <p className="text-body-lg text-text-body">
-          {formatCount(remainder)} {remainderSuffix}
+        <p className="text-body-lg tabular-nums text-text-body">
+          {formatDisplayCount(remainder)} {remainderSuffix}
         </p>
       </div>
 
@@ -84,8 +77,8 @@ export function UsageProgressCard({
       <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2">
         {footerStats.map((stat) => (
           <p key={stat.label} className="text-label text-text-body">
-            <span className="font-medium text-white">
-              {formatCount(stat.value)}
+            <span className="tabular-nums font-medium text-white">
+              {formatDisplayCount(stat.value)}
             </span>{" "}
             {stat.label}
           </p>

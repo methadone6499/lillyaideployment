@@ -1,8 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useConfirmedUserId, useIsAuthenticated } from "@/features/auth";
+import { companyQuotaQueryKeys } from "@/features/company-quota";
+import type { SubscriptionOverview } from "../schemas/billingSchemas";
 
 import { getSubscriptionOverview } from "../api/billingApi";
 import { billingQueryKeys } from "../api/billingQueryKeys";
@@ -32,6 +34,7 @@ export type UseSubscriptionOverviewParams = {
 export function useSubscriptionOverview(
   params: UseSubscriptionOverviewParams = {},
 ) {
+  const queryClient = useQueryClient();
   const isAuthenticated = useIsAuthenticated();
   const userId = useConfirmedUserId();
   const enabled =
@@ -41,6 +44,21 @@ export function useSubscriptionOverview(
     queryKey: billingQueryKeys.overview(userId ?? ""),
     queryFn: async ({ signal }) => {
       const overview = await getSubscriptionOverview(signal);
+      const previous = queryClient.getQueryData<SubscriptionOverview>(
+        billingQueryKeys.overview(userId ?? ""),
+      );
+      if (previous && userId && (
+        previous.subscription?.id !== overview.subscription?.id
+        || previous.subscription?.plan_type !== overview.subscription?.plan_type
+        || previous.subscription?.limits.reports !== overview.subscription?.limits.reports
+        || previous.subscription?.current_period_start !== overview.subscription?.current_period_start
+        || previous.subscription?.current_period_end !== overview.subscription?.current_period_end
+        || previous.can_use_paid_features !== overview.can_use_paid_features
+        || previous.plan_change?.status !== overview.plan_change?.status
+      )) {
+        void queryClient.invalidateQueries({ queryKey: companyQuotaQueryKeys.company(userId) });
+        void queryClient.invalidateQueries({ queryKey: companyQuotaQueryKeys.own(userId) });
+      }
       syncPlanIntentWithOverview(overview);
       return overview;
     },

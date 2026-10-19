@@ -8,12 +8,13 @@ import { LandingFooter } from "./LandingFooter";
 import { LandingHeader } from "./LandingHeader";
 import { PricingSection } from "./PricingSection";
 import { WhyChooseSection } from "./WhyChooseSection";
+import styles from "./LandingPage.module.css";
 
 export function LandingPageShell() {
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-landing-background font-[family-name:var(--font-inter)] text-white">
+    <div className={`${styles.page} min-h-screen w-full overflow-x-hidden bg-landing-background font-[family-name:var(--font-inter)] text-white`}>
       <LandingHeader />
-      <main className="mx-auto flex w-full max-w-layout-max flex-col">
+      <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-col">
         <HeroSection />
         <EvaluationCta />
         <EvaluationCoverageSection />

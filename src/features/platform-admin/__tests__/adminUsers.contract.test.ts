@@ -37,6 +37,7 @@ function buildAdminUser(overrides: Record<string, unknown> = {}) {
     disabled_by_user_id: null,
     created_at: "2026-08-01T00:00:00.000Z",
     access: buildAccess(),
+    subscription_restriction: null,
     access_subscription: {
       id: "subscription-1",
       plan_type: "enterprise",

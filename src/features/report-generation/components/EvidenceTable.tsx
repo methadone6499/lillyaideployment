@@ -269,7 +269,7 @@ export function EvidenceTable({
                       <button
                         type="button"
                         onClick={() => onUploadArticle(item)}
-                        className="inline-flex h-11 items-center rounded-button border border-border-default bg-surface-default px-4 text-label font-medium text-white transition-colors hover:border-brand-border hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                        className="inline-flex h-12 items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:border-brand-border hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                       >
                         {textAvailability === "full_text"
                           ? "Replace PDF"

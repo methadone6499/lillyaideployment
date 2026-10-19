@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
-import { Select } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 import { SearchIcon } from "@/components/ui/icons";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import {
@@ -15,6 +15,7 @@ import {
 import { DashboardPagination } from "@/features/dashboard";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/cn";
+import { formatDisplayCount } from "@/lib/formatDisplay";
 
 import { useAdminCompanies } from "../hooks/useAdminCompanies";
 import {
@@ -125,13 +126,16 @@ export function AdminCompaniesTable() {
 
   return (
     <section aria-label="Companies" aria-busy={query.isFetching} className="mt-10">
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
-        <div className="flex flex-col gap-4 px-6 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
+        <div className="flex flex-col gap-4 px-6 py-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex min-h-14 items-center">
             <h2 className="text-card-title font-medium text-white">Companies</h2>
-            <label className="relative block w-full lg:max-w-[440px]">
+          </div>
+
+          <div className="flex w-full flex-col gap-3 xl:max-w-[1040px] xl:items-end">
+            <label className="relative block h-14 w-full xl:max-w-[480px]">
               <span className="sr-only">Search companies</span>
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-white/30" />
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-5 size-6 -translate-y-1/2 text-text-muted" />
               <input
                 type="search"
                 value={searchQuery}
@@ -141,18 +145,18 @@ export function AdminCompaniesTable() {
                   setSearchQuery(event.target.value);
                   resetPage();
                 }}
-                className="h-12 w-full rounded-card bg-surface-subtle pr-5 pl-14 text-label text-white outline-none placeholder:text-white/30 focus:ring-1 focus:ring-border-default"
+                className="h-14 w-full rounded-surface bg-surface-subtle pr-5 pl-14 text-body-lg text-white outline-none transition-[box-shadow] placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-brand/35"
               />
             </label>
-          </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Select
               value={statusFilter}
               options={STATUS_OPTIONS}
               placeholder="Company status"
               clearable
               clearLabel="All statuses"
+              className="h-14 rounded-surface"
               onChange={(event) => {
                 setStatusFilter(event.target.value);
                 resetPage();
@@ -164,6 +168,7 @@ export function AdminCompaniesTable() {
               placeholder="Plan"
               clearable
               clearLabel="All plans"
+              className="h-14 rounded-surface"
               onChange={(event) => {
                 setPlanFilter(event.target.value);
                 resetPage();
@@ -175,19 +180,21 @@ export function AdminCompaniesTable() {
               placeholder="Subscription status"
               clearable
               clearLabel="All subscription statuses"
+              className="h-14 rounded-surface"
               onChange={(event) => {
                 setSubscriptionFilter(event.target.value);
                 resetPage();
               }}
             />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               disabled={!hasFilters}
               onClick={clearFilters}
-              className="h-12 rounded-card border border-border-default px-4 text-label font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+              size="toolbar" className="w-full"
             >
               Clear filters
-            </button>
+            </Button>
+            </div>
           </div>
         </div>
 
@@ -205,9 +212,9 @@ export function AdminCompaniesTable() {
                 <p>{classifiedError?.message}</p>
                 <AdminRequestId requestId={classifiedError?.requestId} />
                 {classifiedError?.kind === "validation_error" ? (
-                  <button type="button" onClick={clearFilters} className="rounded-button border border-border-default px-4 py-2 text-white">Clear filters</button>
+                  <Button variant="table" size="table" onClick={clearFilters}>Clear filters</Button>
                 ) : (
-                  <button type="button" onClick={() => void query.refetch()} className="rounded-button border border-border-default px-4 py-2 text-white">Try again</button>
+                  <Button variant="table" size="table" onClick={() => void query.refetch()}>Try again</Button>
                 )}
               </div>
             ) : showEmpty ? (
@@ -222,8 +229,8 @@ export function AdminCompaniesTable() {
                   <span className="min-w-0"><span className="block truncate font-medium">{company.name}</span><span className="block truncate text-helper text-text-muted">{company.billing_email}</span></span>
                   <span className="min-w-0"><span className="block truncate">{company.primary_admin?.full_name ?? "Unassigned"}</span><span className="block truncate text-helper text-text-muted">{company.primary_admin?.email ?? "—"}</span></span>
                   <span>{company.subscription ? PLAN_TYPE_LABELS[company.subscription.plan_type] : "None"}</span>
-                  <span>{company.seats.occupied} / {company.seats.limit} occupied</span>
-                  <span>{company.quota ? `${company.quota.remaining} / ${company.quota.total} remaining` : "—"}</span>
+                  <span className="tabular-nums">{formatDisplayCount(company.seats.occupied)} / {formatDisplayCount(company.seats.limit)} occupied</span>
+                  <span className="tabular-nums">{company.quota ? `${formatDisplayCount(company.quota.remaining)} / ${formatDisplayCount(company.quota.total)} remaining` : "—"}</span>
                   <span className={cn("w-fit rounded-card px-2.5 py-2 text-input font-medium", statusPillClass(company.status))}>{COMPANY_STATUS_LABELS[company.status]}</span>
                 </Link>
               ))
@@ -236,7 +243,7 @@ export function AdminCompaniesTable() {
         <div role="alert" className="mt-4 flex justify-end gap-3 text-label text-text-muted">
           <span>{classifiedError?.message}</span>
           <AdminRequestId requestId={classifiedError?.requestId} />
-          <button type="button" onClick={() => void query.fetchNextPage()} className="text-white underline">Retry</button>
+          <Button variant="ghost" size="compact" onClick={() => void query.fetchNextPage()}>Retry</Button>
         </div>
       ) : null}
 

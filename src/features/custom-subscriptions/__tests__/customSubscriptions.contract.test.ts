@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
+import { test } from "node:test";
 
-import { subscriptionOverviewSchema } from "@/features/billing";
+import {
+  SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE,
+  subscriptionOverviewSchema,
+} from "@/features/billing";
 import { ApiRequestError } from "@/services/ApiRequestError";
+import { parseApiErrorResponse } from "@/services/parseApiErrorResponse";
 import { z } from "zod";
 
 import { buildAdminCustomRequestListUrl } from "../api/adminCustomSubscriptionApi";
@@ -11,6 +16,7 @@ import {
   adminCustomRequestClosedSchema,
   adminCustomRequestDetailSchema,
   adminCustomRequestListSchema,
+  CONTACT_PHONE_ERROR_MESSAGE,
   createCustomRequestBodySchema,
   createOfferDraftBodySchema,
   customOfferSchema,
@@ -453,6 +459,59 @@ const normalizedCreate = createCustomRequestBodySchema.parse({
   notes: "We need reviewer access for our medical affairs team.",
 });
 assert.equal(normalizedCreate.contact_phone, "+14155552671");
+for (const [input, expected] of [
+  ["+12345678", "+12345678"],
+  ["+123456789012345", "+123456789012345"],
+  ["+14155552671", "+14155552671"],
+  [" +1 (415) 555-2671 ", "+14155552671"],
+  ["+44 20 7946 0958", "+442079460958"],
+  ["+1.415.555.2671", "+14155552671"],
+  ["", null],
+  ["   ", null],
+  [null, null],
+] as const) {
+  assert.equal(
+    createCustomRequestBodySchema.parse({
+      billing_email: "billing@acme.example",
+      contact_phone: input,
+      requested_seats: 1,
+      requested_reports: 1,
+    }).contact_phone,
+    expected,
+  );
+  assert.equal(
+    updateCustomRequestBodySchema.parse({
+      expected_revision: 3,
+      contact_phone: input,
+    }).contact_phone,
+    expected,
+  );
+}
+for (const contactPhone of [
+  "+2347862",
+  "+1234567890123456",
+  "14155552671",
+  "+04155552671",
+  "+14155552671 ext 12",
+  "+14155552671x12",
+  "+1415555ABCD",
+]) {
+  const invalidPhone = buildCreateCustomRequestBody(
+    {
+      companyName: "",
+      billingEmail: "billing@acme.example",
+      contactPhone,
+      requestedSeats: "1",
+      requestedReports: "1",
+      notes: "",
+    },
+    { includeCompanyName: false },
+  );
+  assert.equal(invalidPhone.ok, false, contactPhone);
+  if (!invalidPhone.ok) {
+    assert.equal(invalidPhone.fieldErrors.contact_phone, CONTACT_PHONE_ERROR_MESSAGE);
+  }
+}
 assert.equal(
   createCustomRequestBodySchema.safeParse({
     billing_email: "billing@acme.example",
@@ -802,6 +861,18 @@ assert.equal(formatTimeRemaining(30_000), "1 minute left");
 
 // --- Error classification (handoff §9) ---
 
+const purchaseSuspended = classifyCustomSubscriptionError(
+  new ApiRequestError({
+    status: 403,
+    code: "subscription_purchase_suspended",
+    message: "Subscription changes are currently unavailable for this account.",
+  }),
+);
+assert.equal(purchaseSuspended.message, SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE);
+assert.equal(purchaseSuspended.refetch, true);
+assert.equal(purchaseSuspended.retryable, false);
+assert.equal(purchaseSuspended.action, "none");
+
 const expectedActions: Record<string, string> = {
   custom_subscription_request_not_found: "refetch",
   custom_subscription_offer_not_found: "refetch",
@@ -907,12 +978,48 @@ const validation = classifyCustomSubscriptionError(
   }),
 );
 assert.equal(validation.kind, "validation_error");
-assert.ok(validation.fieldErrors.contact_phone);
+assert.equal(validation.fieldErrors.contact_phone, CONTACT_PHONE_ERROR_MESSAGE);
+
+test("custom request phone validation survives both API error envelopes", async () => {
+  const items = [{
+    type: "value_error",
+    loc: ["body", "contact_phone"],
+    msg: "Value error, contact_phone must be an international number such as +14155552671",
+    input: "+2347862",
+    ctx: { error: {} },
+  }];
+  const requestId = "ff13a25c-5532-4167-bf23-c2c5418c35f4";
+
+  for (const body of [
+    {
+      code: "validation_error",
+      message: "Request validation failed",
+      details: items,
+      request_id: requestId,
+    },
+    { detail: items },
+  ]) {
+    const apiError = await parseApiErrorResponse(new Response(JSON.stringify(body), {
+      status: 422,
+      headers: { "content-type": "application/json" },
+    }));
+    assert.equal(apiError.fieldErrors.contact_phone, items[0].msg);
+    assert.equal(apiError.requestId, "request_id" in body ? requestId : null);
+    const classified = classifyCustomSubscriptionError(apiError);
+    assert.equal(classified.fieldErrors.contact_phone, CONTACT_PHONE_ERROR_MESSAGE);
+    assert.equal(classified.message, "Please correct the highlighted fields and try again.");
+  }
+});
 const zodFailure = classifyCustomSubscriptionError(
   z.object({ billing_email: z.email() }).safeParse({ billing_email: "x" }).error,
 );
 assert.equal(zodFailure.kind, "validation_error");
-assert.ok(zodFailure.fieldErrors.billing_email);
+assert.equal(zodFailure.fieldErrors.billing_email, "Enter a valid billing email address, such as name@example.com.");
+const invalidRequestedSeats = z.object({ requested_seats: z.number().int().min(1) }).safeParse({ requested_seats: -1 });
+assert.equal(invalidRequestedSeats.success, false);
+if (!invalidRequestedSeats.success) {
+  assert.equal(classifyCustomSubscriptionError(invalidRequestedSeats.error).fieldErrors.requested_seats, "Enter a whole number of at least 1 for the requested seats.");
+}
 
 assert.equal(
   isCustomRequestNotFoundError(apiError(404, "custom_subscription_request_not_found")),

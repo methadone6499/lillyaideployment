@@ -71,7 +71,7 @@ export function EvidenceTextFilter({
         aria-expanded={open}
         aria-controls={listboxId}
         aria-label="Filter by text availability"
-        className="flex items-center gap-2 rounded-card bg-[rgba(255,255,255,0.08)] px-3 py-2 text-label font-medium text-white outline-none"
+        className="flex items-center gap-2 rounded-surface bg-[rgba(255,255,255,0.08)] px-3 py-2 text-label font-medium text-white outline-none"
         onClick={() => setOpen((isOpen) => !isOpen)}
       >
         <FilterLinesIcon className="size-4 shrink-0 text-white" />
@@ -88,7 +88,7 @@ export function EvidenceTextFilter({
           id={listboxId}
           role="listbox"
           aria-labelledby={id}
-          className="absolute right-0 top-full z-50 mt-1 min-w-full overflow-hidden rounded-card border border-border-default bg-input-fill"
+          className="absolute right-0 top-full z-50 mt-1 min-w-full overflow-hidden rounded-surface border border-border-default bg-input-fill"
         >
           {TEXT_AVAILABILITY_OPTIONS.map((option, index) => (
             <li

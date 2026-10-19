@@ -31,7 +31,7 @@ export function Tabs<T extends string>({
               type="button"
               onClick={() => onChange(tab.id)}
               className={cn(
-                "px-4 py-3 text-label transition-colors",
+                "px-4 py-3 text-label transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
                 isActive
                   ? "font-medium text-white"
                   : "font-normal text-text-step",

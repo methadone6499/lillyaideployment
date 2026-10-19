@@ -97,7 +97,7 @@ export function AdminOfferDraftForm({
 
   return (
     <form
-      className="flex flex-col gap-4 rounded-card border border-border-default bg-surface-subtle p-5"
+      className="flex flex-col gap-4 rounded-surface border border-border-default bg-surface-subtle p-5"
       noValidate
       onSubmit={handleSubmit}
     >
@@ -145,13 +145,13 @@ export function AdminOfferDraftForm({
         the customer must free seats before accepting.
       </p>
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" className="h-11 text-label" disabled={isPending}>
+        <Button type="submit" size="small" className="text-label" disabled={isPending}>
           {submitLabel}
         </Button>
         <Button
           type="button"
           variant="secondary"
-          className="h-11 text-label"
+          size="small" className="text-label"
           disabled={isPending}
           onClick={onCancel}
         >

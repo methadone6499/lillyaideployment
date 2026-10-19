@@ -3,11 +3,12 @@ import { whyCards } from "../data/landingContent";
 import type { WhyCardContent } from "../types";
 import { LandingSection } from "./LandingSection";
 import { SectionHeading } from "./SectionHeading";
+import { BRAND } from "@/lib/brand";
 
 function WhyCard({ card }: { card: WhyCardContent }) {
   return (
-    <article className="flex flex-1 flex-col items-center gap-12 text-center lg:gap-[clamp(48px,5.156vw,99px)] lg:text-left">
-      <div className="relative h-[clamp(220px,14.583vw,280px)] w-[clamp(220px,14.063vw,270px)] shrink-0 overflow-hidden">
+    <article className="flex min-w-0 flex-1 flex-col items-center gap-6 text-center lg:text-left">
+      <div className="relative h-[280px] w-[270px] max-w-full shrink-0 overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={card.imageUrl}
@@ -16,8 +17,8 @@ function WhyCard({ card }: { card: WhyCardContent }) {
         />
         <div className="absolute inset-0 bg-landing-background/40" aria-hidden />
       </div>
-      <div className="flex w-full max-w-[400px] flex-col gap-9">
-        <h3 className="text-[28px] text-landing-text-heading">{card.title}</h3>
+      <div className="flex w-full max-w-[400px] flex-col gap-4">
+        <h3 className="text-section-heading leading-8 font-medium text-landing-text-heading">{card.title}</h3>
         <p className="text-landing-body-size leading-landing-body-line text-landing-text-subtle">
           {card.description}
         </p>
@@ -29,9 +30,9 @@ function WhyCard({ card }: { card: WhyCardContent }) {
 export function WhyChooseSection() {
   return (
     <LandingSection id="why-us">
-      <div className="flex flex-col items-center gap-[clamp(40px,3.281vw,63px)] px-0 lg:px-[clamp(0px,3.125vw,60px)]">
+      <div className="flex flex-col items-center gap-12">
         <SectionHeading
-          title="Why Choose Lilly HTA?"
+          title={`Why choose ${BRAND.name}?`}
           subtitle="Purpose-built for HTA committees and formulary decision-makers to streamline reimbursement evaluation with evidence-based automation."
         />
 
@@ -41,7 +42,7 @@ export function WhyChooseSection() {
               <WhyCard card={card} />
               {index < whyCards.length - 1 && (
                 <div
-                  className="hidden w-px shrink-0 self-stretch bg-border-default lg:mx-[30px] lg:block"
+                  className="hidden w-px shrink-0 self-stretch bg-border-default lg:mx-6 lg:block"
                   aria-hidden
                 />
               )}

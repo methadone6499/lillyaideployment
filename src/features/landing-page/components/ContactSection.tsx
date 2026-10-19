@@ -3,6 +3,7 @@ import { LandingCtaButton, LandingSecondaryButton } from "./LandingCtaButton";
 import { MailIcon, PhoneIcon } from "./LandingIcons";
 import { LandingSection } from "./LandingSection";
 import type { ReactNode } from "react";
+import { BRAND } from "@/lib/brand";
 
 function ContactDetail({
   icon,
@@ -16,13 +17,13 @@ function ContactDetail({
   href: string;
 }) {
   return (
-    <a href={href} className="flex items-center gap-4">
-      <div className="flex size-[42px] shrink-0 items-center justify-center rounded-card bg-surface-elevated">
+    <a href={href} className="group flex min-w-0 max-w-full items-center gap-4 rounded-[var(--landing-radius-button)] text-landing-text-subtle transition-colors duration-150 hover:text-white motion-reduce:transition-none">
+      <div className="flex size-12 shrink-0 items-center justify-center rounded-field bg-surface-elevated">
         {icon}
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="flex min-w-0 flex-col gap-2">
         <span className="text-label font-medium text-white">{label}</span>
-        <span className="text-label text-text-muted">{value}</span>
+        <span className="break-words text-label leading-6 underline-offset-4 group-hover:underline">{value}</span>
       </div>
     </a>
   );
@@ -31,22 +32,22 @@ function ContactDetail({
 export function ContactSection() {
   return (
     <LandingSection id="contact">
-      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-16 xl:grid-cols-[minmax(0,573px)_minmax(0,723px)] xl:gap-[clamp(80px,7.5vw,144px)]">
-        <div className="flex flex-col gap-14">
-          <div className="flex flex-col gap-9">
-            <h2 className="text-landing-section-size leading-landing-section-line text-landing-text-heading">
-              Get in Touch
+      <div className="mx-auto grid w-full max-w-[723px] grid-cols-1 items-center gap-12 xl:max-w-none xl:grid-cols-2">
+        <div className="flex min-w-0 flex-col items-center gap-8 text-center xl:items-start xl:text-left">
+          <div className="flex w-full flex-col gap-4">
+            <h2 className="text-landing-section-size leading-landing-section-line font-medium tracking-[-0.01em] text-landing-text-heading">
+              Get in touch
             </h2>
-            <div className="text-landing-body-lg-size leading-landing-body-lg-line text-text-body">
+            <div className="text-landing-body-lg-size leading-landing-body-lg-line text-landing-text-subtle">
               <p>Ready to transform your HTA evaluation process?</p>
               <p>Contact our team today.</p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-8 sm:flex-row sm:items-center">
+          <div className="flex w-full flex-col items-center gap-6 text-left sm:flex-row sm:flex-wrap sm:justify-center xl:justify-start">
             <ContactDetail
               icon={<PhoneIcon />}
-              label="Phone Number"
+              label="Phone number"
               value={contactDetails.phone}
               href={`tel:${contactDetails.phone.replace(/\s/g, "")}`}
             />
@@ -60,34 +61,31 @@ export function ContactSection() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-9 rounded-button border border-border-default bg-surface-default px-6 pb-7 pt-2">
-          <div className="flex w-full max-w-[667px] flex-col gap-5">
-            <h3 className="text-[clamp(24px,1.458vw,28px)] leading-9 text-landing-text-heading">
-              Premium Add-on Services
+        <div className="flex w-full min-w-0 max-w-[723px] flex-col items-center justify-self-center gap-6 rounded-[var(--landing-radius-card)] border border-border-default bg-surface-default p-6 xl:justify-self-end">
+          <div className="flex w-full flex-col gap-4">
+            <h3 className="text-card-title leading-7 font-medium text-landing-text-heading">
+              Premium add-on services
             </h3>
-            <p className="text-label leading-[26px] text-text-step">
-              See how Lilly can streamline your HTA evaluation workflow and
-              improve decision-making. Our team will walk you through the
-              platform&apos;s capabilities tailored to your organization.
+            <p className="text-label leading-6 text-landing-text-subtle">
+              {`See how ${BRAND.name} can streamline your HTA evaluation workflow and improve decision-making. Our team will walk you through the platform's capabilities tailored to your organization.`}
             </p>
           </div>
 
           <div className="h-px w-full bg-border-default" />
 
-          <div className="flex w-full max-w-[667px] flex-col gap-3.5 sm:flex-row">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
             <LandingSecondaryButton
+              href={`mailto:${contactDetails.email}?subject=${encodeURIComponent(`${BRAND.name} demo request`)}`}
               fullWidth
-              className="h-[58px] rounded-card border-border-default"
             >
-              Request Demo
+              Request demo
             </LandingSecondaryButton>
             <LandingCtaButton
               href={`mailto:${contactDetails.email}`}
               fullWidth
               showArrow={false}
-              className="h-[58px] rounded-card"
             >
-              Contact Sales
+              Contact sales
             </LandingCtaButton>
           </div>
         </div>

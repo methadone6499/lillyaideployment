@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDisplayCount } from "@/lib/formatDisplay";
+
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 
@@ -35,20 +37,20 @@ function DialogError({ message }: { message: string | null }) {
 
 function OfferTermsSummary({ offer }: { offer: CustomOffer }) {
   return (
-    <dl className="grid gap-3 rounded-card bg-surface-subtle p-4 text-label sm:grid-cols-3">
+    <dl className="grid gap-3 rounded-surface bg-surface-subtle p-4 text-label sm:grid-cols-3">
       <div>
         <dt className="text-helper text-text-muted">Price</dt>
-        <dd className="mt-1 font-medium text-white">
+        <dd className="mt-1 tabular-nums font-medium text-white">
           {formatMonthlyPrice(offer.amount_minor)}
         </dd>
       </div>
       <div>
         <dt className="text-helper text-text-muted">Seats</dt>
-        <dd className="mt-1 font-medium text-white">{offer.seats}</dd>
+        <dd className="mt-1 tabular-nums font-medium text-white">{formatDisplayCount(offer.seats)}</dd>
       </div>
       <div>
         <dt className="text-helper text-text-muted">Reports per month</dt>
-        <dd className="mt-1 font-medium text-white">{offer.reports}</dd>
+        <dd className="mt-1 tabular-nums font-medium text-white">{formatDisplayCount(offer.reports)}</dd>
       </div>
     </dl>
   );
@@ -366,14 +368,14 @@ export function SeatsExceedDialog({
       <div className="flex flex-col gap-4 text-label leading-relaxed text-text-body">
         {details ? (
           <p>
-            This plan includes {details.offer_seats} seats. You currently have{" "}
-            {details.occupied_membership_seats} occupied{" "}
+            This plan includes {formatDisplayCount(details.offer_seats)} seats. You currently have{" "}
+            {formatDisplayCount(details.occupied_membership_seats)} occupied{" "}
             {details.occupied_membership_seats === 1 ? "membership" : "memberships"}{" "}
-            and {details.pending_invitation_seats} pending{" "}
+            and {formatDisplayCount(details.pending_invitation_seats)} pending{" "}
             {details.pending_invitation_seats === 1 ? "invitation" : "invitations"} (
-            {details.total_occupied_seats} total). Remove members or revoke
+            {formatDisplayCount(details.total_occupied_seats)} total). Remove members or revoke
             invitations to free{" "}
-            <span className="font-medium text-white">{details.seats_to_free}</span>{" "}
+            <span className="font-medium text-white">{formatDisplayCount(details.seats_to_free)}</span>{" "}
             {details.seats_to_free === 1 ? "seat" : "seats"}, then accept.
           </p>
         ) : (

@@ -37,6 +37,8 @@ export type ClassifiedBillingError = {
 };
 
 const GENERIC_MESSAGE = "Something went wrong. Please try again.";
+export const SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE =
+  "Subscription purchases and billing changes were suspended by a platform administrator. Contact support for assistance.";
 const RETRYABLE_MESSAGE =
   "We could not update billing right now. Please try again in a moment.";
 const SESSION_MESSAGE = "Your session has expired. Please sign in again.";
@@ -61,7 +63,7 @@ const CHECKOUT_CONFLICT_MESSAGE =
 const UNSUPPORTED_CHANGE_MESSAGE =
   "Only an active Standard subscription can be upgraded to Enterprise.";
 const CANCELLATION_PENDING_MESSAGE =
-  "Resume this subscription in the billing portal before upgrading.";
+  "Resume this subscription before upgrading.";
 const CHANGE_PENDING_MESSAGE =
   "An Enterprise upgrade is already in progress.";
 const SUBSCRIPTION_REQUIRED_MESSAGE =
@@ -88,6 +90,8 @@ const ERROR_MESSAGES: Record<BillingErrorCode, string> = {
   checkout_payment_pending: CHECKOUT_PAYMENT_MESSAGE,
   checkout_state_conflict: CHECKOUT_CONFLICT_MESSAGE,
   billing_owner_required: OWNER_MESSAGE,
+  subscription_purchase_suspended: SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE,
+  subscription_resume_not_available: "This subscription can no longer be resumed. Review the latest billing information.",
   unsupported_plan_change: UNSUPPORTED_CHANGE_MESSAGE,
   subscription_cancellation_pending: CANCELLATION_PENDING_MESSAGE,
   subscription_change_pending: CHANGE_PENDING_MESSAGE,
@@ -118,7 +122,10 @@ function fieldErrorsFromZod(error: ZodError): FieldErrors {
       .join(".");
 
     if (key && fieldErrors[key] === undefined) {
-      fieldErrors[key] = issue.message;
+      fieldErrors[key] = key === "company_name"
+        ? "Enter a company name using 1–200 characters."
+        : key === "plan_type" ? "Choose an available subscription plan."
+        : "Check this entry and try again.";
     }
   }
 
@@ -207,6 +214,19 @@ export function classifyBillingError(error: unknown): ClassifiedBillingError {
   const mappedMessage = code ? ERROR_MESSAGES[code] : undefined;
   const message = error.message || mappedMessage || GENERIC_MESSAGE;
   const pendingPlanType = pendingPlanTypeFromDetails(error.details);
+
+  if (code === "subscription_purchase_suspended") {
+    return buildClassifiedError({
+      kind: code,
+      message: SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE,
+      requestId,
+      hideOwnerControls: true,
+      reloadOverview: true,
+    });
+  }
+  if (code === "subscription_resume_not_available") {
+    return buildClassifiedError({ kind: code, message: ERROR_MESSAGES[code], requestId, reloadOverview: true });
+  }
 
   if (error.status === 401 || code === "invalid_session") {
     return buildClassifiedError({
@@ -308,11 +328,10 @@ export function classifyBillingError(error: unknown): ClassifiedBillingError {
   if (code === "subscription_cancellation_pending") {
     return buildClassifiedError({
       kind: "subscription_cancellation_pending",
-      message,
+      message: CANCELLATION_PENDING_MESSAGE,
       requestId,
       retryAfterSeconds,
       reloadOverview: true,
-      openPortal: true,
     });
   }
 

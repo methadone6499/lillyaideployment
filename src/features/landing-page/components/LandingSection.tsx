@@ -21,7 +21,7 @@ export function LandingSection({
     >
       <div
         className={cn(
-          "mx-auto w-full max-w-landing-section",
+          "mx-auto w-full max-w-[var(--layout-landing-section-width)]",
           containerClassName,
         )}
       >

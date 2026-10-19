@@ -4,7 +4,11 @@ import type {
   CustomerCommunication,
   CustomerCommunicationKind,
 } from "../schemas/customSubscriptionSchemas";
-import { formatUsdAmount } from "../utils/formatCustomSubscription";
+import {
+  formatReportCount,
+  formatSeatCount,
+  formatUsdAmount,
+} from "../utils/formatCustomSubscription";
 
 const KIND_LABELS: Record<CustomerCommunicationKind, string> = {
   action_required: "We asked for more information",
@@ -15,10 +19,10 @@ const KIND_LABELS: Record<CustomerCommunicationKind, string> = {
 function formatSuggestions(communication: CustomerCommunication): string | null {
   const parts = [
     communication.suggested_seats !== null
-      ? `${communication.suggested_seats} seats`
+      ? formatSeatCount(communication.suggested_seats)
       : null,
     communication.suggested_reports !== null
-      ? `${communication.suggested_reports} reports / month`
+      ? `${formatReportCount(communication.suggested_reports)} / month`
       : null,
     communication.suggested_amount_minor !== null
       ? `${formatUsdAmount(communication.suggested_amount_minor)} / month`
@@ -40,7 +44,7 @@ export function CustomCommunicationList({
   return (
     <section
       aria-labelledby="custom-communications-title"
-      className="rounded-card border border-border-default bg-surface-default p-6"
+      className="rounded-surface border border-border-default bg-surface-default p-6"
     >
       <h2
         id="custom-communications-title"
@@ -55,7 +59,7 @@ export function CustomCommunicationList({
           return (
             <article
               key={communication.id}
-              className="rounded-card border border-border-default bg-surface-subtle p-4"
+              className="rounded-surface border border-border-default bg-surface-subtle p-4"
             >
               <h3 className="text-label font-medium text-white">
                 {KIND_LABELS[communication.kind]}

@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ApiRequestError } from "@/services/ApiRequestError";
+import { useAuthStore } from "@/store/useAuthStore";
 
 import {
   useResendVerificationMutation,
@@ -57,6 +58,7 @@ export function LoginPage() {
       );
 
       if (!me) {
+        if (useAuthStore.getState().companyAccess === "disabled") return;
         setErrorState({
           type: "retryable",
           message:

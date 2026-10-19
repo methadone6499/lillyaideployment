@@ -1,4 +1,5 @@
-import { isReportApiError } from "../api/reportApiError";
+import { getEditingErrorCode } from "../api/reportApiError";
+import { getReportRequestErrorMessage } from "./getReportRequestErrorMessage";
 import type {
   CreateRewritePreviewInput,
   EditableBlock,
@@ -70,24 +71,13 @@ export function getRewritePreviewStatusMessage(
     return null;
   }
 
-  const serverMessage = preview.message?.trim();
-  if (serverMessage) {
-    return serverMessage;
-  }
-
   return REWRITE_PREVIEW_STATUS_MESSAGES[preview.status];
 }
 
 export function getRewritePreviewFailureMessage(error: unknown): string {
-  if (isReportApiError(error) && error.message.trim()) {
-    return error.message;
-  }
-
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-
-  return REWRITE_PREVIEW_GENERIC_FAILURE_MESSAGE;
+  const code = getEditingErrorCode(error);
+  if (code === "validation_failed") return REWRITE_PREVIEW_STATUS_MESSAGES.validation_failed;
+  return getReportRequestErrorMessage(error, REWRITE_PREVIEW_GENERIC_FAILURE_MESSAGE);
 }
 
 export function resolveRewritePreviewChoice(

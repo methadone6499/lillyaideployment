@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { Select } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 import { SearchIcon } from "@/components/ui/icons";
 import {
   userStatusSchema,
@@ -123,7 +123,7 @@ export function AdminCompanyMembersTable({
 
   return (
     <section aria-label="Company members" aria-busy={query.isFetching} className="mt-8">
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-6 py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -132,9 +132,9 @@ export function AdminCompanyMembersTable({
                 The default view includes active and disabled memberships. Select Removed members to view former members.
               </p>
             </div>
-            <label className="relative block w-full lg:max-w-[380px]">
+            <label className="relative block w-full lg:max-w-[480px]">
               <span className="sr-only">Search company members</span>
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-5 size-5 -translate-y-1/2 text-white/30" />
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-5 size-6 -translate-y-1/2 text-text-muted" />
               <input
                 type="search"
                 value={searchQuery}
@@ -144,7 +144,7 @@ export function AdminCompanyMembersTable({
                   setSearchQuery(event.target.value);
                   resetPage();
                 }}
-                className="h-12 w-full rounded-card bg-surface-subtle pr-5 pl-14 text-label text-white outline-none placeholder:text-white/30 focus:ring-1 focus:ring-border-default"
+                className="h-14 w-full rounded-surface bg-surface-subtle pr-5 pl-14 text-body-lg text-white outline-none transition-[box-shadow] placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-brand/35"
               />
             </label>
           </div>
@@ -183,14 +183,14 @@ export function AdminCompanyMembersTable({
                 resetPage();
               }}
             />
-            <button
-              type="button"
+            <Button
+              variant="table"
+              size="table"
               disabled={!hasFilters}
               onClick={clearFilters}
-              className="h-12 rounded-card border border-border-default px-4 text-label font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               Clear filters
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -206,9 +206,9 @@ export function AdminCompanyMembersTable({
                 <p>{classifiedError?.message}</p>
                 <AdminRequestId requestId={classifiedError?.requestId} />
                 {classifiedError?.kind === "validation_error" ? (
-                  <button type="button" onClick={clearFilters} className="rounded-button border border-border-default px-4 py-2 text-white">Clear filters</button>
+                  <Button variant="table" size="table" onClick={clearFilters}>Clear filters</Button>
                 ) : classifiedError?.kind !== "not_found" ? (
-                  <button type="button" onClick={() => void query.refetch()} className="rounded-button border border-border-default px-4 py-2 text-white">Try again</button>
+                  <Button variant="table" size="table" onClick={() => void query.refetch()}>Try again</Button>
                 ) : null}
               </div>
             ) : members.length === 0 && !query.isFetching ? (
@@ -237,7 +237,7 @@ export function AdminCompanyMembersTable({
         <div role="alert" className="mt-4 flex justify-end gap-3 text-label text-text-muted">
           <span>{classifiedError?.message}</span>
           <AdminRequestId requestId={classifiedError?.requestId} />
-          <button type="button" onClick={() => void query.fetchNextPage()} className="text-white underline">Retry</button>
+          <Button variant="ghost" size="compact" onClick={() => void query.fetchNextPage()}>Retry</Button>
         </div>
       ) : null}
 

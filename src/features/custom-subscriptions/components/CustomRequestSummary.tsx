@@ -19,7 +19,7 @@ export function CustomRequestSummary({ request }: { request: CustomRequest }) {
     <div className="flex flex-col gap-4">
       <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {rows.map((row) => (
-          <div key={row.label} className="rounded-card bg-surface-subtle p-4">
+          <div key={row.label} className="rounded-surface bg-surface-subtle p-4">
             <dt className="text-helper text-text-muted">{row.label}</dt>
             <dd className="mt-1 break-words text-label font-medium text-white">
               {row.value}
@@ -28,7 +28,7 @@ export function CustomRequestSummary({ request }: { request: CustomRequest }) {
         ))}
       </dl>
       {request.notes ? (
-        <div className="rounded-card bg-surface-subtle p-4">
+        <div className="rounded-surface bg-surface-subtle p-4">
           <p className="text-helper text-text-muted">Notes</p>
           <p className="mt-1 whitespace-pre-wrap text-label text-text-body">
             {request.notes}

@@ -12,7 +12,7 @@ export function AuthGradientLink({ href, children }: AuthGradientLinkProps) {
   return (
     <Link
       href={href}
-      className="bg-landing-emerald-gradient bg-clip-text font-medium text-transparent underline decoration-brand underline-offset-2"
+      className="text-label font-medium text-brand no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       {children}
     </Link>

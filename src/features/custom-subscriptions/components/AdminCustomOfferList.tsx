@@ -7,7 +7,11 @@ import type {
   CustomOffer,
   OfferTerms,
 } from "../schemas/customSubscriptionSchemas";
-import { formatMonthlyPrice } from "../utils/formatCustomSubscription";
+import {
+  formatMonthlyPrice,
+  formatReportCount,
+  formatSeatCount,
+} from "../utils/formatCustomSubscription";
 import { AdminOfferDraftForm } from "./AdminOfferDraftForm";
 import { CustomOfferStatusPill } from "./CustomStatusPill";
 
@@ -79,7 +83,7 @@ export function AdminCustomOfferList({
         return (
           <article
             key={offer.id}
-            className="flex flex-col gap-3 rounded-card border border-border-default bg-surface-subtle p-4"
+            className="flex flex-col gap-3 rounded-surface border border-border-default bg-surface-subtle p-4"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -87,8 +91,8 @@ export function AdminCustomOfferList({
                   Revision {offer.revision} · {offer.company_name}
                 </h3>
                 <p className="mt-1 text-label text-text-body">
-                  {formatMonthlyPrice(offer.amount_minor)} · {offer.seats} seats ·{" "}
-                  {offer.reports} reports per month
+                  {formatMonthlyPrice(offer.amount_minor)} · {formatSeatCount(offer.seats)} ·{" "}
+                  {formatReportCount(offer.reports)} per month
                 </p>
               </div>
               <CustomOfferStatusPill status={offer.status} />
@@ -118,7 +122,7 @@ export function AdminCustomOfferList({
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="button"
-                  className="h-11 text-label"
+                  size="small" className="text-label"
                   disabled={isBusy}
                   onClick={() => onPublish(offer)}
                 >
@@ -127,7 +131,7 @@ export function AdminCustomOfferList({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-11 text-label"
+                  size="small" className="text-label"
                   disabled={isBusy}
                   onClick={() => onEdit(offer.id)}
                 >
@@ -136,7 +140,7 @@ export function AdminCustomOfferList({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-11 text-label"
+                  size="small" className="text-label"
                   disabled={isBusy}
                   onClick={() => onCancelOffer(offer)}
                 >
@@ -150,7 +154,7 @@ export function AdminCustomOfferList({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-11 text-label"
+                  size="small" className="text-label"
                   disabled={isBusy || isResendCoolingDown}
                   onClick={() => onResendEmail(offer)}
                 >
@@ -161,7 +165,7 @@ export function AdminCustomOfferList({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-11 text-label"
+                  size="small" className="text-label"
                   disabled={isBusy}
                   onClick={() => onCancelOffer(offer)}
                 >

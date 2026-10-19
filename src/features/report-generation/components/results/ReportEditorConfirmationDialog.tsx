@@ -110,7 +110,7 @@ export function ReportEditorConfirmationDialog({
         aria-labelledby="report-editor-confirmation-title"
         aria-describedby="report-editor-confirmation-description"
         tabIndex={-1}
-        className="w-full max-w-[480px] overflow-hidden rounded-button border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white"
+        className="w-full max-w-[480px] overflow-hidden rounded-surface border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white"
       >
         <header className="flex h-[67px] items-center justify-between border-b border-border-default px-6">
           <h2
@@ -123,7 +123,7 @@ export function ReportEditorConfirmationDialog({
             type="button"
             onClick={onCancel}
             disabled={isConfirming}
-            className="inline-flex size-6 items-center justify-center transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex size-10 items-center justify-center rounded-field text-text-muted transition-colors hover:bg-surface-elevated hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
             aria-label="Close confirmation"
           >
             <CloseIcon className="size-5" />
@@ -143,7 +143,7 @@ export function ReportEditorConfirmationDialog({
               type="button"
               onClick={onCancel}
               disabled={isConfirming}
-              className="inline-flex h-[42px] items-center text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-[52px] items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
             >
               {cancelLabel}
             </button>
@@ -151,7 +151,7 @@ export function ReportEditorConfirmationDialog({
               type="button"
               onClick={onConfirm}
               disabled={isConfirming}
-              className="inline-flex h-[42px] items-center rounded-button bg-brand px-[18px] text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-[52px] items-center rounded-button bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted"
             >
               {confirmLabel}
             </button>

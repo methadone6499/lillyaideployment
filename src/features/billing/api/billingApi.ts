@@ -7,6 +7,7 @@ import {
   downgradeResponseSchema,
   portalResponseSchema,
   subscriptionOverviewSchema,
+  subscriptionSummarySchema,
   upgradeRequestSchema,
   upgradeResponseSchema,
   type CheckoutRequest,
@@ -19,6 +20,12 @@ import {
 } from "../schemas/billingSchemas";
 
 const SUBSCRIPTION_ME_URL = "/api/v1/subscriptions/me";
+
+export function resumeSubscription(signal?: AbortSignal) {
+  return authenticatedAuthRequest((token, requestSignal) => apiRequest("/api/v1/subscriptions/resume", {
+    method: "POST", headers: bearerHeaders(token), schema: subscriptionSummarySchema, signal: requestSignal,
+  }), signal);
+}
 const SUBSCRIPTION_CHECKOUT_URL = "/api/v1/subscriptions/checkout";
 const SUBSCRIPTION_PORTAL_URL = "/api/v1/subscriptions/portal";
 const SUBSCRIPTION_UPGRADE_URL = "/api/v1/subscriptions/upgrade";

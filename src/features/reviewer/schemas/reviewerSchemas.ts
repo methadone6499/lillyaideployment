@@ -397,7 +397,7 @@ export type AdminReviewDashboard = z.infer<
 >;
 
 export type ReviewerDashboardFilters = {
-  status?: ReviewAssignmentStatus;
+  status?: ReviewAssignmentStatus | readonly ReviewAssignmentStatus[];
   overdue?: boolean;
   search?: string;
   limit?: number;

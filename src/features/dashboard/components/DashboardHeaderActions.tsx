@@ -1,6 +1,6 @@
 "use client";
 
-import { BellIcon, ChevronDownIcon } from "@/components/ui/icons";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import {
   getActiveContext,
   useAuthUser,
@@ -8,15 +8,14 @@ import {
   type ContextType,
   type EffectiveRole,
 } from "@/features/auth";
+import { LeaveCompanyDialog } from "@/features/seat-management";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { dashboardNotifications } from "../data/dashboardData";
-import type { DashboardNotification } from "../types";
 
-type OpenPanel = "notifications" | "account" | null;
+type OpenPanel = "account" | null;
 
 export type AccountMenuVariant =
   | "standard"
@@ -24,10 +23,6 @@ export type AccountMenuVariant =
   | "seat"
   | "reviewer"
   | "super-admin";
-
-export type DashboardHeaderActionsProps = {
-  notifications?: readonly DashboardNotification[];
-};
 
 function getAccountMenuVariant(
   contextType: ContextType | undefined,
@@ -52,44 +47,7 @@ function getAccountMenuVariant(
   return "standard";
 }
 
-function NotificationItem({ notification }: { notification: DashboardNotification }) {
-  const hasReportLeadIn = notification.message.startsWith("Your report");
-  const trailingMessage = hasReportLeadIn
-    ? notification.message.slice("Your report".length).trim()
-    : notification.message;
-
-  return (
-    <li className="grid min-h-19.75 grid-cols-[minmax(0,1fr)_20px] items-center gap-3 border-b border-white/6 px-5 py-2.75 last:border-b-0">
-      <div className="flex min-w-0 flex-col gap-3">
-        <p className="text-input font-normal leading-normal text-white/72">
-          {hasReportLeadIn ? "Your report " : null}
-          {notification.reportName ? (
-            <span className="font-medium text-white/92">
-              {notification.reportName}
-            </span>
-          ) : null}
-          {trailingMessage ? ` ${trailingMessage}` : null}
-        </p>
-        <p className="text-helper leading-normal tracking-[-0.12px] text-white/56">
-          {notification.timestamp}
-        </p>
-      </div>
-      <span aria-hidden className="flex size-5 items-center justify-center">
-        <Image
-          src="/notification-chevron.svg"
-          alt=""
-          width={7}
-          height={12}
-          className="rotate-180"
-        />
-      </span>
-    </li>
-  );
-}
-
-export function DashboardHeaderActions({
-  notifications = dashboardNotifications,
-}: DashboardHeaderActionsProps) {
+export function DashboardHeaderActions() {
   const router = useRouter();
   const { authMe } = useAuthUser();
   const activeContext = getActiveContext(authMe);
@@ -98,10 +56,9 @@ export function DashboardHeaderActions({
     activeContext?.role,
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(
-    notifications.length > 0,
-  );
+  const [leaveCompanyOpen, setLeaveCompanyOpen] = useState(false);
   const logoutMutation = useLogoutMutation();
   const contextMenuItem =
     accountMenuVariant === "company-admin"
@@ -161,75 +118,13 @@ export function DashboardHeaderActions({
       <div className="relative">
         <button
           type="button"
-          aria-label="Notifications"
-          aria-haspopup="true"
-          aria-expanded={openPanel === "notifications"}
-          aria-controls="dashboard-notifications-panel"
-          className={cn(
-            "relative flex size-11 items-center justify-center rounded-field border border-border-default bg-surface-default text-text-primary transition-colors hover:bg-surface-elevated",
-            openPanel === "notifications" && "bg-surface-elevated",
-          )}
-          onClick={() => togglePanel("notifications")}
-        >
-          <BellIcon className="size-5" />
-          {hasUnreadNotifications ? (
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-brand" />
-          ) : null}
-        </button>
-
-        {openPanel === "notifications" ? (
-          <div
-            id="dashboard-notifications-panel"
-            role="region"
-            aria-label="Notifications"
-            className="fixed left-4 right-4 top-[calc(var(--layout-header-height)+0.5rem)] z-50 overflow-hidden rounded-button bg-[#222] shadow-[0_36px_174px_rgba(0,0,0,0.13),0_10.63px_51.859px_rgba(0,0,0,0.09),0_2.555px_15.698px_rgba(0,0,0,0.08),0_-0.567px_1.537px_rgba(0,0,0,0.06),0_-1.483px_0_rgba(0,0,0,0.05),0_-1.147px_0_rgba(0,0,0,0.04)] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[min(400px,calc(100vw-2rem))]"
-          >
-            <div className="flex h-13 items-center justify-between gap-4 border-b border-white/6 px-5">
-              <p className="text-label font-medium text-white/92">
-                Notifications
-              </p>
-              <button
-                type="button"
-                className="flex shrink-0 items-center gap-1 text-helper font-medium tracking-[-0.12px] text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                onClick={() => setHasUnreadNotifications(false)}
-              >
-                <span
-                  aria-hidden
-                  className="flex size-4 items-center justify-center overflow-hidden rounded-step-badge border border-white/16 bg-white/12"
-                >
-                  <Image
-                    src="/notification-check.svg"
-                    alt=""
-                    width={7}
-                    height={5}
-                  />
-                </span>
-                Mark All as read
-              </button>
-            </div>
-            <ul className="max-h-80 overflow-y-auto">
-              {notifications.map((notification) => (
-                <NotificationItem key={notification.id} notification={notification} />
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-
-      <div
-        aria-hidden
-        className="hidden h-8 w-px shrink-0 bg-border-default sm:block"
-      />
-
-      <div className="relative">
-        <button
-          type="button"
+          ref={accountButtonRef}
           aria-label="Account menu"
           aria-haspopup="menu"
           aria-expanded={openPanel === "account"}
           aria-controls="dashboard-account-menu"
           className={cn(
-            "inline-flex h-11 items-center gap-2 rounded-field border border-border-default bg-surface-default px-3 text-label font-medium text-text-heading transition-colors hover:bg-surface-elevated sm:px-4",
+            "inline-flex h-12 items-center gap-2 rounded-header-control border border-border-default bg-surface-default px-3 text-label font-medium text-text-heading transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4",
             openPanel === "account" && "bg-surface-elevated",
           )}
           onClick={() => togglePanel("account")}
@@ -248,7 +143,7 @@ export function DashboardHeaderActions({
             id="dashboard-account-menu"
             role="menu"
             aria-label="Account menu"
-            className="absolute right-0 top-full z-50 mt-2 w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-button bg-[#222] shadow-[0_36px_174px_rgba(0,0,0,0.13),0_10.63px_51.859px_rgba(0,0,0,0.09),0_2.555px_15.698px_rgba(0,0,0,0.08),0_-0.567px_1.537px_rgba(0,0,0,0.06),0_-1.483px_0_rgba(0,0,0,0.05),0_-1.147px_0_rgba(0,0,0,0.04)]"
+            className="absolute right-0 top-full z-50 mt-2 w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-surface bg-[#222] shadow-[0_36px_174px_rgba(0,0,0,0.13),0_10.63px_51.859px_rgba(0,0,0,0.09),0_2.555px_15.698px_rgba(0,0,0,0.08),0_-0.567px_1.537px_rgba(0,0,0,0.06),0_-1.483px_0_rgba(0,0,0,0.05),0_-1.147px_0_rgba(0,0,0,0.04)]"
           >
             {contextMenuItem ? (
               <Link
@@ -272,11 +167,25 @@ export function DashboardHeaderActions({
                 </span>
               </Link>
             ) : null}
+            {accountMenuVariant === "seat" ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="mx-2 mt-2 flex h-12 w-[calc(100%-16px)] items-center rounded-field px-3.5 text-left text-body-lg font-medium leading-normal text-status-danger transition-colors hover:bg-[rgba(217,34,68,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                onClick={() => {
+                  setOpenPanel(null);
+                  accountButtonRef.current?.focus();
+                  setLeaveCompanyOpen(true);
+                }}
+              >
+                Leave company
+              </button>
+            ) : null}
             {showBilling ? (
               <Link
                 href="/settings/billing"
                 role="menuitem"
-                className="mx-2 mt-2 flex h-12 items-center justify-between rounded-card px-3.5 text-body-lg font-medium leading-normal text-white transition-colors hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                className="mx-2 mt-2 flex h-12 items-center justify-between rounded-field px-3.5 text-body-lg font-medium leading-normal text-white transition-colors hover:bg-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 onClick={() => setOpenPanel(null)}
               >
                 <span>Billing</span>
@@ -297,7 +206,7 @@ export function DashboardHeaderActions({
             <button
               type="button"
               role="menuitem"
-              className="m-2 flex h-12 w-[calc(100%-16px)] items-center justify-between rounded-card bg-[rgba(217,34,68,0.16)] pl-3.5 pr-4.5 text-left text-body-lg font-medium leading-normal text-[#d92244] transition-colors hover:bg-[rgba(217,34,68,0.22)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d92244] disabled:opacity-60"
+              className="m-2 flex h-12 w-[calc(100%-16px)] items-center justify-between rounded-field bg-[rgba(217,34,68,0.16)] pl-3.5 pr-4.5 text-left text-body-lg font-medium leading-normal text-status-danger transition-colors hover:bg-[rgba(217,34,68,0.24)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
               disabled={logoutMutation.isPending}
               onClick={() => void handleLogout()}
             >
@@ -316,6 +225,9 @@ export function DashboardHeaderActions({
           </div>
         ) : null}
       </div>
+      {leaveCompanyOpen && accountMenuVariant === "seat" ? (
+        <LeaveCompanyDialog onClose={() => setLeaveCompanyOpen(false)} />
+      ) : null}
     </div>
   );
 }

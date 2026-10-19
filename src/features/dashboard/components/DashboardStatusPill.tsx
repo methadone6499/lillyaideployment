@@ -20,7 +20,7 @@ const statusConfig: Record<
   },
   failed: {
     label: "Failed",
-    className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+    className: "bg-[rgba(217,34,68,0.12)] text-status-danger",
   },
   unassigned: {
     label: "Unassigned",
@@ -32,7 +32,7 @@ const statusConfig: Record<
   },
   pending: {
     label: "Pending Review",
-    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
+    className: "bg-[rgba(0,101,248,0.12)] text-status-info",
   },
   in_review: {
     label: "In Review",
@@ -40,7 +40,7 @@ const statusConfig: Record<
   },
   reviewed: {
     label: "Reviewed",
-    className: "bg-[rgba(165,147,224,0.12)] text-[#a593e0]",
+    className: "bg-[rgba(165,147,224,0.12)] text-status-reviewed",
   },
 };
 
@@ -56,7 +56,7 @@ function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-card p-2.5 text-input font-medium whitespace-nowrap",
+        "inline-flex items-center justify-center rounded-field p-2.5 text-input font-medium whitespace-nowrap",
         toneClassName,
         className,
       )}

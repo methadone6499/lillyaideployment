@@ -1,6 +1,9 @@
 "use client";
 
+import { formatDisplayDate as formatInvitationDate } from "@/lib/formatDisplay";
+
 import type { Invitation } from "@/features/company-invitations";
+import { Button } from "@/components/ui";
 import { DashboardPagination } from "@/features/dashboard";
 
 type PendingInvitationsTableProps = {
@@ -24,21 +27,6 @@ type PendingInvitationsTableProps = {
   onResend: (invitation: Invitation) => void;
   onRevoke: (invitation: Invitation) => void;
 };
-
-const invitationDateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-});
-
-function formatInvitationDate(value: string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return invitationDateFormatter.format(date);
-}
 
 export function PendingInvitationsTable({
   invitations,
@@ -67,14 +55,15 @@ export function PendingInvitationsTable({
       aria-busy={isLoading || isUpdatingResults || isPageChangePending}
       className="mt-12 lg:mt-14"
     >
-      <h2
-        id="pending-invitations-heading"
-        className="mb-4 text-card-title font-medium text-white"
-      >
-        Pending Invitations
-      </h2>
-
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
+        <header className="flex min-h-14 items-center border-b border-border-default px-6 py-4">
+          <h2
+            id="pending-invitations-heading"
+            className="text-card-title font-medium text-white"
+          >
+            Pending Invitations
+          </h2>
+        </header>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] table-fixed">
             <caption className="sr-only">
@@ -121,13 +110,13 @@ export function PendingInvitationsTable({
                     >
                       <p>{errorMessage ?? "Unable to load invitations."}</p>
                       {onRetry ? (
-                        <button
-                          type="button"
-                          className="rounded-button border border-border-default px-4 py-2 font-medium text-white transition-colors hover:bg-surface-elevated"
+                        <Button
+                          variant="table"
+                          size="table"
                           onClick={onRetry}
                         >
                           Try again
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                   </td>
@@ -165,8 +154,9 @@ export function PendingInvitationsTable({
                       <td className="py-4 pr-6 pl-3">
                         {canManage ? (
                           <span className="flex items-center justify-end gap-2">
-                            <button
-                              type="button"
+                            <Button
+                              variant="table"
+                              size="table"
                               disabled={
                                 isRowPending || isCoolingDown || resendLocked
                               }
@@ -178,20 +168,19 @@ export function PendingInvitationsTable({
                                     : "Resend invitation"
                               }
                               onClick={() => onResend(invitation)}
-                              className="inline-flex h-10 items-center justify-center rounded-card px-3 text-input font-medium text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isCoolingDown
                                 ? `Resend in ${cooldownSeconds}s`
                                 : "Resend"}
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="table"
                               disabled={isRowPending}
                               onClick={() => onRevoke(invitation)}
-                              className="inline-flex h-10 items-center justify-center rounded-card px-3 text-input font-medium text-[#d92244] transition-colors hover:bg-[rgba(217,34,68,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d92244] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               Revoke
-                            </button>
+                            </Button>
                           </span>
                         ) : (
                           <span className="flex justify-end text-helper font-normal text-text-muted">
@@ -219,14 +208,14 @@ export function PendingInvitationsTable({
         >
           <span>{nextPageErrorMessage}</span>
           {onRetryNextPage ? (
-            <button
-              type="button"
-              className="rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"
+            <Button
+              variant="table"
+              size="compact"
               disabled={isPageChangePending}
               onClick={onRetryNextPage}
             >
               Retry
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

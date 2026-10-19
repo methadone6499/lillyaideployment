@@ -4,6 +4,7 @@ import {
   ArrowNarrowLeftIcon,
   ArrowNarrowRightIcon,
   Button,
+  SpinnerIcon,
 } from "@/components/ui";
 import type { WizardStep } from "../types";
 
@@ -14,6 +15,8 @@ type WizardFooterProps = {
   continueLabel?: string;
   showBack?: boolean;
   continueDisabled?: boolean;
+  continueDisabledReason?: string;
+  continuePending?: boolean;
 };
 
 export function WizardFooter({
@@ -23,7 +26,11 @@ export function WizardFooter({
   continueLabel = "Continue",
   showBack = true,
   continueDisabled = false,
+  continueDisabledReason,
+  continuePending = false,
 }: WizardFooterProps) {
+  const helperId = "wizard-continue-helper";
+
   return (
     <footer className="mt-auto border-t border-border-default pt-7">
       <div className="flex items-center justify-between">
@@ -45,14 +52,21 @@ export function WizardFooter({
           </span>
           <Button
             onClick={onContinue}
-            disabled={continueDisabled}
-            trailingIcon={<ArrowNarrowRightIcon />}
+            disabled={continueDisabled || continuePending}
+            aria-busy={continuePending}
+            aria-describedby={continueDisabledReason ? helperId : undefined}
+            trailingIcon={continuePending ? <SpinnerIcon /> : <ArrowNarrowRightIcon />}
             className="pl-5 pr-3"
           >
             {continueLabel}
           </Button>
         </div>
       </div>
+      {continueDisabledReason ? (
+        <p id={helperId} className="mt-2 ml-auto max-w-72 text-right text-helper text-text-muted">
+          {continueDisabledReason}
+        </p>
+      ) : null}
     </footer>
   );
 }

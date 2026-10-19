@@ -9,10 +9,17 @@ import {
   reportReviewStatusSchema,
   reviewAssignmentSchema,
   reviewerDashboardSchema,
+  reviewerQueryKeys,
   reviewHistorySchema,
   reviewSectionNoteSchema,
   saveReviewSectionNoteRequestSchema,
 } from "../index";
+import { appendReviewerAssignmentStatuses } from "../utils/appendReviewerAssignmentStatuses";
+import {
+  getReviewerAssignmentFilterOptions,
+  getReviewerAssignmentFilters,
+} from "../utils/reviewerAssignmentFilters";
+import { getReviewerAssignmentPagination } from "../utils/reviewerAssignmentPagination";
 
 const assignment = {
   id: "review-assignment-2",
@@ -63,6 +70,76 @@ const dashboard = reviewerDashboardSchema.parse({
 });
 assert.equal(dashboard.items[0]?.id, "review-assignment-2");
 assert.equal(dashboard.next_cursor, "next-page");
+
+const currentAssignmentFilters = getReviewerAssignmentFilters("current", "all");
+const historyAssignmentFilters = getReviewerAssignmentFilters("history", "all");
+assert.deepEqual(currentAssignmentFilters.status, ["pending", "in_review"]);
+assert.deepEqual(historyAssignmentFilters.status, ["completed", "superseded"]);
+assert.deepEqual(getReviewerAssignmentFilters("current", "overdue"), {
+  status: ["pending", "in_review"],
+  overdue: true,
+});
+assert.deepEqual(getReviewerAssignmentFilters("current", "completed"), currentAssignmentFilters);
+assert.deepEqual(getReviewerAssignmentFilters("history", "pending"), historyAssignmentFilters);
+assert.deepEqual(getReviewerAssignmentFilters("history", "overdue"), historyAssignmentFilters);
+assert.equal(getReviewerAssignmentFilters("current", "pending").status, "pending");
+assert.equal(getReviewerAssignmentFilters("history", "completed").status, "completed");
+assert.deepEqual(
+  getReviewerAssignmentFilterOptions("current").map((option) => option.value),
+  ["all", "pending", "in_review", "overdue"],
+);
+assert.deepEqual(
+  getReviewerAssignmentFilterOptions("history").map((option) => option.value),
+  ["all", "completed", "superseded"],
+);
+
+const currentAssignmentQuery = new URLSearchParams({
+  limit: "6", cursor: "next-page", search: "Nusinersen",
+});
+appendReviewerAssignmentStatuses(currentAssignmentQuery, currentAssignmentFilters.status);
+assert.equal(
+  currentAssignmentQuery.toString(),
+  "limit=6&cursor=next-page&search=Nusinersen&status=pending&status=in_review",
+);
+const historyAssignmentQuery = new URLSearchParams({ limit: "20" });
+appendReviewerAssignmentStatuses(historyAssignmentQuery, historyAssignmentFilters.status);
+assert.equal(historyAssignmentQuery.toString(), "limit=20&status=completed&status=superseded");
+const singleStatusQuery = new URLSearchParams();
+appendReviewerAssignmentStatuses(singleStatusQuery, "completed");
+assert.deepEqual(singleStatusQuery.getAll("status"), ["completed"]);
+const unfilteredQuery = new URLSearchParams({ limit: "6" });
+appendReviewerAssignmentStatuses(unfilteredQuery, undefined);
+appendReviewerAssignmentStatuses(unfilteredQuery, []);
+assert.equal(unfilteredQuery.toString(), "limit=6");
+
+assert.notDeepEqual(
+  reviewerQueryKeys.dashboard("user-1", currentAssignmentFilters),
+  reviewerQueryKeys.dashboard("user-2", currentAssignmentFilters),
+);
+assert.notDeepEqual(
+  reviewerQueryKeys.assignmentHistory("user-1", historyAssignmentFilters),
+  reviewerQueryKeys.dashboard("user-1", currentAssignmentFilters),
+);
+assert.notDeepEqual(
+  reviewerQueryKeys.dashboard("user-1", currentAssignmentFilters),
+  reviewerQueryKeys.dashboard("user-1", getReviewerAssignmentFilters("current", "pending")),
+);
+
+assert.deepEqual(getReviewerAssignmentPagination([], 1, false), {
+  currentPage: 1, totalPages: 1,
+});
+assert.deepEqual(getReviewerAssignmentPagination([
+  { items: [parsedAssignment] }, { items: [] },
+], 2, false), { currentPage: 1, totalPages: 1 });
+assert.deepEqual(getReviewerAssignmentPagination([
+  { items: [parsedAssignment] },
+], 3, false), { currentPage: 1, totalPages: 1 });
+assert.deepEqual(getReviewerAssignmentPagination([
+  { items: [parsedAssignment] },
+], 1, true), { currentPage: 1, totalPages: 2 });
+assert.deepEqual(getReviewerAssignmentPagination([
+  { items: [parsedAssignment] }, { items: [parsedAssignment] },
+], 2, false), { currentPage: 2, totalPages: 2 });
 
 const queuedReview = reportReviewStateSchema.parse({
   report_id: "report-2",

@@ -1,6 +1,9 @@
 "use client";
 
+import { formatDisplayCount } from "@/lib/formatDisplay";
+
 import { SearchIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui";
 import {
   DashboardPagination,
   DashboardStatusFilter,
@@ -45,7 +48,7 @@ type SeatListTableProps = {
 };
 
 const SEAT_STATUS_OPTIONS = [
-  { value: "all", label: "All Status" },
+  { value: "all", label: "All statuses" },
   { value: "active", label: "Active" },
   { value: "disabled", label: "Disabled" },
 ] as const satisfies readonly DashboardStatusFilterOption<SeatStatusFilterValue>[];
@@ -113,7 +116,7 @@ export function SeatListTable({
       aria-busy={isLoading || isUpdatingResults || isPageChangePending}
       className="mt-12 lg:mt-14"
     >
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-6">
           <h2
             id="seats-list-heading"
@@ -125,7 +128,7 @@ export function SeatListTable({
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:max-w-[720px] lg:justify-end lg:gap-4">
             <label className="relative block min-w-0 flex-1">
               <span className="sr-only">Search seats by user or email</span>
-              <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-white/72">
+              <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-text-muted">
                 <SearchIcon />
               </span>
               <input
@@ -134,7 +137,7 @@ export function SeatListTable({
                 maxLength={100}
                 placeholder="Search seats"
                 onChange={(event) => onSearchChange(event.target.value)}
-                className="h-14 w-full rounded-button bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none placeholder:text-white/28 focus:ring-1 focus:ring-border-default"
+                className="h-14 w-full rounded-surface bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none transition-[box-shadow] placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-brand/35"
               />
             </label>
 
@@ -166,19 +169,19 @@ export function SeatListTable({
                 <th scope="col" className="py-4 pr-3 pl-6">
                   User Name
                 </th>
-                <th scope="col" className="px-3 py-4">
+                <th scope="col" className="px-3 py-4 tabular-nums">
                   User Email
                 </th>
-                <th scope="col" className="px-3 py-4">
+                <th scope="col" className="px-3 py-4 tabular-nums">
                   Report Quota
                 </th>
-                <th scope="col" className="px-3 py-4">
+                <th scope="col" className="px-3 py-4 tabular-nums">
                   Used Reports
                 </th>
-                <th scope="col" className="px-3 py-4">
+                <th scope="col" className="px-3 py-4 tabular-nums">
                   Remaining Reports
                 </th>
-                <th scope="col" className="px-3 py-4">
+                <th scope="col" className="px-3 py-4 tabular-nums">
                   Status
                 </th>
                 <th scope="col" className="py-4 pr-6 pl-3">
@@ -205,13 +208,13 @@ export function SeatListTable({
                     >
                       <p>{errorMessage ?? "Unable to load seats."}</p>
                       {onRetry ? (
-                        <button
-                          type="button"
-                          className="rounded-button border border-border-default px-4 py-2 font-medium text-white transition-colors hover:bg-surface-elevated"
+                        <Button
+                          variant="table"
+                          size="table"
                           onClick={onRetry}
                         >
                           Try again
-                        </button>
+                        </Button>
                       ) : null}
                     </div>
                   </td>
@@ -245,7 +248,7 @@ export function SeatListTable({
                     >
                       <td className="py-4 pr-3 pl-6">
                         <span className="flex min-w-0 items-center gap-4">
-                          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-toggle-knob bg-surface-elevated text-input text-white">
+                          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-row-index bg-surface-elevated text-input text-white">
                             {rowNumber}
                           </span>
                           <span className="flex min-w-0 flex-col">
@@ -259,19 +262,19 @@ export function SeatListTable({
                         </span>
                       </td>
                       <td className="truncate px-3 py-4">{seat.email}</td>
-                      <td className="px-3 py-4">{seat.report_quota_total}</td>
-                      <td className="px-3 py-4">{seat.report_quota_used}</td>
-                      <td className="px-3 py-4">
-                        {seat.report_quota_remaining}
+                      <td className="px-3 py-4 tabular-nums">{formatDisplayCount(seat.report_quota_total)}</td>
+                      <td className="px-3 py-4 tabular-nums">{formatDisplayCount(seat.report_quota_used)}</td>
+                      <td className="px-3 py-4 tabular-nums">
+                        {formatDisplayCount(seat.report_quota_remaining)}
                       </td>
-                      <td className="px-3 py-4">
+                      <td className="px-3 py-4 tabular-nums">
                         <span
                           className={cn(
-                            "inline-flex rounded-card px-2 py-2 text-input",
+                            "inline-flex rounded-field px-2 py-2 text-input",
                             seat.status === "active"
                               ? "bg-brand-border text-status-success"
                               : seat.status === "disabled"
-                                ? "bg-[rgba(217,34,68,0.12)] text-[#d92244]"
+                                ? "bg-[rgba(217,34,68,0.12)] text-status-danger"
                                 : "bg-white/10 text-text-muted",
                           )}
                         >
@@ -280,11 +283,13 @@ export function SeatListTable({
                       </td>
                       <td className="py-4 pr-6 pl-3">
                         <span className="flex items-center gap-3">
-                          <button
-                            type="button"
+                          <Button
+                            variant="secondary"
+                            size="icon"
                             aria-label={`View seat for ${seat.full_name}`}
+                            title={`View seat for ${seat.full_name}`}
                             onClick={() => onEditSeat(seat)}
-                            className="inline-flex size-10 shrink-0 items-center justify-center rounded-card bg-surface-elevated transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                            className="shrink-0 bg-surface-elevated"
                           >
                             <Image
                               src="/company-admin/seats/edit.svg"
@@ -293,11 +298,12 @@ export function SeatListTable({
                               height={18}
                               aria-hidden
                             />
-                          </button>
+                          </Button>
 
                           {canRemove ? (
-                            <button
-                              type="button"
+                            <Button
+                              variant="destructive"
+                              size="icon"
                               aria-label={`Remove seat for ${seat.full_name}`}
                               disabled={isRowPending || seatChangesLocked}
                               title={
@@ -306,10 +312,10 @@ export function SeatListTable({
                                   : undefined
                               }
                               onClick={() => onRemoveSeat(seat)}
-                              className="inline-flex size-10 shrink-0 items-center justify-center rounded-card bg-surface-elevated text-[#d92244] transition-colors hover:bg-[rgba(217,34,68,0.16)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d92244] disabled:cursor-not-allowed disabled:opacity-50"
+                              className="shrink-0"
                             >
                               <TrashIcon />
-                            </button>
+                            </Button>
                           ) : null}
 
                           {canToggleStatus ? (
@@ -348,14 +354,14 @@ export function SeatListTable({
         >
           <span>{nextPageErrorMessage}</span>
           {onRetryNextPage ? (
-            <button
-              type="button"
-              className="rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"
+            <Button
+              variant="table"
+              size="compact"
               disabled={isPageChangePending}
               onClick={onRetryNextPage}
             >
               Retry
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

@@ -7,6 +7,8 @@ import {
   type Permission,
 } from "@/features/auth";
 import { ApiRequestError } from "@/services/ApiRequestError";
+import { companyQuotaQueryKeys, companyQuotaSummarySchema } from "@/features/company-quota";
+import { canReadCompanyBillingQuota, selectBillingPageQuotaView } from "../utils/selectBillingPageQuota";
 
 import { billingQueryKeys } from "../api/billingQueryKeys";
 import { resolveHostedBillingUrl } from "../utils/assignHostedBillingUrl";
@@ -1287,6 +1289,7 @@ assert.deepEqual(unsubscribedOverview, {
   quota: null,
   can_use_paid_features: false,
   operation_lock: null,
+  purchase_restriction: null,
 });
 assert.deepEqual(emptySuperAdminOverview, {
   subscription: null,
@@ -1295,6 +1298,7 @@ assert.deepEqual(emptySuperAdminOverview, {
   quota: null,
   can_use_paid_features: true,
   operation_lock: null,
+  purchase_restriction: null,
 });
 assert.equal(
   subscriptionOverviewSchema.safeParse({
@@ -1399,6 +1403,10 @@ assert.equal(companyNameSchema.parse("  Acme  "), "Acme");
 assert.equal(companyNameSchema.parse("a".repeat(200)).length, 200);
 assert.equal(companyNameSchema.safeParse("").success, false);
 assert.equal(companyNameSchema.safeParse("a".repeat(201)).success, false);
+const blankCompanyName = companyNameSchema.safeParse(" ");
+if (!blankCompanyName.success) assert.equal(blankCompanyName.error.issues[0]?.message, "Enter a company name.");
+const longCompanyName = companyNameSchema.safeParse("a".repeat(201));
+if (!longCompanyName.success) assert.equal(longCompanyName.error.issues[0]?.message, "Use 200 characters or fewer for the company name.");
 
 assert.deepEqual(
   upgradeRequestSchema.parse({ company_name: "  Example Pharma  " }),
@@ -1667,6 +1675,68 @@ assert.equal(isBillingOwner(enterprisePaidOverview, companySeatMe), false);
 assert.equal(isBillingOwner(enterprisePaidOverview, personalMe), false);
 assert.equal(isBillingOwner(unsubscribedOverview, personalMe), false);
 assert.equal(isBillingOwner(emptySuperAdminOverview, superAdminMe), false);
+
+const purchaseRestriction = {
+  reason: "subscription_purchase_suspended",
+  restricted_at: "2026-10-16T14:30:00Z",
+  paid_access_ends_at: null,
+};
+for (const [overview, me] of [
+  [standardPaidOverview, personalMe],
+  [enterprisePaidOverview, companyAdminMe],
+] as const) {
+  for (const paidAccessEndsAt of [null, overview.subscription?.current_period_end]) {
+    const restricted = parseOverview({
+      ...overview,
+      purchase_restriction: {
+        ...purchaseRestriction,
+        paid_access_ends_at: paidAccessEndsAt,
+      },
+    });
+    assert.equal(restricted.purchase_restriction?.paid_access_ends_at, paidAccessEndsAt);
+    assert.deepEqual(selectBillingOwnerCapabilities(restricted, me), {
+      isOwner: true,
+      canOpenPortal: false,
+      canUpgradeToEnterprise: false,
+      requiresPortalBeforeUpgrade: false,
+      canDowngradeToStandard: false,
+      canRequestCustom: false,
+      canScheduleEnterpriseDowngrade: false,
+      canCancelEnterpriseDowngrade: false,
+    });
+    assert.equal(hasPaidAccess(restricted, me), true);
+    assert.equal(canUsePaidFeature(restricted, "report_generation", me), true);
+    assert.equal(
+      selectBillingPlanCards(restricted, selectBillingOwnerCapabilities(restricted, me))
+        .every((plan) => plan.disabled && plan.action === "none"),
+      true,
+    );
+    const restored = parseOverview({ ...restricted, purchase_restriction: null });
+    assert.deepEqual(
+      selectBillingOwnerCapabilities(restored, me),
+      selectBillingOwnerCapabilities(overview, me),
+    );
+  }
+}
+const restrictedWithoutSubscription = parseOverview({
+  purchase_restriction: purchaseRestriction,
+});
+assert.equal(
+  selectBillingPlanCards(
+    restrictedWithoutSubscription,
+    selectBillingOwnerCapabilities(restrictedWithoutSubscription, personalMe),
+  ).every((plan) => plan.disabled && plan.action === "none"),
+  true,
+);
+assert.equal(hasPaidAccess(restrictedWithoutSubscription, personalMe), false);
+assert.equal(subscriptionOverviewSchema.safeParse({
+  ...unsubscribedOverview,
+  purchase_restriction: { ...purchaseRestriction, reason: "unknown_restriction" },
+}).success, false);
+assert.equal(subscriptionOverviewSchema.safeParse({
+  ...unsubscribedOverview,
+  purchase_restriction: { ...purchaseRestriction, restricted_at: "invalid-date" },
+}).success, false);
 
 assert.deepEqual(selectBillingOwnerCapabilities(standardPaidOverview, personalMe), {
   isOwner: true,
@@ -1979,6 +2049,22 @@ const classifiedOwnerRequired = classifyBillingError(
 assert.equal(classifiedOwnerRequired.hideOwnerControls, true);
 assert.equal(classifiedOwnerRequired.retryable, false);
 
+const classifiedPurchaseSuspended = classifyBillingError(
+  billingError({
+    status: 403,
+    code: "subscription_purchase_suspended",
+    message: "Subscription changes are currently unavailable for this account.",
+  }),
+);
+assert.equal(
+  classifiedPurchaseSuspended.message,
+  "Subscription purchases and billing changes were suspended by a platform administrator. Contact support for assistance.",
+);
+assert.equal(classifiedPurchaseSuspended.hideOwnerControls, true);
+assert.equal(classifiedPurchaseSuspended.reloadOverview, true);
+assert.equal(classifiedPurchaseSuspended.retryable, false);
+assert.equal(classifiedPurchaseSuspended.destination, null);
+
 const classifiedUnsupportedChange = classifyBillingError(
   billingError({
     status: 409,
@@ -1992,10 +2078,10 @@ const classifiedCancellationPending = classifyBillingError(
   billingError({
     status: 409,
     code: "subscription_cancellation_pending",
-    message: "Resume this subscription in the billing portal before upgrading.",
+    message: "Resume this subscription before upgrading.",
   }),
 );
-assert.equal(classifiedCancellationPending.openPortal, true);
+assert.equal(classifiedCancellationPending.openPortal, false);
 assert.equal(classifiedCancellationPending.reloadOverview, true);
 
 const classifiedChangePending = classifyBillingError(
@@ -2437,3 +2523,114 @@ assert.deepEqual(billingQueryKeys.cancelDowngrade(), [
   "mutation",
   "cancel-downgrade",
 ]);
+
+// A company subscription overview can contain the signed-in member's allocation.
+const allocatedEnterpriseOverview = parseOverview({
+  ...enterprisePaidOverview,
+  quota: {
+    ...enterprisePaidOverview.quota,
+    quota_total: 80,
+    quota_used: 6,
+    quota_remaining: 74,
+  },
+});
+const companyPool = companyQuotaSummarySchema.parse({
+  company_id: "company-1",
+  subscription_id: allocatedEnterpriseOverview.subscription!.id,
+  quota_period_id: "period-1",
+  feature: "report_generation",
+  status: "active",
+  period_start: allocatedEnterpriseOverview.subscription!.current_period_start,
+  period_end: allocatedEnterpriseOverview.subscription!.current_period_end,
+  quota_total: 100,
+  quota_allocated: 100,
+  quota_unallocated: 0,
+  quota_used: 9,
+  quota_remaining: 91,
+  redistribution: null,
+});
+const loadedCompanyQuota = { data: companyPool, isPending: false, errorMessage: null };
+
+assert.equal(canReadCompanyBillingQuota(allocatedEnterpriseOverview, companyAdminMe), true);
+assert.equal(canReadCompanyBillingQuota(allocatedEnterpriseOverview, companySeatMe), false);
+assert.equal(canReadCompanyBillingQuota(standardPaidOverview, personalMe), false);
+assert.equal(canReadCompanyBillingQuota(allocatedEnterpriseOverview, superAdminMe), false);
+assert.equal(canReadCompanyBillingQuota(undefined, companyAdminMe), false);
+assert.deepEqual(
+  selectBillingPageQuotaView(allocatedEnterpriseOverview, companyAdminMe, loadedCompanyQuota),
+  {
+    kind: "known",
+    quota: {
+      quota_total: 100,
+      quota_used: 9,
+      quota_remaining: 91,
+      period_start: companyPool.period_start,
+      period_end: companyPool.period_end,
+    },
+  },
+);
+assert.deepEqual(
+  selectBillingPageQuotaView(standardPaidOverview, personalMe, loadedCompanyQuota),
+  { kind: "known", quota: standardPaidOverview.quota },
+);
+assert.deepEqual(
+  selectBillingPageQuotaView(allocatedEnterpriseOverview, superAdminMe, loadedCompanyQuota),
+  { kind: "unlimited" },
+);
+assert.deepEqual(
+  selectBillingPageQuotaView(allocatedEnterpriseOverview, companySeatMe, loadedCompanyQuota),
+  { kind: "unavailable" },
+);
+assert.deepEqual(
+  selectBillingPageQuotaView(allocatedEnterpriseOverview, companyAdminMe, {
+    isPending: true,
+    errorMessage: null,
+  }),
+  { kind: "loading" },
+);
+assert.deepEqual(
+  selectBillingPageQuotaView(allocatedEnterpriseOverview, companyAdminMe, {
+    ...loadedCompanyQuota,
+    errorMessage: "Unable to load company quota. Please try again.",
+  }),
+  { kind: "error", message: "Unable to load company quota. Please try again." },
+);
+assert.deepEqual(
+  selectBillingPageQuotaView(allocatedEnterpriseOverview, companyAdminMe, {
+    isPending: false,
+    errorMessage: null,
+  }),
+  { kind: "unavailable" },
+);
+for (const mismatchedPool of [
+  { ...companyPool, company_id: "company-2" },
+  { ...companyPool, subscription_id: "subscription-other" },
+  { ...companyPool, period_end: "2026-11-10T10:00:00Z" },
+]) {
+  assert.deepEqual(
+    selectBillingPageQuotaView(allocatedEnterpriseOverview, companyAdminMe, {
+      ...loadedCompanyQuota,
+      data: mismatchedPool,
+    }),
+    { kind: "unavailable" },
+  );
+}
+const emptyPool = {
+  ...companyPool,
+  quota_total: 0,
+  quota_allocated: 0,
+  quota_used: 0,
+  quota_remaining: 0,
+};
+const emptyPoolView = selectBillingPageQuotaView(allocatedEnterpriseOverview, companyAdminMe, {
+  ...loadedCompanyQuota,
+  data: emptyPool,
+});
+assert.equal(emptyPoolView.kind, "known");
+if (emptyPoolView.kind === "known") {
+  assert.equal(emptyPoolView.quota.quota_total, 0);
+  assert.equal(emptyPoolView.quota.quota_remaining, 0);
+}
+assert.notDeepEqual(companyQuotaQueryKeys.company("user-1", "company-1"), companyQuotaQueryKeys.company("user-2", "company-1"));
+assert.notDeepEqual(companyQuotaQueryKeys.company("user-1", "company-1"), companyQuotaQueryKeys.company("user-1", "company-2"));
+assert.notDeepEqual(companyQuotaQueryKeys.own("user-1", "company-1", "member-1"), companyQuotaQueryKeys.own("user-1", "company-1", "member-2"));

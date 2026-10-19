@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useIsMutating } from "@tanstack/react-query";
+import { billingQueryKeys } from "../api/billingQueryKeys";
 
 import { Button, Card } from "@/components/ui";
 import {
@@ -11,6 +13,7 @@ import {
   getAuthUserInstitutionName,
   useCurrentUserQuery,
 } from "@/features/auth";
+import { classifyQuotaQueryError, useCompanyQuota } from "@/features/company-quota";
 
 import {
   useCancelEnterpriseDowngradeMutation,
@@ -30,9 +33,9 @@ import { formatPlanName } from "../utils/formatBilling";
 import {
   hasScheduledEnterpriseDowngrade,
   selectBillingOwnerCapabilities,
-  selectBillingQuotaView,
   type BillingOwnerCapabilities,
 } from "../utils/selectBillingCapabilities";
+import { canReadCompanyBillingQuota, selectBillingPageQuotaView } from "../utils/selectBillingPageQuota";
 import {
   getBillingOverviewPollInterval,
   getHostedInvoiceUrl,
@@ -56,6 +59,7 @@ import { OperationLockBanner } from "./OperationLockBanner";
 import { PaymentInformationCard } from "./PaymentInformationCard";
 import { RecentInvoicesTable } from "./RecentInvoicesTable";
 import { ScheduledDowngradeCard } from "./ScheduledDowngradeCard";
+import { SubscriptionPurchaseRestrictionNotice } from "./SubscriptionPurchaseRestrictionNotice";
 
 const ALERT_DESTINATION_LABELS: Partial<
   Record<ClassifiedBillingError["kind"], string>
@@ -102,6 +106,7 @@ function hiddenOwnerCapabilities(
 }
 
 export function BillingShell() {
+  const billingMutationCount = useIsMutating({ mutationKey: billingQueryKeys.mutations() });
   const router = useRouter();
   const pathname = usePathname();
   const { data: me } = useCurrentUserQuery();
@@ -120,6 +125,11 @@ export function BillingShell() {
     null,
   );
   const overview = overviewQuery.data;
+  const canReadCompanyQuota = canReadCompanyBillingQuota(overview, me);
+  const companyQuotaQuery = useCompanyQuota({
+    enabled: canReadCompanyQuota,
+    refetchOnMount: "always",
+  });
   const overviewClassified = overviewQuery.error
     ? classifyBillingError(overviewQuery.error)
     : null;
@@ -131,6 +141,8 @@ export function BillingShell() {
     overviewClassified?.kind === "invalid_session" ||
     actionError?.kind === "invalid_session";
   const hideOwnerControls = Boolean(classifiedAlert?.hideOwnerControls);
+  const purchasesSuspended = Boolean(overview?.purchase_restriction) ||
+    classifiedAlert?.kind === "subscription_purchase_suspended";
 
   useEffect(() => {
     if (hasInvalidSession) {
@@ -220,7 +232,7 @@ export function BillingShell() {
           {overviewClassified?.retryable ? (
             <Button
               type="button"
-              className="h-12 w-fit text-label"
+              size="table" className="w-fit text-label"
               onClick={() => {
                 void overviewQuery.refetch();
               }}
@@ -236,8 +248,14 @@ export function BillingShell() {
   }
 
   const settingsKind = selectBillingSettingsKind(overview, me);
-  const quotaView = selectBillingQuotaView(overview, me);
-  const ownerCapabilities = hideOwnerControls
+  const quotaView = selectBillingPageQuotaView(overview, me, {
+    data: companyQuotaQuery.data,
+    isPending: companyQuotaQuery.isPending,
+    errorMessage: canReadCompanyQuota && companyQuotaQuery.isError
+      ? classifyQuotaQueryError(companyQuotaQuery.error, "company")
+      : null,
+  });
+  const ownerCapabilities = hideOwnerControls && !purchasesSuspended
     ? hiddenOwnerCapabilities(selectBillingOwnerCapabilities(overview, me))
     : selectBillingOwnerCapabilities(overview, me);
   const checkoutUrl = getResumableCheckoutUrl(overview.checkout);
@@ -246,6 +264,8 @@ export function BillingShell() {
     ? selectCheckoutActionState(overview.checkout)
     : null;
   const isBusy =
+    purchasesSuspended ||
+    billingMutationCount > 0 ||
     portalMutation.isPending ||
     upgradeMutation.isPending ||
     downgradeMutation.isPending ||
@@ -253,6 +273,7 @@ export function BillingShell() {
   const scheduledDowngrade = hasScheduledEnterpriseDowngrade(overview);
   const plans = selectBillingPlanCards(overview, ownerCapabilities, isBusy);
   const showPlanComparison =
+    !purchasesSuspended &&
     !hideOwnerControls &&
     (settingsKind === "picker" ||
       (settingsKind === "subscription" && ownerCapabilities.isOwner));
@@ -308,15 +329,34 @@ export function BillingShell() {
 
   return (
     <BillingPageFrame>
-      <OperationLockBanner className="mt-8 max-w-[1488px]" />
-      {showAlert && !downgradeDialogOpen ? (
+      {purchasesSuspended ? (
+        <div className="mt-8 flex max-w-[1488px] flex-col gap-3">
+          <SubscriptionPurchaseRestrictionNotice restriction={overview.purchase_restriction} />
+          <Button
+            type="button"
+            variant="table"
+            size="compact"
+            className="w-fit"
+            disabled={overviewQuery.isFetching}
+            onClick={() => {
+              setActionError(null);
+              void overviewQuery.refetch();
+            }}
+          >
+            {overviewQuery.isFetching ? "Refreshing…" : "Refresh status"}
+          </Button>
+        </div>
+      ) : null}
+      <OperationLockBanner className="mt-8 max-w-[1488px]" showManagePayment={!purchasesSuspended} />
+      {showAlert && classifiedAlert?.kind !== "subscription_purchase_suspended" &&
+      (!downgradeDialogOpen || purchasesSuspended) ? (
         <div className="mt-12 flex flex-col gap-4">
           <BillingFlowAlert classified={classifiedAlert} />
           <BillingAlertDestination classified={classifiedAlert} />
           {classifiedAlert?.retryable ? (
             <Button
               type="button"
-              className="h-12 w-fit text-label"
+              size="table" className="w-fit text-label"
               onClick={() => {
                 setActionError(null);
                 void overviewQuery.refetch();
@@ -331,7 +371,7 @@ export function BillingShell() {
       ) : null}
 
       {settingsKind === "super_admin" ? (
-        <Card className="mt-12 max-w-xl rounded-button p-6">
+        <Card className="mt-12 max-w-xl p-6">
           <p className="text-input font-medium text-white">
             A subscription is not required for this account.
           </p>
@@ -351,6 +391,10 @@ export function BillingShell() {
             subscription={overview.subscription}
             canUsePaidFeatures={overview.can_use_paid_features}
             quotaView={quotaView}
+            isQuotaFetching={companyQuotaQuery.isFetching}
+            onRetryQuota={canReadCompanyQuota ? () => {
+              void companyQuotaQuery.refetch();
+            } : undefined}
             capabilities={ownerCapabilities}
             disabled={isBusy}
             isPortalPending={portalMutation.isPending}
@@ -385,7 +429,7 @@ export function BillingShell() {
       {overview.plan_change &&
       !scheduledDowngrade &&
       overview.plan_change.status !== "cancelled" ? (
-        <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 rounded-button p-6">
+        <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 p-6">
           <h2 className="text-card-title font-medium text-white">
             Enterprise upgrade pending
           </h2>
@@ -400,7 +444,7 @@ export function BillingShell() {
           <Button
             type="button"
             variant="secondary"
-            className="h-12 w-fit text-label"
+            size="table" className="w-fit text-label"
             onClick={() => {
               void overviewQuery.refetch();
             }}
@@ -412,7 +456,7 @@ export function BillingShell() {
       ) : null}
 
       {overview.checkout && settingsKind !== "subscription" ? (
-        <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 rounded-button p-6">
+        <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 p-6">
           <h2 className="text-card-title font-medium text-white">
             {checkoutAction === "creating"
               ? "Preparing checkout"
@@ -433,7 +477,7 @@ export function BillingShell() {
             <Button
               type="button"
               variant="secondary"
-              className="h-12 w-fit text-label"
+              size="table" className="w-fit text-label"
               onClick={() => {
                 void overviewQuery.refetch();
               }}
@@ -446,7 +490,7 @@ export function BillingShell() {
       ) : null}
 
       {overview.checkout && settingsKind === "subscription" && checkoutUrl ? (
-        <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 rounded-button p-6">
+        <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 p-6">
           <h2 className="text-card-title font-medium text-white">
             Open checkout
           </h2>
@@ -463,7 +507,7 @@ export function BillingShell() {
         </p>
       ) : null}
 
-      {settingsKind === "subscription" && upgradeFormOpen ? (
+      {settingsKind === "subscription" && upgradeFormOpen && !purchasesSuspended ? (
         <BillingOwnerActions
           capabilities={ownerCapabilities}
           institutionName={getAuthUserInstitutionName(me.user)}
@@ -485,7 +529,7 @@ export function BillingShell() {
         />
       ) : null}
 
-      {downgradeDialogOpen && overview.subscription ? (
+      {downgradeDialogOpen && !purchasesSuspended && overview.subscription ? (
         <EnterpriseDowngradeDialog
           subscription={overview.subscription}
           isPending={downgradeMutation.isPending}

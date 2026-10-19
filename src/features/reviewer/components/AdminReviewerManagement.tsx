@@ -1,12 +1,14 @@
 "use client";
 
-import { Button } from "@/components/ui";
+import { Button, RequestErrorState } from "@/components/ui";
+import { SuccessToast } from "@/components/ui/SuccessToast";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import {
   DashboardStatusFilter,
   type DashboardStatusFilterOption,
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
+import { formatDisplayCount, formatDisplayDate } from "@/lib/formatDisplay";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import {
@@ -19,25 +21,28 @@ import {
   useAdminReviewerInvitations,
   useAdminReviewers,
 } from "../hooks/useReviewerQueries";
-import type {
-  ReviewerInvitationStatus,
-  ReviewerStatus,
+import {
+  createReviewerInvitationRequestSchema,
+  type ReviewerInvitationStatus,
+  type ReviewerStatus,
+  type Reviewer,
 } from "../schemas/reviewerSchemas";
-import { classifyReviewerError } from "../utils/classifyReviewerError";
+import { classifyReviewerError, getReviewerRequestErrorMessage } from "../utils/classifyReviewerError";
 import { ReviewerAdminNavigation } from "./ReviewerAdminNavigation";
+import { ReviewerStatusDialog } from "./ReviewerStatusDialog";
 
 type ReviewerFilter = ReviewerStatus | "all";
 type InvitationFilter = ReviewerInvitationStatus | "all";
 
 const REVIEWER_OPTIONS = [
-  { value: "all", label: "All Reviewers" },
+  { value: "all", label: "All reviewers" },
   { value: "invited", label: "Invited" },
   { value: "active", label: "Active" },
   { value: "suspended", label: "Suspended" },
 ] as const satisfies readonly DashboardStatusFilterOption<ReviewerFilter>[];
 
 const INVITATION_OPTIONS = [
-  { value: "all", label: "All Invitations" },
+  { value: "all", label: "All invitations" },
   { value: "pending", label: "Pending" },
   { value: "accepted", label: "Accepted" },
   { value: "revoked", label: "Revoked" },
@@ -46,38 +51,42 @@ const INVITATION_OPTIONS = [
 
 const statusTone: Record<ReviewerStatus | ReviewerInvitationStatus, string> = {
   active: "bg-[rgba(16,185,129,0.12)] text-status-success",
-  invited: "bg-[rgba(0,101,248,0.12)] text-[#4b8fff]",
-  suspended: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+  invited: "bg-[rgba(0,101,248,0.12)] text-status-info",
+  suspended: "bg-[rgba(217,34,68,0.12)] text-status-danger",
   pending: "bg-[rgba(255,200,92,0.12)] text-status-running",
   accepted: "bg-[rgba(16,185,129,0.12)] text-status-success",
-  revoked: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+  revoked: "bg-[rgba(217,34,68,0.12)] text-status-danger",
   expired: "bg-white/8 text-text-muted",
 };
 
-const dateFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
-}
-
 function StatusPill({ status }: { status: ReviewerStatus | ReviewerInvitationStatus }) {
   return (
-    <span className={cn("inline-flex rounded-card px-3 py-2 text-input font-medium capitalize", statusTone[status])}>
+    <span className={cn("inline-flex rounded-field px-3 py-2 text-input font-medium capitalize", statusTone[status])}>
       {status.replaceAll("_", " ")}
     </span>
   );
+}
+
+function getEmailError(email: string): string | null {
+  if (!email.trim()) return "Enter the reviewer’s email address.";
+  return createReviewerInvitationRequestSchema.safeParse({ email }).success
+    ? null
+    : "Enter a valid email address, such as reviewer@example.com.";
 }
 
 export function AdminReviewerManagement() {
   const { authMe } = useAuthUser();
   const canManage = hasPermission(authMe, "admin:reviewers_manage");
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const invitationPendingRef = useRef(false);
+  const reviewerStatusPendingRef = useRef(false);
+  const [statusConfirmation, setStatusConfirmation] = useState<{
+    reviewer: Reviewer;
+    activate: boolean;
+    errorMessage: string | null;
+  } | null>(null);
   const [reviewerFilter, setReviewerFilter] = useState<ReviewerFilter>("all");
   const [invitationFilter, setInvitationFilter] =
     useState<InvitationFilter>("pending");
@@ -101,12 +110,14 @@ export function AdminReviewerManagement() {
   const resendInvitation = useResendReviewerInvitationMutation();
   const revokeInvitation = useRevokeReviewerInvitationMutation();
   const setReviewerStatus = useSetReviewerStatusMutation();
+  const inviteDisabled = !canManage || createInvitation.isPending ||
+    getEmailError(email) !== null || emailError !== null;
 
   const reviewers = reviewersQuery.data?.pages.flatMap((page) => page.items) ?? [];
   const invitations = invitationsQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
   const showError = (error: unknown) =>
-    setFeedback({ type: "error", message: classifyReviewerError(error).message });
+    setFeedback({ type: "error", message: getReviewerRequestErrorMessage(error, "We couldn’t complete this action. Try again.") });
 
   useEffect(
     () => () => {
@@ -119,16 +130,57 @@ export function AdminReviewerManagement() {
 
   const handleInvite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const normalizedEmail = email.trim();
-    if (!normalizedEmail) return;
+    if (!canManage || invitationPendingRef.current || createInvitation.isPending) return;
     setFeedback(null);
+    const validationError = getEmailError(email) ?? emailError;
+    setEmailError(validationError);
+    if (validationError) {
+      emailInputRef.current?.focus();
+      return;
+    }
+    invitationPendingRef.current = true;
     try {
-      await createInvitation.mutateAsync(normalizedEmail);
+      await createInvitation.mutateAsync(email.trim());
       setEmail("");
+      setEmailError(null);
       setInvitationFilter("pending");
       setFeedback({ type: "success", message: "Reviewer invitation sent." });
     } catch (error) {
-      showError(error);
+      const classified = classifyReviewerError(error);
+      if (["reviewer_recipient_ineligible", "reviewer_invitation_already_pending", "account_already_exists"].includes(classified.code)) {
+        setEmailError(classified.message);
+        emailInputRef.current?.focus();
+      } else if (classified.fieldErrors.email) {
+        setEmailError("Check this email address and try again.");
+        emailInputRef.current?.focus();
+      } else {
+        setFeedback({ type: "error", message: getReviewerRequestErrorMessage(error, "We couldn’t send this invitation. Check the invitation list before trying again.") });
+      }
+    } finally {
+      invitationPendingRef.current = false;
+    }
+  };
+
+  const handleReviewerStatusConfirm = async () => {
+    if (!canManage || !statusConfirmation || reviewerStatusPendingRef.current) return;
+    reviewerStatusPendingRef.current = true;
+    const { reviewer, activate } = statusConfirmation;
+    setStatusConfirmation({ ...statusConfirmation, errorMessage: null });
+    try {
+      await setReviewerStatus.mutateAsync({ reviewerId: reviewer.id, active: activate });
+      setStatusConfirmation(null);
+      setFeedback({
+        type: "success",
+        message: `${reviewer.email} ${activate ? "reactivated" : "suspended"}.`,
+      });
+    } catch (error) {
+      setStatusConfirmation({
+        reviewer,
+        activate,
+        errorMessage: getReviewerRequestErrorMessage(error, "We couldn’t update this reviewer. Try again."),
+      });
+    } finally {
+      reviewerStatusPendingRef.current = false;
     }
   };
 
@@ -139,7 +191,7 @@ export function AdminReviewerManagement() {
       setFeedback({ type: "success", message: "Invitation resent." });
     } catch (error) {
       const classified = classifyReviewerError(error);
-      setFeedback({ type: "error", message: classified.message });
+      setFeedback({ type: "error", message: getReviewerRequestErrorMessage(error, "We couldn’t resend this invitation. Check the invitation list before trying again.") });
       if (classified.code === "reviewer_invitation_resend_cooldown") {
         const seconds = Math.max(1, classified.retryAfterSeconds ?? 60);
         setResendCooldownIds((current) => new Set(current).add(invitationId));
@@ -168,66 +220,111 @@ export function AdminReviewerManagement() {
     <>
       <ReviewerAdminNavigation activeHref="/super-admin/reviewers" />
 
-      <form onSubmit={handleInvite} className="mt-8 flex flex-col gap-3 rounded-button border border-border-default bg-surface-default p-5 sm:flex-row sm:items-end">
-        <label className="flex min-w-0 flex-1 flex-col gap-2 text-label text-text-muted">
-          Reviewer email
-          <input
-            type="email"
-            required
-            value={email}
-            placeholder="reviewer@example.com"
-            onChange={(event) => setEmail(event.target.value)}
-            className="h-12 rounded-button border border-border-default bg-surface-subtle px-4 text-body-lg text-white outline-none focus:border-brand"
-          />
-        </label>
-        <Button type="submit" disabled={createInvitation.isPending}>
+      <form noValidate onSubmit={handleInvite} className="mt-8 flex flex-col gap-3 rounded-surface border border-border-default bg-surface-default p-5 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <label htmlFor="reviewer-invitation-email" className="flex flex-col gap-2 text-label text-text-muted">
+            Reviewer email
+            <input
+              ref={emailInputRef}
+              id="reviewer-invitation-email"
+              type="email"
+              required
+              autoComplete="email"
+              disabled={createInvitation.isPending}
+              aria-invalid={emailError ? true : undefined}
+              aria-describedby={emailError ? "reviewer-invitation-email-error" : undefined}
+              value={email}
+              placeholder="reviewer@example.com"
+              onBlur={() => {
+                if (!createInvitation.isPending) setEmailError(getEmailError(email));
+              }}
+              onChange={(event) => {
+                const nextEmail = event.target.value;
+                setEmail(nextEmail);
+                setFeedback(null);
+                if (emailError) setEmailError(getEmailError(nextEmail));
+              }}
+              className={cn(
+                "h-12 rounded-field border bg-surface-subtle px-4 text-label text-white outline-none placeholder:text-text-placeholder disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted",
+                emailError ? "border-red-400 focus:border-red-400" : "border-border-default focus:border-brand",
+              )}
+            />
+          </label>
+          {emailError ? (
+            <p id="reviewer-invitation-email-error" role="alert" className="mt-2 text-helper text-status-danger">{emailError}</p>
+          ) : null}
+        </div>
+        <Button type="submit" disabled={inviteDisabled} className="sm:mt-7 sm:self-start">
           {createInvitation.isPending ? "Sending..." : "Add Reviewer"}
         </Button>
       </form>
 
-      {feedback ? (
-        <p className={cn("mt-4 text-label", feedback.type === "error" ? "text-red-400" : "text-brand")} role={feedback.type === "error" ? "alert" : "status"}>
+      {feedback?.type === "error" ? (
+        <p className="mt-4 text-label text-status-danger" role="alert">
           {feedback.message}
         </p>
       ) : null}
+      <SuccessToast
+        message={feedback?.type === "success" ? feedback.message : null}
+        onDismiss={() => setFeedback(null)}
+      />
+      {statusConfirmation ? (
+        <ReviewerStatusDialog
+          reviewer={statusConfirmation.reviewer}
+          activate={statusConfirmation.activate}
+          pending={setReviewerStatus.isPending}
+          errorMessage={statusConfirmation.errorMessage}
+          onCancel={() => {
+            if (!reviewerStatusPendingRef.current) setStatusConfirmation(null);
+          }}
+          onConfirm={() => void handleReviewerStatusConfirm()}
+        />
+      ) : null}
 
       <section className="mt-10" aria-labelledby="reviewers-title">
-        <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+        <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
           <header className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 id="reviewers-title" className="text-card-title font-medium text-white">Reviewers</h2>
+            <h2 id="reviewers-title" tabIndex={-1} className="text-card-title font-medium text-white">Reviewers</h2>
             <DashboardStatusFilter value={reviewerFilter} options={REVIEWER_OPTIONS} showSelectedLabel onChange={setReviewerFilter} />
           </header>
+          {reviewersQuery.isError ? (
+            <RequestErrorState
+              className="mx-6 my-4"
+              title={reviewers.length ? "Couldn’t refresh reviewers" : "Couldn’t load reviewers"}
+              message={getReviewerRequestErrorMessage(reviewersQuery.error, "Try loading the reviewer list again. Your filters have been kept.")}
+              onRetry={() => void reviewersQuery.refetch()}
+              retryPending={reviewersQuery.isFetching}
+            />
+          ) : null}
           <div className="overflow-x-auto">
-            <div className="grid min-w-[980px] grid-cols-[minmax(230px,1fr)_140px_140px_180px_180px] gap-6 bg-surface-subtle px-6 py-4 text-label font-medium text-text-step">
+            <div className="grid min-h-14 min-w-[980px] grid-cols-[minmax(230px,1fr)_140px_140px_180px_180px] items-center gap-6 bg-surface-subtle px-6 text-label font-medium text-text-muted">
               <span>Email</span><span>Status</span><span>Active work</span><span>Oldest due</span><span>Action</span>
             </div>
             {reviewersQuery.isPending ? (
               <TableMessage message="Loading reviewers..." />
-            ) : reviewersQuery.isError ? (
-              <TableMessage message={classifyReviewerError(reviewersQuery.error).message} error />
             ) : reviewers.length === 0 ? (
-              <TableMessage message="No reviewers match this filter." />
+              !reviewersQuery.isError ? <TableMessage message="No reviewers match this filter." /> : null
             ) : reviewers.map((reviewer) => (
-              <div key={reviewer.id} className="grid min-w-[980px] grid-cols-[minmax(230px,1fr)_140px_140px_180px_180px] items-center gap-6 border-t border-border-subtle px-6 py-4 text-label text-white">
+              <div key={reviewer.id} className="grid min-h-16 min-w-[980px] grid-cols-[minmax(230px,1fr)_140px_140px_180px_180px] items-center gap-6 border-t border-border-subtle px-6 py-3 text-label text-white">
                 <span className="truncate">{reviewer.email}</span>
                 <span><StatusPill status={reviewer.status} /></span>
-                <span>{reviewer.active_assignment_count}</span>
-                <span>{formatDate(reviewer.oldest_open_due_at)}</span>
+                <span className="tabular-nums">{formatDisplayCount(reviewer.active_assignment_count)}</span>
+                <span>{formatDisplayDate(reviewer.oldest_open_due_at)}</span>
                 <span>
                   {reviewer.status === "active" || reviewer.status === "suspended" ? (
-                    <button
+                    <Button
                       type="button"
+                      size="table"
+                      variant={reviewer.status === "active" ? "destructive" : "table"}
                       disabled={setReviewerStatus.isPending}
-                      className="font-medium text-brand hover:underline disabled:opacity-50"
                       onClick={() => {
                         const activate = reviewer.status === "suspended";
-                        if (!window.confirm(`${activate ? "Reactivate" : "Suspend"} ${reviewer.email}?`)) return;
                         setFeedback(null);
-                        void setReviewerStatus.mutateAsync({ reviewerId: reviewer.id, active: activate }).catch(showError);
+                        setStatusConfirmation({ reviewer, activate, errorMessage: null });
                       }}
                     >
                       {reviewer.status === "active" ? "Suspend" : "Reactivate"}
-                    </button>
+                    </Button>
                   ) : "Awaiting registration"}
                 </span>
               </div>
@@ -240,34 +337,41 @@ export function AdminReviewerManagement() {
       </section>
 
       <section className="mt-10" aria-labelledby="invitations-title">
-        <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+        <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
           <header className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 id="invitations-title" className="text-card-title font-medium text-white">Invitations</h2>
             <DashboardStatusFilter value={invitationFilter} options={INVITATION_OPTIONS} showSelectedLabel onChange={setInvitationFilter} />
           </header>
+          {invitationsQuery.isError ? (
+            <RequestErrorState
+              className="mx-6 my-4"
+              title={invitations.length ? "Couldn’t refresh invitations" : "Couldn’t load invitations"}
+              message={getReviewerRequestErrorMessage(invitationsQuery.error, "Try loading invitations again. Your email input and filters have been kept.")}
+              onRetry={() => void invitationsQuery.refetch()}
+              retryPending={invitationsQuery.isFetching}
+            />
+          ) : null}
           <div className="overflow-x-auto">
-            <div className="grid min-w-[920px] grid-cols-[minmax(240px,1fr)_140px_180px_240px] gap-6 bg-surface-subtle px-6 py-4 text-label font-medium text-text-step">
+            <div className="grid min-h-14 min-w-[920px] grid-cols-[minmax(240px,1fr)_140px_180px_240px] items-center gap-6 bg-surface-subtle px-6 text-label font-medium text-text-muted">
               <span>Email</span><span>Status</span><span>Expires</span><span>Actions</span>
             </div>
             {invitationsQuery.isPending ? (
               <TableMessage message="Loading invitations..." />
-            ) : invitationsQuery.isError ? (
-              <TableMessage message={classifyReviewerError(invitationsQuery.error).message} error />
             ) : invitations.length === 0 ? (
-              <TableMessage message="No invitations match this filter." />
+              !invitationsQuery.isError ? <TableMessage message="No invitations match this filter." /> : null
             ) : invitations.map((invitation) => (
-              <div key={invitation.id} className="grid min-w-[920px] grid-cols-[minmax(240px,1fr)_140px_180px_240px] items-center gap-6 border-t border-border-subtle px-6 py-4 text-label text-white">
+              <div key={invitation.id} className="grid min-h-16 min-w-[920px] grid-cols-[minmax(240px,1fr)_140px_180px_240px] items-center gap-6 border-t border-border-subtle px-6 py-3 text-label text-white">
                 <span className="truncate">{invitation.email}</span>
                 <span><StatusPill status={invitation.status} /></span>
-                <span>{formatDate(invitation.expires_at)}</span>
-                <span className="flex gap-4">
+                <span>{formatDisplayDate(invitation.expires_at)}</span>
+                <span className="flex gap-2">
                   {invitation.status === "pending" ? (
                     <>
-                      <button type="button" className="font-medium text-brand hover:underline" disabled={resendInvitation.isPending || resendCooldownIds.has(invitation.id)} onClick={() => void handleResend(invitation.id)}>{resendCooldownIds.has(invitation.id) ? "Wait to resend" : "Resend"}</button>
-                      <button type="button" className="font-medium text-red-400 hover:underline" disabled={revokeInvitation.isPending} onClick={() => {
+                      <Button type="button" size="table" variant="table" disabled={resendInvitation.isPending || resendCooldownIds.has(invitation.id)} onClick={() => void handleResend(invitation.id)}>{resendCooldownIds.has(invitation.id) ? "Wait to resend" : "Resend"}</Button>
+                      <Button type="button" size="table" variant="destructive" disabled={revokeInvitation.isPending} onClick={() => {
                         if (!window.confirm(`Revoke the invitation for ${invitation.email}?`)) return;
                         void revokeInvitation.mutateAsync(invitation.id).then(() => setFeedback({ type: "success", message: "Invitation revoked." })).catch(showError);
-                      }}>Revoke</button>
+                      }}>Revoke</Button>
                     </>
                   ) : "—"}
                 </span>

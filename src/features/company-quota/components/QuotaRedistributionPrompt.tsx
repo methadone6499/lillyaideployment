@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import { cn } from "@/lib/cn";
+import { formatDisplayCount } from "@/lib/formatDisplay";
 
 import { useCompanyQuota } from "../hooks/useCompanyQuota";
 import { useDismissQuotaRedistributionMutation } from "../hooks/useDismissQuotaRedistributionMutation";
@@ -51,7 +52,7 @@ export function QuotaRedistributionPrompt({
     <div
       role="status"
       className={cn(
-        "flex flex-col gap-3 rounded-card border border-brand-border bg-brand-bg p-4 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 rounded-surface border border-brand-border bg-brand-bg p-4 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
@@ -62,8 +63,9 @@ export function QuotaRedistributionPrompt({
             : "Your plan changed."}{" "}
           Redistribute report quota to your seat users.
         </p>
-        <p className="text-helper text-text-muted">
-          You hold {summary.quota_unallocated} of {summary.quota_total} reports
+        <p className="text-helper tabular-nums text-text-muted">
+          You hold {formatDisplayCount(summary.quota_unallocated)} of {formatDisplayCount(summary.quota_total)}{" "}
+          {summary.quota_total === 1 ? "report" : "reports"}
           for this period. Seat users can only generate reports after you
           assign quota to them.
         </p>
@@ -77,7 +79,7 @@ export function QuotaRedistributionPrompt({
         {assignQuotaHref ? (
           <Link
             href={assignQuotaHref}
-            className="inline-flex h-11 items-center justify-center rounded-button bg-brand px-4 text-label font-medium text-white transition-colors hover:bg-brand/90"
+            className="inline-flex h-[52px] items-center justify-center rounded-button bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669]"
           >
             Assign quota
           </Link>
@@ -85,7 +87,7 @@ export function QuotaRedistributionPrompt({
         <Button
           type="button"
           variant="secondary"
-          className="h-11 text-label"
+          size="small" className="text-label"
           disabled={dismissMutation.isPending}
           onClick={() => {
             void handleDismiss();

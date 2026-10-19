@@ -7,7 +7,7 @@ type IconProps = {
 export function ArrowNarrowRightSmallIcon({ className }: IconProps) {
   return (
     <svg
-      className={cn("size-[18px]", className)}
+      className={cn("size-5", className)}
       viewBox="0 0 20 20"
       fill="none"
       aria-hidden
@@ -26,7 +26,7 @@ export function ArrowNarrowRightSmallIcon({ className }: IconProps) {
 export function CheckIcon({ className }: IconProps) {
   return (
     <svg
-      className={cn("size-[18px] shrink-0 text-brand", className)}
+      className={cn("size-5 shrink-0 text-brand", className)}
       viewBox="0 0 18 18"
       fill="none"
       aria-hidden
@@ -53,7 +53,7 @@ export function BellIcon({ className }: IconProps) {
       <path
         d="M14 21H10M18 8C18 6.4087 17.3679 4.8826 16.2426 3.7574C15.1174 2.6321 13.5913 2 12 2C10.4087 2 8.8826 2.6321 7.7574 3.7574C6.6321 4.8826 6 6.4087 6 8C6 11.0902 5.2205 13.206 4.3497 14.6054C3.6151 15.7859 3.2479 16.3761 3.2613 16.5408C3.2762 16.7231 3.3149 16.7926 3.4618 16.9016C3.5945 17 4.1926 17 5.3889 17H18.6111C19.8074 17 20.4055 17 20.5382 16.9016C20.6851 16.7926 20.7238 16.7231 20.7387 16.5408C20.7521 16.3761 20.3849 15.7859 19.6503 14.6054C18.7795 13.206 18 11.0902 18 8Z"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -108,7 +108,7 @@ export function MailIcon({ className }: IconProps) {
 export function SocialXIcon({ className }: IconProps) {
   return (
     <svg
-      className={cn("size-6 text-white/32", className)}
+      className={cn("size-6", className)}
       viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden
@@ -121,7 +121,7 @@ export function SocialXIcon({ className }: IconProps) {
 export function SocialInstagramIcon({ className }: IconProps) {
   return (
     <svg
-      className={cn("size-7 text-white/32", className)}
+      className={cn("size-6", className)}
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden
@@ -144,7 +144,7 @@ export function SocialInstagramIcon({ className }: IconProps) {
 export function SocialLinkedInIcon({ className }: IconProps) {
   return (
     <svg
-      className={cn("size-7 text-white/32", className)}
+      className={cn("size-6", className)}
       viewBox="0 0 24 24"
       fill="currentColor"
       aria-hidden

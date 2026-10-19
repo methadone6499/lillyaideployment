@@ -32,7 +32,7 @@ const MAX_SEARCH_LENGTH = 100;
 type SuperAdminStatusFilterValue = GenerationStatus | ReviewStatus | "all";
 
 const SUPER_ADMIN_STATUS_FILTER_OPTIONS = [
-  { value: "all", label: "All Status" },
+  { value: "all", label: "All statuses" },
   { value: "completed", label: "Completed" },
   { value: "generating", label: "In Progress" },
   { value: "failed", label: "Failed" },
@@ -44,7 +44,7 @@ const SUPER_ADMIN_STATUS_FILTER_OPTIONS = [
 ] as const satisfies readonly DashboardStatusFilterOption<SuperAdminStatusFilterValue>[];
 
 const superAdminReportRowClass =
-  "grid min-w-[1280px] grid-cols-[minmax(200px,1.4fr)_minmax(140px,1fr)_minmax(140px,1fr)_minmax(180px,1.2fr)_minmax(140px,1fr)_minmax(148px,180px)_minmax(140px,180px)_110px] items-center gap-x-6 px-6";
+  "grid min-w-[1520px] grid-cols-[minmax(200px,1.4fr)_minmax(140px,1fr)_minmax(140px,1fr)_minmax(180px,1.2fr)_minmax(140px,1fr)_240px_minmax(140px,180px)_110px] items-center gap-x-6 px-6";
 
 function getListErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -196,7 +196,7 @@ export function SuperAdminReportsTable() {
 
   return (
     <section aria-label="Reports" aria-busy={reportsQuery.isFetching}>
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-card-title font-medium text-white">Reports</h2>
 
@@ -301,7 +301,7 @@ export function SuperAdminReportsTable() {
                     {report.reviewer?.full_name || "Unassigned"}
                   </span>
 
-                  <span className="text-label font-medium whitespace-nowrap text-white">
+                  <span className="min-w-0 break-words whitespace-normal text-label font-medium text-white">
                     {formatReportDateTime(report.updated_at)}
                   </span>
 
@@ -313,7 +313,7 @@ export function SuperAdminReportsTable() {
 
                   {canManageReportComments ? <button
                     type="button"
-                    className="relative z-10 justify-self-start rounded-button border border-border-default px-3 py-2 text-label font-medium text-white hover:bg-surface-elevated"
+                    className="relative z-10 inline-flex h-[52px] items-center justify-center justify-self-start rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     onClick={() => setCommentsReport(report)}
                     aria-label={`Comments for ${report.title}`}
                   >

@@ -33,7 +33,7 @@ export function DashboardPagination({
         type="button"
         aria-label="Previous page"
         disabled={currentPage <= 1 || isPageChangePending}
-        className="flex size-8 items-center justify-center rounded-card text-text-primary drop-shadow-[0_0_2.286px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex size-8 items-center justify-center rounded-field text-text-primary drop-shadow-[0_0_2.286px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-100"
         onClick={() => {
           void onPageChange(currentPage - 1);
         }}
@@ -53,9 +53,9 @@ export function DashboardPagination({
               aria-current={isActive ? "page" : undefined}
               disabled={isPageChangePending}
               className={cn(
-                "flex size-8 items-center justify-center rounded-card text-body-lg shadow-toggle-knob transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60",
+                "flex size-8 items-center justify-center rounded-field text-body-lg shadow-toggle-knob transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted disabled:opacity-100",
                 isActive
-                  ? "bg-brand font-semibold text-white"
+                  ? "bg-brand font-semibold text-brand-foreground"
                   : "bg-surface-subtle font-medium text-text-primary hover:bg-surface-default",
               )}
               onClick={() => {
@@ -72,7 +72,7 @@ export function DashboardPagination({
         type="button"
         aria-label="Next page"
         disabled={currentPage >= totalPages || isPageChangePending}
-        className="flex size-8 items-center justify-center rounded-card text-text-primary drop-shadow-[0_0_2.286px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex size-8 items-center justify-center rounded-field text-text-primary drop-shadow-[0_0_2.286px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-100"
         onClick={() => {
           void onPageChange(currentPage + 1);
         }}

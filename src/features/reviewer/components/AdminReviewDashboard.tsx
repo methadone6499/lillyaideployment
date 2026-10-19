@@ -1,6 +1,11 @@
 "use client";
 
+import { formatDisplayCount, formatDisplayDate as formatDate } from "@/lib/formatDisplay";
+
+
+
 import { hasPermission, useAuthUser } from "@/features/auth";
+import { Button, TextLink } from "@/components/ui";
 import {
   DashboardPagination,
   DashboardSearchInput,
@@ -34,53 +39,42 @@ type ReviewFilter =
   | "overdue";
 
 const STATUS_OPTIONS = [
-  { value: "all", label: "All Reviews" },
-  { value: "awaiting_assignment", label: "Awaiting Assignment" },
+  { value: "all", label: "All reviews" },
+  { value: "awaiting_assignment", label: "Awaiting assignment" },
   { value: "pending", label: "Pending" },
-  { value: "in_review", label: "In Review" },
+  { value: "in_review", label: "In review" },
   { value: "reviewed", label: "Reviewed" },
   { value: "overdue", label: "Overdue" },
 ] as const satisfies readonly DashboardStatusFilterOption<ReviewFilter>[];
 
 const statCards = [
-  { key: "awaiting_assignment", label: "Awaiting Assignment" },
-  { key: "assigned_reports", label: "Assigned" },
-  { key: "in_review", label: "In Review" },
-  { key: "completed_reports", label: "Completed" },
-  { key: "overdue_reports", label: "Overdue" },
-  { key: "active_reviewers", label: "Active Reviewers" },
+  { key: "awaiting_assignment", label: "Awaiting Assignment", className: "text-status-info" },
+  { key: "assigned_reports", label: "Assigned", className: "text-status-info" },
+  { key: "in_review", label: "In Review", className: "text-status-running" },
+  { key: "completed_reports", label: "Completed", className: "text-status-success" },
+  { key: "overdue_reports", label: "Overdue", className: "text-status-danger" },
+  { key: "active_reviewers", label: "Active Reviewers", className: "text-status-reviewed" },
 ] as const satisfies readonly {
   key: keyof AdminReviewDashboardStats;
   label: string;
+  className: string;
 }[];
 
 const statusStyle: Record<Exclude<ReportReviewStatus, "unassigned"> | "overdue", string> = {
   awaiting_assignment: "bg-white/8 text-text-muted",
-  pending: "bg-[rgba(0,101,248,0.12)] text-[#4b8fff]",
+  pending: "bg-[rgba(0,101,248,0.12)] text-status-info",
   in_review: "bg-[rgba(255,200,92,0.12)] text-status-running",
-  reviewed: "bg-[rgba(16,185,129,0.12)] text-status-success",
-  overdue: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+  reviewed: "bg-[rgba(165,147,224,0.12)] text-status-reviewed",
+  overdue: "bg-[rgba(217,34,68,0.12)] text-status-danger",
 };
-
-const dateFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
-}
 
 function ReviewStatusPill({ item }: { item: AdminReviewDashboardItem }) {
   return (
     <span className="flex flex-wrap gap-2">
-      <span className={cn("inline-flex rounded-card px-3 py-2 text-input font-medium capitalize", statusStyle[item.review_status])}>
+      <span className={cn("inline-flex rounded-field px-3 py-2 text-input font-medium capitalize", statusStyle[item.review_status])}>
         {item.review_status.replaceAll("_", " ")}
       </span>
-      {item.assignment?.is_overdue ? <span className={cn("inline-flex rounded-card px-3 py-2 text-input font-medium", statusStyle.overdue)}>Overdue</span> : null}
+      {item.assignment?.is_overdue ? <span className={cn("inline-flex rounded-field px-3 py-2 text-input font-medium", statusStyle.overdue)}>Overdue</span> : null}
     </span>
   );
 }
@@ -152,19 +146,19 @@ export function AdminReviewDashboardView() {
 
       <section aria-label="Review statistics" className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {statCards.map((card) => (
-          <div key={card.key} className="flex min-h-[130px] flex-col justify-between rounded-button border border-border-default bg-surface-default p-5">
-            <p className="text-label font-medium text-white">{card.label}</p>
-            <p className={cn("text-[42px] leading-none font-medium", card.key === "overdue_reports" ? "text-red-400" : "text-brand")}>
-              {stats ? String(stats[card.key]).padStart(2, "0") : "—"}
+          <div key={card.key} className="flex min-h-[150px] flex-col justify-between rounded-surface border border-border-default bg-surface-default p-6">
+            <p className="text-card-title font-medium text-white">{card.label}</p>
+            <p className={cn("text-kpi tabular-nums leading-none font-medium tracking-[-0.02em]", card.className)}>
+              {stats ? formatDisplayCount(stats[card.key]) : "—"}
             </p>
           </div>
         ))}
       </section>
 
-      {feedback ? <p className="mt-4 text-label text-red-400" role="alert">{feedback}</p> : null}
+      {feedback ? <p className="mt-4 text-label text-status-danger" role="alert">{feedback}</p> : null}
 
       <section className="mt-10" aria-labelledby="review-queue-title">
-        <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+        <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
           <header className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 id="review-queue-title" className="text-card-title font-medium text-white">Submitted reports</h2>
             <div className="flex w-full flex-col gap-3 sm:max-w-[700px] sm:flex-row">
@@ -185,7 +179,7 @@ export function AdminReviewDashboardView() {
           </header>
 
           <div className="overflow-x-auto">
-            <div className="grid min-w-[1320px] grid-cols-[minmax(250px,1fr)_190px_170px_160px_180px_280px] gap-6 bg-surface-subtle px-6 py-4 text-label font-medium text-text-step">
+            <div className="grid min-h-14 min-w-[1320px] grid-cols-[minmax(250px,1fr)_190px_170px_160px_180px_360px] items-center gap-6 bg-surface-subtle px-6 text-label font-medium text-text-muted">
               <span>Report</span><span>Reviewer</span><span>Submitted</span><span>Status</span><span>Due</span><span>Actions</span>
             </div>
             {rowsQuery.isPending ? (
@@ -198,7 +192,7 @@ export function AdminReviewDashboardView() {
               const assignmentId = item.assignment?.id;
               const canReassign = assignmentId && (item.review_status === "pending" || item.review_status === "in_review");
               return (
-                <div key={`${item.report.id}:${assignmentId ?? "waiting"}`} className="grid min-w-[1320px] grid-cols-[minmax(250px,1fr)_190px_170px_160px_180px_280px] items-center gap-6 border-t border-border-subtle px-6 py-4 text-label text-white">
+                <div key={`${item.report.id}:${assignmentId ?? "waiting"}`} className="grid min-h-16 min-w-[1320px] grid-cols-[minmax(250px,1fr)_190px_170px_160px_180px_360px] items-center gap-6 border-t border-border-subtle px-6 py-3 text-label text-white">
                   <span className="min-w-0"><span className="block truncate font-medium">{item.report.title}</span><span className="mt-1 block truncate text-helper text-text-muted">{item.report.drug_name}</span></span>
                   <span className="truncate">{item.reviewer?.full_name || item.reviewer?.email || "Unassigned"}</span>
                   <span>{formatDate(item.submitted_at)}</span>
@@ -206,15 +200,16 @@ export function AdminReviewDashboardView() {
                   <span>{formatDate(item.assignment?.due_at)}</span>
                   <span className="flex items-center gap-3">
                     {item.review_status === "awaiting_assignment" ? (
-                      <button
+                      <Button
                         type="button"
+                        size="table"
+                        variant="table"
                         disabled={retryMutation.isPending}
-                        className="font-medium text-brand hover:underline disabled:opacity-50"
                         onClick={() => {
                           setFeedback(null);
                           void retryMutation.mutateAsync(item.report.id).catch(handleActionError);
                         }}
-                      >Retry assignment</button>
+                      >Retry assignment</Button>
                     ) : null}
                     {canReassign ? (
                       <>
@@ -222,17 +217,18 @@ export function AdminReviewDashboardView() {
                           aria-label={`Reassign ${item.report.title}`}
                           value={selectedReviewerByAssignment[assignmentId as string] ?? ""}
                           onChange={(event) => setSelectedReviewerByAssignment((current) => ({ ...current, [assignmentId as string]: event.target.value }))}
-                          className="h-9 max-w-[130px] rounded-card border border-border-default bg-surface-subtle px-2 text-input text-white"
+                          className="h-12 max-w-[130px] rounded-field border border-border-default bg-surface-subtle px-2 text-input text-white"
                         >
                           <option value="">Automatic</option>
                           {reviewers.filter((reviewer) => reviewer.id !== item.reviewer?.id).map((reviewer) => (
                             <option key={reviewer.id} value={reviewer.id}>{reviewer.email}</option>
                           ))}
                         </select>
-                        <button
+                        <Button
                           type="button"
+                          size="table"
+                          variant="table"
                           disabled={reassignMutation.isPending}
-                          className="font-medium text-brand hover:underline disabled:opacity-50"
                           onClick={() => {
                             if (!window.confirm(`Reassign ${item.report.title}? The current assignment and notes will become read-only.`)) return;
                             setFeedback(null);
@@ -240,11 +236,11 @@ export function AdminReviewDashboardView() {
                             const reviewerId = selectedReviewerByAssignment[resolvedAssignmentId] || undefined;
                             void reassignMutation.mutateAsync({ assignmentId: resolvedAssignmentId, request: reviewerId ? { reviewer_id: reviewerId } : {} }).catch(handleActionError);
                           }}
-                        >Reassign</button>
+                        >Reassign</Button>
                       </>
                     ) : null}
                     {assignmentId ? (
-                      <button type="button" className="font-medium text-white/70 hover:text-white" onClick={() => setInspectedAssignmentId(assignmentId)}>Notes</button>
+                      <TextLink type="button" onClick={() => setInspectedAssignmentId(assignmentId)}>Notes</TextLink>
                     ) : null}
                   </span>
                 </div>
@@ -266,13 +262,13 @@ export function AdminReviewDashboardView() {
 }
 
 function QueueMessage({ message, error = false }: { message: string; error?: boolean }) {
-  return <p className={cn("px-6 py-10 text-center text-label text-text-muted", error && "text-red-400")} role={error ? "alert" : undefined}>{message}</p>;
+  return <p className={cn("px-6 py-10 text-center text-label text-text-muted", error && "text-status-danger")} role={error ? "alert" : undefined}>{message}</p>;
 }
 
 function AdminNotesPanel({ assignmentId, onClose }: { assignmentId: string; onClose: () => void }) {
   const notesQuery = useAdminReviewAssignmentNotes(assignmentId);
   return (
-    <section className="mt-8 rounded-button border border-border-default bg-surface-default p-6" aria-labelledby="admin-review-notes-title">
+    <section className="mt-8 rounded-surface border border-border-default bg-surface-default p-6" aria-labelledby="admin-review-notes-title">
       <div className="flex items-center justify-between gap-4">
         <h2 id="admin-review-notes-title" className="text-card-title font-medium text-white">Assignment notes</h2>
         <button type="button" className="text-label font-medium text-text-muted hover:text-white" onClick={onClose}>Close</button>
@@ -284,7 +280,7 @@ function AdminNotesPanel({ assignmentId, onClose }: { assignmentId: string; onCl
       ) : notesQuery.data?.items.some((note) => note.assignment_id === assignmentId) ? (
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {notesQuery.data.items.filter((note) => note.assignment_id === assignmentId).map((note) => (
-            <article key={note.id} className="rounded-card border border-border-default bg-surface-subtle p-4">
+            <article key={note.id} className="rounded-surface border border-border-default bg-surface-subtle p-4">
               <h3 className="text-label font-medium text-white">{note.section_heading}{note.section_occurrence > 1 ? ` (${note.section_occurrence})` : ""}</h3>
               <p className="mt-3 whitespace-pre-wrap text-label leading-6 text-text-body">{note.content}</p>
             </article>

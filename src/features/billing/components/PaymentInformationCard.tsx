@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-import { Card } from "@/components/ui";
+import { Button, Card, TextLink } from "@/components/ui";
 
 type PaymentInformationCardProps = {
   canManage: boolean;
@@ -18,14 +18,15 @@ export function PaymentInformationCard({
   onOpenPortal,
 }: PaymentInformationCardProps) {
   return (
-    <Card className="min-h-[247px] rounded-button p-6">
+    <Card className="min-h-[247px] p-6">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-card-title font-medium text-white">
           Payment Information
         </h2>
         {canManage ? (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="icon"
             aria-label={
               isPortalPending
                 ? "Opening billing portal"
@@ -33,7 +34,8 @@ export function PaymentInformationCard({
             }
             disabled={disabled}
             onClick={onOpenPortal}
-            className="flex size-10 shrink-0 items-center justify-center rounded-field bg-surface-elevated transition-colors hover:bg-white/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+            title="Edit payment information in Stripe"
+            className="shrink-0 bg-surface-elevated"
           >
             <Image
               src="/billing/edit.svg"
@@ -42,7 +44,7 @@ export function PaymentInformationCard({
               height={20}
               className="size-5 object-contain"
             />
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -64,14 +66,13 @@ export function PaymentInformationCard({
               : "Your company billing owner manages payment methods and billing details."}
           </p>
           {canManage ? (
-            <button
-              type="button"
+            <TextLink
               disabled={disabled}
               onClick={onOpenPortal}
-              className="mt-4 text-input font-medium text-brand underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-4"
             >
               {isPortalPending ? "Opening portal..." : "Manage payment details"}
-            </button>
+            </TextLink>
           ) : null}
         </div>
       </div>

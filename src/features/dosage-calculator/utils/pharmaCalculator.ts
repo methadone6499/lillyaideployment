@@ -1,3 +1,5 @@
+import { DosageCalculatorApiError } from "../api/dosageCalculatorFetch";
+import { classifyDosageCalculatorError } from "./classifyDosageCalculatorError";
 import type {
   BudgetImpactRequest,
   BudgetImpactResponse,
@@ -222,7 +224,7 @@ export function toDosingRequest(inputs: DosingInputs): DosingRequest {
     times_per_day: inputs.dosesPerDay,
     days_per_year: inputs.daysPerYear,
     dose_type: inputs.doseType,
-    patient_weight: inputs.patientWeight,
+    patient_weight: inputs.doseType === "weight_based" ? inputs.patientWeight : undefined,
     wastage_percent: inputs.wastagePercent,
   };
 }
@@ -482,10 +484,12 @@ export function toBudgetImpactAnalysis(
   };
 }
 
-export function getPharmaCalculatorErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
+export function getPharmaCalculatorErrorMessage(error: unknown, operation?: "label"): string {
+  if (error instanceof DosageCalculatorApiError && error.status === 404) {
+    return operation === "label"
+      ? "No label guidance was found. Check the drug name and indication, or enter dosing values manually."
+      : "This calculator request could not be found. Try the calculation again. If this continues, contact support.";
   }
-
-  return "The calculator could not complete this request. Check the inputs and try again.";
+  return classifyDosageCalculatorError(error)?.message ??
+    "The calculator could not complete this request. Try again.";
 }

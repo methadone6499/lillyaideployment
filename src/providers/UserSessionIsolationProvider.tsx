@@ -38,7 +38,7 @@ export function UserSessionIsolationProvider({
         prevStatus === "authenticated" && status === "unauthenticated";
 
       const becameAuthenticated =
-        prevStatus !== "authenticated" &&
+        (prevStatus !== "authenticated" || prevUserId === null) &&
         status === "authenticated" &&
         confirmedUserId !== null;
 

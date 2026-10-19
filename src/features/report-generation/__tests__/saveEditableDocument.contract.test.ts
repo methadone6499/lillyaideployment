@@ -117,7 +117,7 @@ assert.equal(
 );
 assert.equal(
   getSaveEditableDocumentFailureMessage(staleRevisionError),
-  "Document revision has changed; refresh and retry",
+  SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES.stale_revision,
 );
 
 const inactiveSectionError = createReportApiError(
@@ -136,7 +136,7 @@ assert.equal(
 );
 assert.equal(
   getSaveEditableDocumentFailureMessage(inactiveSectionError),
-  "Section is not in the current report generation",
+  SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES.inactive_section,
 );
 
 const duplicateClientOpError = createReportApiError(
@@ -155,7 +155,7 @@ assert.equal(
 );
 assert.equal(
   getSaveEditableDocumentFailureMessage(duplicateClientOpError),
-  "client_op_id already used",
+  SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES.duplicate_client_op_id,
 );
 
 const validationFailedError = createReportApiError(
@@ -174,7 +174,7 @@ assert.equal(
 );
 assert.equal(
   getSaveEditableDocumentFailureMessage(validationFailedError),
-  "Structural / overlay-unsafe block change",
+  SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES.validation_failed,
 );
 
 assert.equal(
@@ -198,7 +198,7 @@ assert.equal(
 );
 assert.equal(
   getSaveEditableDocumentFailureMessage(reportNotEditableError),
-  "Report is not completed",
+  SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES.report_not_editable,
 );
 
 const sectionNotReadyError = createReportApiError(
@@ -217,7 +217,7 @@ assert.equal(
 );
 assert.equal(
   getSaveEditableDocumentFailureMessage(sectionNotReadyError),
-  "Section is still generating",
+  SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES.section_not_ready,
 );
 assert.equal(shouldRetrySaveEditableDocument(), false);
 assert.equal(

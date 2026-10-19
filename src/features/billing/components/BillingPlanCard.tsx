@@ -22,15 +22,15 @@ export function BillingPlanCard({ plan, onAction }: BillingPlanCardProps) {
   return (
     <Card
       variant={plan.current ? "accent" : "default"}
-      className="flex min-h-[512px] min-w-0 flex-col rounded-button p-6"
+      className="flex min-h-[512px] min-w-0 flex-col p-6"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-label font-medium text-white">{plan.name}</h3>
+          <h3 className="text-card-title font-medium text-white">{plan.name}</h3>
           <p className="mt-4 text-helper text-text-muted">{plan.audience}</p>
         </div>
         {plan.current ? (
-          <span className="shrink-0 rounded-card bg-brand/12 px-2.5 py-2 text-helper font-medium leading-none text-brand">
+          <span className="shrink-0 rounded-field bg-brand/12 px-2.5 py-2 text-helper font-medium leading-none text-brand">
             Current
           </span>
         ) : null}
@@ -77,7 +77,7 @@ export function BillingPlanCard({ plan, onAction }: BillingPlanCardProps) {
           aria-describedby={plan.helper ? helperId : undefined}
           onClick={() => onAction(plan.action, plan.id)}
           className={cn(
-            "h-14 w-full text-label",
+            "w-full",
             plan.current && "border-white/8 bg-white/8",
           )}
         >

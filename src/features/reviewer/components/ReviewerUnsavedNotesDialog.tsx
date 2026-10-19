@@ -1,6 +1,6 @@
 "use client";
 
-import { CloseIcon } from "@/components/ui";
+import { Button, CloseIcon } from "@/components/ui";
 import { useEffect, useRef } from "react";
 
 const FOCUSABLE_SELECTOR = [
@@ -98,7 +98,7 @@ export function ReviewerUnsavedNotesDialog({
         aria-labelledby="reviewer-unsaved-notes-title"
         aria-describedby="reviewer-unsaved-notes-description"
         tabIndex={-1}
-        className="w-full max-w-[480px] overflow-hidden rounded-button border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white"
+        className="w-full max-w-[480px] overflow-hidden rounded-surface border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white"
       >
         <header className="flex h-[67px] items-center justify-between border-b border-border-default px-6">
           <h2
@@ -110,7 +110,7 @@ export function ReviewerUnsavedNotesDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex size-6 items-center justify-center transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className="inline-flex size-10 items-center justify-center rounded-field text-text-muted transition-colors hover:bg-surface-elevated hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             aria-label="Close confirmation"
           >
             <CloseIcon className="size-5" />
@@ -126,21 +126,19 @@ export function ReviewerUnsavedNotesDialog({
             report?
           </p>
           <footer className="mt-8 flex flex-wrap items-center justify-end gap-7">
-            <button
+            <Button
               ref={cancelRef}
-              type="button"
+              variant="secondary"
               onClick={onCancel}
-              className="inline-flex h-[42px] items-center text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               Continue reviewing
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="destructiveSolid"
               onClick={onConfirm}
-              className="inline-flex h-[42px] items-center rounded-button bg-brand px-[18px] text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               Discard and continue
-            </button>
+            </Button>
           </footer>
         </div>
       </div>

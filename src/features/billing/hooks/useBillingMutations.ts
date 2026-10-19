@@ -10,11 +10,13 @@ import {
   createSubscriptionCheckout,
   scheduleEnterpriseDowngrade,
   upgradeSubscription,
+  resumeSubscription,
 } from "../api/billingApi";
 import { billingQueryKeys } from "../api/billingQueryKeys";
 import type {
   CheckoutRequest,
   UpgradeRequest,
+  SubscriptionOverview,
 } from "../schemas/billingSchemas";
 import {
   invalidateBillingOverview,
@@ -24,6 +26,20 @@ import {
   getBillingRetryDelay,
   shouldRetryBillingMutation,
 } from "../utils/shouldRetryBillingQuery";
+
+export function useResumeSubscriptionMutation() {
+  const queryClient = useQueryClient();
+  const userId = useConfirmedUserId();
+  return useMutation({
+    mutationKey: billingQueryKeys.resume(), mutationFn: () => resumeSubscription(),
+    retry: shouldRetryBillingMutation, retryDelay: getBillingRetryDelay,
+    onSuccess: async (subscription) => {
+      if (userId) queryClient.setQueryData<SubscriptionOverview>(billingQueryKeys.overview(userId), (old) => old ? { ...old, subscription } : old);
+      await invalidateBillingOverview(queryClient, userId);
+    },
+    onError: (error) => recoverBillingMutationFailure(queryClient, userId, error),
+  });
+}
 
 export function useCreateCheckoutMutation() {
   const queryClient = useQueryClient();

@@ -26,6 +26,10 @@ export function isClosedSessionAuthError(error: unknown): boolean {
     return false;
   }
 
+  if (error.status === 403 && error.code === "company_access_disabled") {
+    return false;
+  }
+
   if (error.status === 401 || error.status === 403) {
     return true;
   }

@@ -1,6 +1,5 @@
-const reportCountFormatter = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 0,
-});
+import { formatDisplayCount } from "@/lib/formatDisplay";
+import { Button } from "@/components/ui";
 
 export type AdminReportLeaderboardItem = {
   id: string;
@@ -57,11 +56,11 @@ export function AdminReportLeaderboardCard({
     <article
       aria-labelledby={headingId}
       aria-busy={isLoading || isRefreshing}
-      className="flex min-h-[240px] min-w-0 flex-col rounded-button border border-border-default bg-surface-default p-6"
+      className="flex min-h-[240px] min-w-0 flex-col rounded-surface border border-border-default bg-surface-default p-6"
     >
       <h2
         id={headingId}
-        className="text-label font-medium tracking-[0.08em] text-white uppercase"
+        className="text-card-title font-medium text-white"
       >
         {title}
       </h2>
@@ -76,13 +75,14 @@ export function AdminReportLeaderboardCard({
             <p className="text-helper text-text-step">Request ID: {requestId}</p>
           ) : null}
           {onRetry ? (
-            <button
-              type="button"
-              className="self-start rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"
+            <Button
+              variant="table"
+              size="compact"
+              className="self-start"
               onClick={onRetry}
             >
               Try again
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
@@ -101,13 +101,13 @@ export function AdminReportLeaderboardCard({
             <p className="text-helper text-text-step">Request ID: {requestId}</p>
           ) : null}
           {onRetry ? (
-            <button
-              type="button"
-              className="rounded-button border border-border-default px-4 py-2 font-medium text-white transition-colors hover:bg-surface-elevated"
+            <Button
+              variant="table"
+              size="table"
               onClick={onRetry}
             >
               Try again
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : showLoading ? (
@@ -151,8 +151,10 @@ export function AdminReportLeaderboardCard({
                     ) : null}
                   </div>
                   <span className="shrink-0 text-label font-medium text-white tabular-nums">
-                    {reportCountFormatter.format(item.reportCount)}
-                    <span className="sr-only"> reports</span>
+                    {formatDisplayCount(item.reportCount)}
+                    <span className="sr-only">
+                      {item.reportCount === 1 ? " report" : " reports"}
+                    </span>
                   </span>
                 </div>
                 <div

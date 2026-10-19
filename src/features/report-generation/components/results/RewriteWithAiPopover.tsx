@@ -117,7 +117,7 @@ export function RewriteWithAiPopover({
       aria-modal="false"
       aria-labelledby="rewrite-with-ai-title"
       aria-busy={isRewriting || isLoadingPresets}
-      className="fixed z-[60] flex flex-col overflow-hidden rounded-button border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white shadow-2xl"
+      className="fixed z-[60] flex flex-col overflow-hidden rounded-surface border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white shadow-2xl"
       style={position}
     >
       <header className="flex h-[67px] shrink-0 items-center justify-between border-b border-border-default px-6">
@@ -137,7 +137,7 @@ export function RewriteWithAiPopover({
           type="button"
           onClick={onClose}
           disabled={isRewriting}
-          className="inline-flex size-6 items-center justify-center transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
+          className="inline-flex size-10 items-center justify-center rounded-field text-text-muted transition-colors hover:bg-surface-elevated hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
           aria-label="Close rewrite panel"
         >
           <CloseIcon className="size-5" />
@@ -156,7 +156,7 @@ export function RewriteWithAiPopover({
           disabled={isRewriting}
           placeholder="e.g. Make this more concise and HTA focused..."
           aria-label="Rewrite instruction"
-          className="h-24 w-full shrink-0 resize-none rounded-card border border-border-default bg-surface-default px-4 py-4 text-input text-white outline-none placeholder:text-white/36 focus:border-brand/60 disabled:opacity-60"
+          className="h-24 w-full shrink-0 resize-none rounded-card border border-border-default bg-surface-default px-4 py-4 text-input text-white outline-none transition-[border-color,box-shadow] placeholder:text-text-muted focus-visible:border-brand/60 focus-visible:ring-2 focus-visible:ring-brand/35 disabled:text-text-muted disabled:opacity-100"
         />
 
         {isLoadingPresets ? (
@@ -188,7 +188,7 @@ export function RewriteWithAiPopover({
                     setInstruction("");
                   }}
                   className={cn(
-                    "inline-flex h-8 items-center rounded-card border px-3 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50",
+                    "inline-flex h-8 items-center rounded-field border px-3 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted",
                     selected
                       ? "border-brand-chip-border bg-brand-bg text-brand"
                       : "border-border-default bg-surface-default text-white hover:bg-surface-elevated",
@@ -212,7 +212,7 @@ export function RewriteWithAiPopover({
             type="button"
             onClick={onClose}
             disabled={isRewriting}
-            className="inline-flex h-[42px] items-center text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
+            className="inline-flex h-[52px] items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
           >
             Cancel
           </button>
@@ -220,14 +220,14 @@ export function RewriteWithAiPopover({
             type="button"
             onClick={() => void onRewrite(instruction, selectedPreset)}
             disabled={isRewriting || !canSubmit}
-            className="inline-flex h-[42px] items-center gap-2 rounded-button bg-brand pl-3.5 pr-[18px] text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-[52px] items-center gap-2 rounded-button pr-5 pl-4 bg-brand text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted"
           >
             <Image
               src="/report-generation/editing/rewrite-sparkle-white.svg"
               alt=""
               width={20}
               height={20}
-              className="size-5"
+              className="size-5 brightness-0"
             />
             {isRewriting ? "Rewriting…" : "Rewrite"}
           </button>

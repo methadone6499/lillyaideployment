@@ -21,7 +21,7 @@ export function DashboardSearchInput({
   return (
     <label className={cn("relative block min-w-0 w-full sm:flex-1", className)}>
       <span className="sr-only">{label}</span>
-      <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-white/28">
+      <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-text-muted">
         <SearchIcon />
       </span>
       <input
@@ -30,7 +30,7 @@ export function DashboardSearchInput({
         maxLength={maxLength}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="h-14 w-full rounded-button bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none placeholder:text-white/28 focus:ring-1 focus:ring-border-default"
+        className="h-14 w-full rounded-surface bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none transition-[box-shadow] placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-brand/35"
       />
     </label>
   );

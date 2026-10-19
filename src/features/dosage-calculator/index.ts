@@ -18,6 +18,7 @@ export {
   type StandaloneStructuredCostAnalysis,
 } from "./schemas/dosageCalculatorSchemas";
 export { clearDosageCalculatorSession } from "./utils/clearDosageCalculatorSession";
+export { getCalculatorValidationMessage } from "./utils/calculatorValidation";
 export {
   EMPTY_STRUCTURED_COST_ANALYSIS_FORM,
   mapStructuredCostAnalysisFormToRequest,

@@ -29,6 +29,13 @@ type PlatformProxyRule = {
 const PARAM_SEGMENT_PATTERN = /^[A-Za-z0-9._~-]+$/;
 
 const PLATFORM_PROXY_ALLOWLIST = [
+  { prefix: "admin", pattern: ["subscriptions", "summary"], methods: ["GET"] },
+  { prefix: "admin", pattern: ["subscriptions"], methods: ["GET"] },
+  { prefix: "admin", pattern: ["subscriptions", ":subscription_id"], methods: ["GET"] },
+  { prefix: "admin", pattern: ["users", ":user_id", "subscription-suspend"], methods: ["POST"] },
+  { prefix: "admin", pattern: ["users", ":user_id", "subscription-unsuspend"], methods: ["POST"] },
+  { prefix: "subscriptions", pattern: ["resume"], methods: ["POST"] },
+  { prefix: "companies/me", pattern: ["membership"], methods: ["DELETE"] },
   {
     prefix: "subscriptions",
     pattern: ["me"],

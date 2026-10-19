@@ -16,7 +16,7 @@ export function ReviewerAdminNavigation({ activeHref }: { activeHref: string }) 
           href={link.href}
           aria-current={link.href === activeHref ? "page" : undefined}
           className={cn(
-            "rounded-button border px-4 py-2 text-label font-medium transition-colors",
+            "rounded-field border px-4 py-2 text-label font-medium transition-colors",
             link.href === activeHref
               ? "border-brand bg-brand-bg text-white"
               : "border-border-default bg-surface-default text-text-body hover:bg-surface-elevated",

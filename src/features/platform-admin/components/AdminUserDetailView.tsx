@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Button } from "@/components/ui";
 import { hasPermission, useAuthUser } from "@/features/auth";
 import { cn } from "@/lib/cn";
 
@@ -26,6 +27,7 @@ import {
 } from "../utils/adminManagementDisplay";
 import { AdminRequestId } from "./AdminRequestId";
 import { AdminUserStatusDialog } from "./AdminUserStatusDialog";
+import { SubscriptionPurchaseControls } from "./SubscriptionPurchaseControls";
 
 type AdminUserDetailViewProps = {
   userId: string;
@@ -38,7 +40,7 @@ type DetailItemProps = {
 
 function DetailItem({ label, value }: DetailItemProps) {
   return (
-    <div className="rounded-card bg-surface-subtle p-4">
+    <div className="rounded-surface bg-surface-subtle p-4">
       <dt className="text-helper text-text-muted">{label}</dt>
       <dd className="mt-1 break-words text-label font-medium text-white">{value}</dd>
     </div>
@@ -76,11 +78,11 @@ export function AdminUserDetailView({ userId }: AdminUserDetailViewProps) {
 
   if (query.isError || !query.data) {
     return (
-      <div role="alert" className="mt-10 rounded-button border border-border-default bg-surface-default p-8 text-label text-text-muted">
+      <div role="alert" className="mt-10 rounded-surface border border-border-default bg-surface-default p-8 text-label text-text-muted">
         <p>{queryError?.message ?? "Unable to load this user."}</p>
         <AdminRequestId requestId={queryError?.requestId} />
         {queryError?.kind !== "not_found" ? (
-          <button type="button" onClick={() => void query.refetch()} className="mt-4 rounded-button border border-border-default px-4 py-2 text-white">Try again</button>
+          <Button variant="table" size="table" className="mt-4" onClick={() => void query.refetch()}>Try again</Button>
         ) : null}
       </div>
     );
@@ -118,7 +120,7 @@ export function AdminUserDetailView({ userId }: AdminUserDetailViewProps) {
 
   return (
     <>
-      <section className="mt-10 overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <section className="mt-10 overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-5 border-b border-border-default px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-card-title font-medium text-white">{user.full_name}</h2>
@@ -129,14 +131,14 @@ export function AdminUserDetailView({ userId }: AdminUserDetailViewProps) {
               {USER_STATUS_LABELS[user.status]}
             </span>
             {showDisable ? (
-              <button type="button" onClick={() => setDialogAction("disable")} className="h-10 rounded-button bg-[#d92244] px-4 text-label font-medium text-white">
+              <Button variant="destructive" size="table" onClick={() => setDialogAction("disable")}>
                 Disable account
-              </button>
+              </Button>
             ) : null}
             {showEnable ? (
-              <button type="button" onClick={() => setDialogAction("enable")} className="h-10 rounded-button bg-brand px-4 text-label font-medium text-white">
+              <Button size="table" onClick={() => setDialogAction("enable")}>
                 Enable account
-              </button>
+              </Button>
             ) : null}
           </div>
         </div>
@@ -160,8 +162,9 @@ export function AdminUserDetailView({ userId }: AdminUserDetailViewProps) {
         </dl>
       </section>
 
-      <section className="mt-6 rounded-button border border-border-default bg-surface-default p-6">
+      <section className="mt-6 rounded-surface border border-border-default bg-surface-default p-6">
         <h2 className="text-card-title font-medium text-white">Access subscription</h2>
+        <SubscriptionPurchaseControls user={user} />
         {user.access_subscription ? (
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <DetailItem label="Subscription ID" value={user.access_subscription.id} />
@@ -172,7 +175,7 @@ export function AdminUserDetailView({ userId }: AdminUserDetailViewProps) {
           <p className="mt-4 text-label text-text-muted">No access subscription is attached to this account.</p>
         )}
 
-        <p className="mt-5 rounded-card border border-border-default bg-surface-subtle p-4 text-label text-text-muted">
+        <p className="mt-5 rounded-surface border border-border-default bg-surface-subtle p-4 text-label text-text-muted">
           Account status and company membership are separate. Enabling or disabling this account does not change membership, seats, quota, reports, company status, or billing.
         </p>
 

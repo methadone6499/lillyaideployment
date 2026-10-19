@@ -6,6 +6,7 @@ import { BellIcon, CheckIcon } from "./LandingIcons";
 import { LandingSecondaryButton } from "./LandingCtaButton";
 import { LandingSection } from "./LandingSection";
 import { SectionHeading } from "./SectionHeading";
+import styles from "./LandingPage.module.css";
 
 function AddOnChecklist({ items }: { items: string[] }) {
   return (
@@ -13,7 +14,7 @@ function AddOnChecklist({ items }: { items: string[] }) {
       {items.map((item) => (
         <li key={item} className="flex items-start gap-2.5">
           <CheckIcon className="mt-0.5" />
-          <span className="text-input leading-6 text-white">{item}</span>
+          <span className="text-label leading-6 text-white">{item}</span>
         </li>
       ))}
     </ul>
@@ -22,31 +23,30 @@ function AddOnChecklist({ items }: { items: string[] }) {
 
 export function AddOnsSection() {
   return (
-    <LandingSection id="add-ons">
-      <div className="flex flex-col items-center gap-[clamp(40px,2.917vw,56px)]">
+    <LandingSection id="add-ons" className={styles.addOnsSection}>
+      <div className="flex flex-col items-center gap-12">
         <SectionHeading
-          title="Premium Add-on Services"
+          title="Premium add-on services"
           subtitle="Enhance HTA evaluation process with expert validation & support"
-          titleClassName="text-[clamp(32px,2.188vw,42px)] leading-[clamp(40px,3.75vw,72px)]"
         />
 
-        <div className="w-full max-w-[723px] rounded-button border border-border-default bg-surface-default p-6">
-          <div className="flex flex-col gap-10">
+        <div className="w-full max-w-[760px] rounded-[var(--landing-radius-card)] border border-border-default bg-surface-default p-6">
+          <div className="flex flex-col gap-8">
             <div className="flex items-center gap-4">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-[10px] bg-surface-elevated">
                 <BellIcon />
               </div>
-              <div className="flex flex-col gap-4">
-                <h3 className="text-label font-medium text-white">
-                  Expert HTA Review & Validation
+              <div className="flex min-w-0 flex-col gap-2">
+                <h3 className="text-card-title leading-7 font-medium text-white">
+                  Expert HTA review & validation
                 </h3>
-                <p className="text-helper text-text-muted">
+                <p className="text-helper leading-4 text-text-muted">
                   Professional oversight by certified HTA experts
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-24">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <AddOnChecklist items={addOnFeaturesLeft} />
               <AddOnChecklist items={addOnFeaturesRight} />
             </div>
@@ -55,16 +55,16 @@ export function AddOnsSection() {
           <div className="my-8 h-px w-full bg-border-default" />
 
           <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-            <div className="flex flex-col gap-4">
-              <p className="text-helper text-text-muted">
+            <div className="flex min-w-0 flex-col gap-2">
+              <p className="text-helper leading-4 text-text-muted">
                 Interested in volume discounts or human-in-the-loop options?
               </p>
-              <p className="text-label font-medium text-white">
+              <p className="text-label leading-6 font-medium text-white">
                 Contact us for custom contract pricing
               </p>
             </div>
-            <LandingSecondaryButton href="#contact" className="w-full sm:w-[259px]">
-              Contact Sales
+            <LandingSecondaryButton href="#contact" className="w-full sm:w-auto">
+              Contact sales
             </LandingSecondaryButton>
           </div>
         </div>

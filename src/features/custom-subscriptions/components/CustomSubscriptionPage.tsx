@@ -17,6 +17,7 @@ import {
   BillingPageFrame,
   canRequestCustomPlan,
   OperationLockBanner,
+  SubscriptionPurchaseRestrictionNotice,
   resolveHostedBillingUrl,
   useSubscriptionOverview,
 } from "@/features/billing";
@@ -33,6 +34,10 @@ import {
   isCustomPermissionDeniedError,
   type ClassifiedCustomSubscriptionError,
 } from "../utils/classifyCustomSubscriptionError";
+import {
+  formatReportCount,
+  formatSeatCount,
+} from "../utils/formatCustomSubscription";
 import {
   CUSTOM_OFFER_FAST_POLL_WINDOW_MS,
   isOutdatedOfferLink,
@@ -58,7 +63,7 @@ type CustomSubscriptionPageProps = {
 
 function MessageCard({ title, children }: { title: string; children: string }) {
   return (
-    <Card className="mt-8 flex max-w-2xl flex-col gap-3 rounded-button p-6">
+    <Card className="mt-8 flex max-w-2xl flex-col gap-3 p-6">
       <h2 className="text-card-title font-medium text-white">{title}</h2>
       <p className="text-label text-text-muted">{children}</p>
     </Card>
@@ -75,6 +80,7 @@ export function CustomSubscriptionPage({
   const { authMe } = offerStateQuery;
   const overviewQuery = useSubscriptionOverview({
     enabled: offerStateQuery.isCustomerContext,
+    staleTime: 0,
   });
   const cancelRequestMutation = useCancelCustomRequestMutation();
   const [isEditing, setIsEditing] = useState(false);
@@ -108,7 +114,11 @@ export function CustomSubscriptionPage({
   const queryError = offerStateQuery.error
     ? classifyCustomSubscriptionError(offerStateQuery.error)
     : null;
-  const hasInvalidSession = queryError?.kind === "invalid_session";
+  const overviewError = overviewQuery.error
+    ? classifyCustomSubscriptionError(overviewQuery.error)
+    : null;
+  const hasInvalidSession = queryError?.kind === "invalid_session" ||
+    overviewError?.kind === "invalid_session";
 
   useEffect(() => {
     if (hasInvalidSession) {
@@ -211,6 +221,41 @@ export function CustomSubscriptionPage({
       );
     }
 
+    if (!overviewQuery.data) {
+      return (
+        <div className="mt-8 flex max-w-xl flex-col gap-4">
+          <p
+            className="text-label text-text-muted"
+            role={overviewQuery.isError ? "alert" : "status"}
+          >
+            {overviewQuery.isError
+              ? "We could not load your subscription status. Please try again."
+              : "Loading your subscription status…"}
+          </p>
+          {overviewQuery.isError ? (
+            <Button
+              type="button"
+              size="table"
+              className="w-fit"
+              disabled={overviewQuery.isFetching}
+              onClick={() => void overviewQuery.refetch()}
+            >
+              {overviewQuery.isFetching ? "Refreshing…" : "Retry"}
+            </Button>
+          ) : null}
+        </div>
+      );
+    }
+
+    if (overviewQuery.data.purchase_restriction) {
+      return (
+        <SubscriptionPurchaseRestrictionNotice
+          restriction={overviewQuery.data.purchase_restriction}
+          className="mt-8 max-w-[1100px]"
+        />
+      );
+    }
+
     if (planUpdatedOffer) {
       return (
         <div className="mt-8 max-w-[1100px]">
@@ -249,7 +294,7 @@ export function CustomSubscriptionPage({
           )}
           <Button
             type="button"
-            className="h-12 w-fit text-label"
+            size="table" className="w-fit text-label"
             disabled={offerStateQuery.isFetching}
             onClick={() => {
               void offerStateQuery.refetch();
@@ -266,14 +311,14 @@ export function CustomSubscriptionPage({
       const isCustomSubscriber = subscription?.plan_type === "custom";
 
       return (
-        <Card className="mt-8 flex max-w-[1100px] flex-col gap-6 rounded-button p-6">
+        <Card className="mt-8 flex max-w-[1100px] flex-col gap-6 p-6">
           <div className="flex flex-col gap-2">
             <h2 className="text-card-title font-medium text-white">
               {isCustomSubscriber ? "Request new Custom terms" : "Request a Custom plan"}
             </h2>
             <p className="text-label text-text-muted">
               {isCustomSubscriber
-                ? `Your Custom plan currently includes ${subscription.limits.seats} seats and ${subscription.limits.reports} reports per month. Tell us what you need and we'll send a revised offer.`
+                ? `Your Custom plan currently includes ${formatSeatCount(subscription.limits.seats)} and ${formatReportCount(subscription.limits.reports)} per month. Tell us what you need and we'll send a revised offer.`
                 : "Tell us how many seats and reports you need. Requests are non-binding: we'll review them and email you an offer that is valid for 7 days."}
             </p>
           </div>
@@ -297,7 +342,7 @@ export function CustomSubscriptionPage({
 
     return (
       <div className="mt-8 flex max-w-[1100px] flex-col gap-6">
-        <Card className="flex flex-col gap-6 rounded-button p-6">
+        <Card className="flex flex-col gap-6 p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-col gap-2">
               <h2 className="text-card-title font-medium text-white">
@@ -311,7 +356,7 @@ export function CustomSubscriptionPage({
           </div>
 
           {view.kind === "action_required" && request.action_required_message ? (
-            <div className="rounded-card border border-status-running/[0.12] bg-status-running/[0.08] p-4">
+            <div className="rounded-surface border border-status-running/[0.12] bg-status-running/[0.08] p-4">
               <p className="text-helper text-text-muted">Message from our team</p>
               <p className="mt-1 whitespace-pre-wrap text-label text-white">
                 {request.action_required_message}
@@ -341,7 +386,7 @@ export function CustomSubscriptionPage({
             <div className="flex flex-wrap gap-3">
               <Button
                 type="button"
-                className="h-12 text-label"
+                size="table" className="text-label"
                 onClick={() => {
                   setNotice(null);
                   setActionError(null);
@@ -354,7 +399,7 @@ export function CustomSubscriptionPage({
                 <Button
                   type="button"
                   variant="secondary"
-                  className="h-12 text-label"
+                  size="table" className="text-label"
                   onClick={() => {
                     setCancelRequestError(null);
                     setCancelRequestOpen(true);

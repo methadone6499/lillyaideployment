@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, type FormEvent, type ReactNode } from "react";
 
+import { Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 const FOCUSABLE_SELECTOR = [
@@ -138,7 +139,7 @@ export function SeatFormDialog({
         tabIndex={-1}
         noValidate
         onSubmit={onSubmit}
-        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[640px] flex-col overflow-hidden rounded-button border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white shadow-2xl"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[640px] flex-col overflow-hidden rounded-surface border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white shadow-2xl"
       >
         <header className="flex min-h-[58px] shrink-0 items-center border-b border-border-default px-6 py-4">
           <h2 id={titleId} className="text-card-title font-medium text-white">
@@ -156,27 +157,21 @@ export function SeatFormDialog({
             hideConfirm ? "justify-end" : "justify-between",
           )}
         >
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onClose}
             disabled={closeDisabled}
-            className="inline-flex h-[42px] items-center justify-center rounded-button border border-border-default bg-white/[0.04] px-[18px] text-label font-medium text-white/72 transition-colors hover:bg-surface-default hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
           >
             {cancelLabel}
-          </button>
+          </Button>
           {hideConfirm ? null : (
-            <button
+            <Button
               type="submit"
+              variant={confirmTone === "danger" ? "destructiveSolid" : "primary"}
               disabled={confirmDisabled}
-              className={cn(
-                "inline-flex h-[42px] items-center justify-center rounded-button px-[18px] text-label font-medium text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                confirmTone === "danger"
-                  ? "bg-[#d92244] hover:bg-[#c01e3c] focus-visible:outline-[#d92244]"
-                  : "bg-brand hover:bg-brand/90 focus-visible:outline-brand",
-              )}
             >
               {confirmLabel}
-            </button>
+            </Button>
           )}
         </footer>
       </form>

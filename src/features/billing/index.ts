@@ -6,6 +6,7 @@ export { OperationLockBanner } from "./components/OperationLockBanner";
 export { PaidFeatureGate } from "./components/PaidFeatureGate";
 export { PostAuthBillingRedirect } from "./components/PostAuthBillingRedirect";
 export { SubscriptionOnboardingPage } from "./components/SubscriptionOnboardingPage";
+export { SubscriptionPurchaseRestrictionNotice } from "./components/SubscriptionPurchaseRestrictionNotice";
 export {
   cancelEnterpriseDowngrade,
   createBillingPortalSession,
@@ -124,6 +125,7 @@ export type {
   PaidActionFailureKind,
 } from "./utils/classifyBillingError";
 export { clearBillingSession } from "./utils/clearBillingSession";
+export { SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE } from "./utils/classifyBillingError";
 export {
   formatAmountMinor,
   formatBillingIntervalCopy,

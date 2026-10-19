@@ -1,4 +1,6 @@
 export { SeatManagementShell } from "./components/SeatManagementShell";
+export { LeaveCompanyButton } from "./components/LeaveCompanyButton";
+export { LeaveCompanyDialog } from "./components/LeaveCompanyDialog";
 export {
   disableCompanySeat,
   enableCompanySeat,

@@ -29,6 +29,11 @@ export function clearAllReportQueries(queryClient: QueryClient) {
   queryClient.removeQueries({ queryKey: reportQueryKeys.root });
 }
 
+export async function clearCompanyGenerationQueries(queryClient: QueryClient) {
+  await queryClient.cancelQueries({ queryKey: reportQueryKeys.root });
+  clearAllReportQueries(queryClient);
+}
+
 export function syncWizardWithAuthSession(queryClient: QueryClient) {
   const authUserId = getCachedAuthMe(queryClient)?.user.id;
   if (!authUserId) {

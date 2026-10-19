@@ -1,59 +1,40 @@
 "use client";
 
+import { formatDisplayDate as formatDate } from "@/lib/formatDisplay";
+
 import { ChevronRightIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui";
 import {
   DashboardPagination,
   DashboardSearchInput,
   DashboardStatusFilter,
-  type DashboardStatusFilterOption,
 } from "@/features/dashboard";
 import { cn } from "@/lib/cn";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 import { useReviewerAssignments, useReviewerDashboard } from "../hooks/useReviewerQueries";
 import type { ReviewerDashboardItem } from "../schemas/reviewerSchemas";
 import { classifyReviewerError } from "../utils/classifyReviewerError";
+import {
+  getReviewerAssignmentFilterOptions,
+  type ReviewerAssignmentFilter,
+} from "../utils/reviewerAssignmentFilters";
+import { getReviewerAssignmentPagination } from "../utils/reviewerAssignmentPagination";
 import { ReviewerStatusPill } from "./ReviewerStatusPill";
-
-type ReviewerTableFilter =
-  | "all"
-  | "pending"
-  | "in_review"
-  | "completed"
-  | "superseded"
-  | "overdue";
-
-const STATUS_OPTIONS = [
-  { value: "all", label: "All Statuses" },
-  { value: "pending", label: "Pending" },
-  { value: "in_review", label: "In Review" },
-  { value: "completed", label: "Completed" },
-  { value: "overdue", label: "Overdue" },
-  { value: "superseded", label: "Superseded" },
-] as const satisfies readonly DashboardStatusFilterOption<ReviewerTableFilter>[];
 
 const reportRowClass =
   "grid min-w-[1040px] grid-cols-[minmax(260px,1fr)_170px_170px_150px_24px] items-center gap-x-10 px-6";
 
-const dateFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
-
-function formatDate(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
-}
-
 type Props = {
   searchQuery: string;
-  statusFilter: ReviewerTableFilter;
+  statusFilter: ReviewerAssignmentFilter;
   currentPage: number;
   onSearchChange: (value: string) => void;
-  onStatusFilterChange: (value: ReviewerTableFilter) => void;
+  onStatusFilterChange: (value: ReviewerAssignmentFilter) => void;
   onPageChange: (page: number) => void;
   query: ReturnType<typeof useReviewerDashboard> | ReturnType<typeof useReviewerAssignments>;
+  queryScope: string;
   isHistory?: boolean;
 };
 
@@ -65,40 +46,61 @@ export function ReviewerReportsTable({
   onStatusFilterChange,
   onPageChange,
   query,
+  queryScope,
   isHistory = false,
 }: Props) {
+  const paginationRequestRef = useRef(0);
+  useEffect(() => {
+    return () => {
+      // Ignore page changes from a request for a previous tab, filter, or user.
+      paginationRequestRef.current += 1;
+    };
+  }, [queryScope]);
+
   const pages = query.data?.pages ?? [];
-  const page = pages[currentPage - 1];
-  const reports = page?.items ?? [];
-  const totalPages = Math.max(
-    1,
-    pages.length + (query.hasNextPage ? 1 : 0),
+  const { currentPage: displayedPage, totalPages } = getReviewerAssignmentPagination(
+    pages,
+    currentPage,
+    query.hasNextPage,
   );
+  const page = pages[displayedPage - 1];
+  const reports = page?.items ?? [];
   const error = query.isError ? classifyReviewerError(query.error) : null;
   const hasActiveFilters = (isHistory ? false : searchQuery.trim().length > 0) || statusFilter !== "all";
 
   const handlePageChange = async (nextPage: number) => {
-    if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) {
+    if (
+      nextPage < 1 || nextPage > totalPages ||
+      nextPage === displayedPage || query.isFetchingNextPage
+    ) {
       return;
     }
 
+    const requestId = ++paginationRequestRef.current;
     if (nextPage > pages.length) {
       const result = await query.fetchNextPage();
-      if (result.isError) return;
+      if (result.isError || requestId !== paginationRequestRef.current) return;
     }
 
     onPageChange(nextPage);
   };
 
   return (
-    <section aria-label="Assigned reports">
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+    <section aria-label={isHistory ? "Assignment history" : "Current assignments"}>
+      <div className="rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-card-title font-medium text-white">
             {isHistory ? "Assignment history" : "Assigned reports"}
           </h2>
 
-          <div className="flex w-full flex-col gap-3 sm:max-w-[664px] sm:flex-1 sm:flex-row sm:items-center sm:gap-4">
+          <div
+            className={cn(
+              "flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-4",
+              isHistory
+                ? "sm:ml-auto sm:w-auto sm:flex-none"
+                : "sm:max-w-[664px] sm:flex-1",
+            )}
+          >
             {!isHistory ? <DashboardSearchInput
               value={searchQuery}
               maxLength={200}
@@ -108,14 +110,15 @@ export function ReviewerReportsTable({
             /> : null}
             <DashboardStatusFilter
               value={statusFilter}
-              options={isHistory ? STATUS_OPTIONS : STATUS_OPTIONS.filter((option) => option.value !== "superseded")}
+              options={getReviewerAssignmentFilterOptions(isHistory ? "history" : "current")}
               showSelectedLabel
               onChange={onStatusFilterChange}
             />
           </div>
         </div>
 
-        <div className="min-w-0 overflow-x-auto">
+        {/* Clip the rows and scrollbar, leaving the toolbar's menu free to overflow. */}
+        <div className="min-w-0 overflow-x-auto rounded-b-surface">
           <div
             className={cn(
               reportRowClass,
@@ -131,26 +134,28 @@ export function ReviewerReportsTable({
 
           <div className="flex flex-col">
             {query.isPending ? (
-              <TableMessage message="Loading assigned reports..." />
+              <TableMessage message={isHistory ? "Loading assignment history..." : "Loading current assignments..."} />
             ) : error ? (
               <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
                 <p className="text-label text-red-400" role="alert">
                   {error.message}
                 </p>
-                <button
-                  type="button"
-                  className="text-label font-medium text-brand hover:underline"
+                <Button
+                  variant="table"
+                  size="table"
                   onClick={() => void query.refetch()}
                 >
                   Try again
-                </button>
+                </Button>
               </div>
             ) : reports.length === 0 ? (
               <TableMessage
                 message={
                   hasActiveFilters
                     ? "No assignments match these filters."
-                    : "No reports have been assigned yet."
+                    : isHistory
+                      ? "No completed or superseded assignments yet."
+                      : "You have no assignments to work on."
                 }
               />
             ) : (
@@ -158,7 +163,7 @@ export function ReviewerReportsTable({
                 <ReportRow
                   key={report.id}
                   report={report}
-                  rowNumber={(currentPage - 1) * (isHistory ? 20 : 6) + index + 1}
+                  rowNumber={(displayedPage - 1) * (isHistory ? 20 : 6) + index + 1}
                 />
               ))
             )}
@@ -169,10 +174,10 @@ export function ReviewerReportsTable({
       {totalPages > 1 ? (
         <div className="mt-4 px-2">
           <DashboardPagination
-            currentPage={currentPage}
+            currentPage={displayedPage}
             totalPages={totalPages}
             isPageChangePending={query.isFetchingNextPage}
-            ariaLabel="Assigned reports pagination"
+            ariaLabel={isHistory ? "Assignment history pagination" : "Current assignments pagination"}
             onPageChange={handlePageChange}
           />
         </div>
@@ -205,7 +210,7 @@ function ReportRow({
       )}
     >
       <span className="flex min-w-0 items-center gap-4">
-        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-toggle-knob bg-surface-elevated text-input font-medium text-white">
+        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-row-index bg-surface-elevated text-input font-medium text-white">
           {rowNumber}
         </span>
         <span className="flex min-w-0 flex-col gap-1">
@@ -231,5 +236,3 @@ function ReportRow({
     </Link>
   );
 }
-
-export type { ReviewerTableFilter };

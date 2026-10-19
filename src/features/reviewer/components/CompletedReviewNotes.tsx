@@ -22,7 +22,7 @@ export function CompletedReviewNotes({
         {notes.map((note) => (
           <article
             key={note.id}
-            className="rounded-card border border-border-default bg-surface-default p-5"
+            className="rounded-surface border border-border-default bg-surface-default p-5"
           >
             {showSectionHeadings ? (
               <h4 className="text-label font-medium text-white">

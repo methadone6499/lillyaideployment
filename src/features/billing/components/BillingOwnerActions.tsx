@@ -92,7 +92,7 @@ export function BillingOwnerActions({
       aria-describedby="billing-owner-description"
       aria-busy={isBusy}
       tabIndex={-1}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-2xl overflow-y-auto rounded-button border border-border-default bg-[#171717] p-6 font-[family-name:var(--font-inter)] text-white shadow-2xl backdrop:bg-black/60"
+      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-2xl overflow-y-auto rounded-surface border border-border-default bg-[#171717] p-6 font-[family-name:var(--font-inter)] text-white shadow-2xl backdrop:bg-black/60"
       onCancel={(event) => {
         event.preventDefault();
         if (!isBusy) {
@@ -125,7 +125,7 @@ export function BillingOwnerActions({
         <button
           type="button"
           aria-label="Close Enterprise upgrade"
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-card text-text-muted transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-field text-text-muted transition-colors hover:bg-surface-elevated hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
           disabled={isBusy}
           onClick={onCancel}
         >
@@ -161,13 +161,13 @@ export function BillingOwnerActions({
             onCompanyNameChange?.();
           }}
         />
-        <Button type="submit" className="h-12 text-label" disabled={isBusy}>
+        <Button type="submit" size="table" className="text-label" disabled={isBusy}>
           {isUpgradePending ? "Starting upgrade..." : "Upgrade to Enterprise"}
         </Button>
         <Button
           type="button"
           variant="secondary"
-          className="h-12 text-label"
+          size="table" className="text-label"
           disabled={isBusy}
           onClick={onCancel}
         >

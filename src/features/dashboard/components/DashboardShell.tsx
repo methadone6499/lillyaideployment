@@ -1,6 +1,5 @@
 "use client";
 
-import { AppHeader } from "@/components/shared/AppHeader";
 import { getActiveContext, useAuthUser } from "@/features/auth";
 import {
   classifyBillingError,
@@ -18,8 +17,7 @@ import { beginReportWizardSession } from "@/features/report-generation";
 import { useRouter } from "next/navigation";
 import { selectDashboardQuotaCard } from "../utils/selectDashboardQuotaCard";
 import { DashboardActionCard } from "./DashboardActionCard";
-import { DashboardGreeting } from "./DashboardGreeting";
-import { DashboardHeaderActions } from "./DashboardHeaderActions";
+import { DashboardActionGrid, DashboardPageFrame } from "./DashboardPageFrame";
 import { RecentReportsTable } from "./RecentReportsTable";
 import { ReportQuotaCard } from "./ReportQuotaCard";
 
@@ -72,62 +70,53 @@ export function DashboardShell() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-text-body">
-      <AppHeader actions={<DashboardHeaderActions />} />
-
-      <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-[var(--layout-page-padding)] py-14">
-        <div className="flex flex-col gap-7">
-          <DashboardGreeting user={{ displayName }} />
-
-          <OperationLockBanner />
-
-          <section
-            aria-label="Dashboard actions"
-            className="grid grid-cols-1 gap-7 md:grid-cols-2 xl:grid-cols-3"
-          >
-            <ReportQuotaCard
-              view={quotaCard.view}
-              errorMessage={quotaCard.errorMessage}
-              onRetry={
-                canReadOwnQuota && ownQuotaQuery.isError
+    <DashboardPageFrame
+      displayName={displayName}
+      notices={<OperationLockBanner className="mt-8" />}
+      summary={
+        <DashboardActionGrid label="Dashboard actions">
+          <ReportQuotaCard
+            view={quotaCard.view}
+            errorMessage={quotaCard.errorMessage}
+            onRetry={
+              canReadOwnQuota && ownQuotaQuery.isError
+                ? () => {
+                    void ownQuotaQuery.refetch();
+                  }
+                : paidAccess.isError
                   ? () => {
-                      void ownQuotaQuery.refetch();
+                      void paidAccess.refetch();
                     }
-                  : paidAccess.isError
-                    ? () => {
-                        void paidAccess.refetch();
-                      }
-                    : undefined
-              }
-              showBuyAdditional={role !== "company_seat_user"}
-            />
+                  : undefined
+            }
+            showBuyAdditional={role !== "company_seat_user"}
+          />
 
-            <DashboardActionCard
-              title="Budget Impact Calculator"
-              description="Model dosing, treatment costs, and multi-year budget impact analysis for HTA submissions."
-              ctaLabel="Open Calculator"
-              href={resolvePaidFeatureDestination({
-                overview: paidAccess.overview,
-                me: authMe,
-                feature: "dosage_calculator",
-                allowedPath: "/dosage-calculator",
-              })}
-            />
+          <DashboardActionCard
+            title="Budget Impact Calculator"
+            description="Model dosing, treatment costs, and multi-year budget impact analysis for HTA submissions."
+            ctaLabel="Open Calculator"
+            href={resolvePaidFeatureDestination({
+              overview: paidAccess.overview,
+              me: authMe,
+              feature: "dosage_calculator",
+              allowedPath: "/dosage-calculator",
+            })}
+          />
 
-            <DashboardActionCard
-              variant="highlight"
-              title="Generate Report"
-              description="Generate a complete assessment report aligned with HTA compliance requirements."
-              ctaLabel="Generate Report"
-              onCtaClick={handleGenerateReport}
-              disabled={isReportGenerationPaused}
-              disabledReason="Report generation is paused while a Custom plan payment is in progress."
-            />
-          </section>
-
-          <RecentReportsTable />
-        </div>
-      </main>
-    </div>
+          <DashboardActionCard
+            variant="highlight"
+            title="Generate Report"
+            description="Generate a complete assessment report aligned with HTA compliance requirements."
+            ctaLabel="Generate Report"
+            onCtaClick={handleGenerateReport}
+            disabled={isReportGenerationPaused}
+            disabledReason="Report generation is paused while a Custom plan payment is in progress."
+          />
+        </DashboardActionGrid>
+      }
+    >
+      <RecentReportsTable />
+    </DashboardPageFrame>
   );
 }

@@ -1,3 +1,6 @@
+import { formatDisplayCount } from "@/lib/formatDisplay";
+import { Button } from "@/components/ui";
+
 const TOTAL_CARDS = [
   {
     key: "today",
@@ -15,10 +18,6 @@ const TOTAL_CARDS = [
     caption: "UTC month",
   },
 ] as const;
-
-const reportCountFormatter = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 0,
-});
 
 export type AdminReportTotalsValues = {
   today: number;
@@ -41,7 +40,7 @@ function formatTotalValue(value: number | null): string {
     return "—";
   }
 
-  return reportCountFormatter.format(value);
+  return formatDisplayCount(value);
 }
 
 export function AdminReportTotalsCards({
@@ -70,14 +69,14 @@ export function AdminReportTotalsCards({
       className="mt-6"
     >
       {showAccessDenied ? (
-        <p className="rounded-button border border-border-default bg-surface-default px-6 py-10 text-center text-label text-text-muted">
+        <p className="rounded-surface border border-border-default bg-surface-default px-6 py-10 text-center text-label text-text-muted">
           You do not have permission to view report analytics.
         </p>
       ) : null}
 
       {showError ? (
         <div
-          className="flex flex-col items-center gap-4 rounded-button border border-border-default bg-surface-default px-6 py-10 text-center text-label text-text-muted"
+          className="flex flex-col items-center gap-4 rounded-surface border border-border-default bg-surface-default px-6 py-10 text-center text-label text-text-muted"
           role="alert"
         >
           <p>{errorMessage}</p>
@@ -85,13 +84,13 @@ export function AdminReportTotalsCards({
             <p className="text-helper text-text-step">Request ID: {requestId}</p>
           ) : null}
           {onRetry ? (
-            <button
-              type="button"
-              className="rounded-button border border-border-default px-4 py-2 font-medium text-white transition-colors hover:bg-surface-elevated"
+            <Button
+              variant="table"
+              size="table"
               onClick={onRetry}
             >
               Try again
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
@@ -106,13 +105,13 @@ export function AdminReportTotalsCards({
             <p className="text-helper text-text-step">Request ID: {requestId}</p>
           ) : null}
           {onRetry ? (
-            <button
-              type="button"
-              className="rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"
+            <Button
+              variant="table"
+              size="compact"
               onClick={onRetry}
             >
               Try again
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
@@ -122,12 +121,12 @@ export function AdminReportTotalsCards({
           {TOTAL_CARDS.map((card) => (
             <article
               key={card.key}
-              className="flex min-h-[163px] flex-col rounded-button border border-border-default bg-surface-default p-6"
+              className="flex min-h-[163px] flex-col rounded-surface border border-border-default bg-surface-default p-6"
             >
               <h2 className="text-card-title font-medium text-white">
                 {card.title}
               </h2>
-              <p className="mt-auto pt-6 text-[40px] leading-none font-medium text-white tabular-nums sm:text-[64px]">
+              <p className="mt-auto pt-6 text-kpi leading-none font-medium text-white tabular-nums">
                 {formatTotalValue(cardValues[card.key])}
               </p>
               <p className="mt-3 text-helper text-text-body">{card.caption}</p>

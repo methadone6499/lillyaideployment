@@ -92,7 +92,7 @@ export function CustomAwareBillingSuccessPage() {
               href={resolveHostedBillingUrl(paymentLink.url) ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-[52px] items-center justify-center rounded-button bg-brand px-5 text-body-lg font-medium text-white transition-colors hover:bg-brand/90"
+              className="inline-flex h-[52px] items-center justify-center rounded-button bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669]"
             >
               Open invoice in new tab
             </a>
@@ -169,7 +169,7 @@ export function CustomAwareBillingSuccessPage() {
         </AuthFormAlert>
         <Link
           href={BILLING_PATHS.custom}
-          className="inline-flex h-[52px] items-center justify-center rounded-button bg-brand px-5 text-body-lg font-medium text-white transition-colors hover:bg-brand/90"
+          className="inline-flex h-[52px] items-center justify-center rounded-button bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669]"
         >
           View Custom plan request
         </Link>

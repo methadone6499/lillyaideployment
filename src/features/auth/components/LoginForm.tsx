@@ -143,7 +143,7 @@ export function LoginForm({
               onClick={() => {
                 void onResendVerification?.(errorState.email);
               }}
-              className="!h-[var(--layout-auth-button-height)] w-full !rounded-[10.5px] border border-white/10 !bg-white/5 px-6 !text-[16px] !font-medium text-white hover:!bg-white/10"
+              className="w-full !rounded-button border border-white/10 !bg-white/5 px-6 !text-[16px] !font-medium text-white !shadow-none hover:!bg-white/10"
             >
               {isResendingVerification
                 ? "Sending Verification Email..."

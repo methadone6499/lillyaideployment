@@ -46,7 +46,7 @@ export function ReviewerCompletionDialog({
         aria-modal="true"
         aria-labelledby="review-completion-title"
         aria-describedby="review-completion-description"
-        className="w-full max-w-[500px] overflow-hidden rounded-button border border-border-default bg-[#171717] text-white"
+        className="w-full max-w-[500px] overflow-hidden rounded-surface border border-border-default bg-[#171717] text-white"
       >
         <header className="flex h-[67px] items-center justify-between border-b border-border-default px-6">
           <h2 id="review-completion-title" className="text-card-title font-medium">
@@ -57,7 +57,7 @@ export function ReviewerCompletionDialog({
             disabled={isSubmitting}
             onClick={onCancel}
             aria-label="Close confirmation"
-            className="inline-flex size-6 items-center justify-center disabled:opacity-50"
+            className="inline-flex size-10 items-center justify-center rounded-field text-text-muted hover:bg-surface-elevated hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
           >
             <CloseIcon className="size-5" />
           </button>
@@ -67,15 +67,14 @@ export function ReviewerCompletionDialog({
             Completing the review makes your notes read-only and unlocks the report for its owner.
           </p>
           <footer className="mt-8 flex flex-wrap justify-end gap-4">
-            <button
+            <Button
               ref={cancelRef}
-              type="button"
+              variant="secondary"
               disabled={isSubmitting}
               onClick={onCancel}
-              className="inline-flex h-[52px] items-center justify-center rounded-button border border-border-default bg-surface-default px-5 text-body-lg font-medium text-white transition-colors hover:bg-surface-elevated disabled:opacity-50"
             >
               Keep reviewing
-            </button>
+            </Button>
             <Button disabled={isSubmitting} onClick={onConfirm}>
               {isSubmitting ? "Completing..." : "Complete review"}
             </Button>

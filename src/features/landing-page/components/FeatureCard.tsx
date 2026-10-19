@@ -6,7 +6,7 @@ type FeatureCardProps = {
 
 export function FeatureCard({ card }: FeatureCardProps) {
   return (
-    <article className="relative min-h-[clamp(320px,20.833vw,400px)] overflow-hidden rounded-button bg-landing-surface-card">
+    <article className="relative min-h-[320px] overflow-hidden rounded-[var(--landing-radius-card)] border border-border-default bg-landing-surface-card">
       <div
         className="absolute inset-0 bg-base-black"
         style={{
@@ -22,11 +22,11 @@ export function FeatureCard({ card }: FeatureCardProps) {
           backgroundSize: "12px 12px",
         }}
       />
-      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-[clamp(20px,1.458vw,28px)] p-[clamp(32px,2.5vw,48px)]">
-        <h3 className="text-[clamp(24px,1.667vw,32px)] leading-[1.2] text-landing-text-heading">
+      <div className="relative flex min-h-[320px] flex-col justify-end gap-4 p-6">
+        <h3 className="text-section-heading leading-8 font-medium text-landing-text-heading">
           {card.title}
         </h3>
-        <p className="text-[clamp(16px,0.938vw,18px)] leading-6 text-landing-text-subtle">
+        <p className="text-landing-body-size leading-landing-body-line text-white/90">
           {card.description}
         </p>
       </div>

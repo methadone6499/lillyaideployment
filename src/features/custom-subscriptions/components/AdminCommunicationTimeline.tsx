@@ -7,6 +7,8 @@ import type {
 } from "../schemas/customSubscriptionSchemas";
 import {
   formatIdentity,
+  formatReportCount,
+  formatSeatCount,
   formatUsdAmount,
 } from "../utils/formatCustomSubscription";
 
@@ -21,10 +23,10 @@ const KIND_LABELS: Record<AdminCommunicationKind, string> = {
 function formatSuggestions(communication: AdminCommunication): string | null {
   const parts = [
     communication.suggested_seats !== null
-      ? `${communication.suggested_seats} seats`
+      ? formatSeatCount(communication.suggested_seats)
       : null,
     communication.suggested_reports !== null
-      ? `${communication.suggested_reports} reports / month`
+      ? `${formatReportCount(communication.suggested_reports)} / month`
       : null,
     communication.suggested_amount_minor !== null
       ? `${formatUsdAmount(communication.suggested_amount_minor)} / month`
@@ -55,7 +57,7 @@ export function AdminCommunicationTimeline({
           <article
             key={communication.id}
             className={cn(
-              "rounded-card border p-4",
+              "rounded-surface border p-4",
               isInternal
                 ? "border-border-default border-l-2 border-l-brand bg-brand-bg"
                 : "border-border-default bg-surface-subtle",

@@ -114,6 +114,8 @@ export function useEditableSectionDraft({
     isPersistedDocumentLoading,
     isPersistedDocumentError,
     error: query.error,
+    isFetching: query.isFetching,
+    retryLoad: query.refetch,
     setDraftBlocks,
     acceptRewriteId,
     applyPersistedDocument,

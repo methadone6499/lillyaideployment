@@ -49,6 +49,17 @@ assert.deepEqual(select("unlimited"), {
   errorMessage: null,
 });
 
+assert.deepEqual(select("company_allocation", {
+  ownQuota: { ...ownQuota, quota_total: 80, quota_used: 6, quota_remaining: 74 },
+  billingQuotaView: {
+    kind: "known",
+    quota: { ...knownBillingQuota.quota, quota_total: 100, quota_used: 9, quota_remaining: 91 },
+  },
+}), {
+  view: { kind: "known", used: 6, total: 80, remaining: 74 },
+  errorMessage: null,
+});
+
 assert.deepEqual(
   select("subscription_overview", {
     billingQuotaView: { kind: "unavailable" },

@@ -7,7 +7,7 @@ export function useAuthStatus(): AuthStatus {
 }
 
 export function useIsAuthenticated(): boolean {
-  return useAuthStore((state) => state.status === "authenticated");
+  return useAuthStore((state) => state.status === "authenticated" && state.companyAccess === "available");
 }
 
 export function useIsAuthInitializing(): boolean {

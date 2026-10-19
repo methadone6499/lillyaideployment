@@ -1,6 +1,7 @@
 import {
   httpValidationErrorSchema,
   platformErrorSchema,
+  validationErrorItemSchema,
   type ValidationErrorItem,
 } from "./apiErrorSchemas";
 import { ApiRequestError, type FieldErrors } from "./ApiRequestError";
@@ -93,6 +94,10 @@ function buildApiRequestErrorFromBody(
 
   if (platformError.success) {
     const parsed = platformError.data;
+    const validationItems =
+      parsed.code === "validation_error"
+        ? validationErrorItemSchema.array().safeParse(parsed.details)
+        : null;
 
     return new ApiRequestError({
       status,
@@ -100,6 +105,9 @@ function buildApiRequestErrorFromBody(
       code: parsed.code,
       details: parsed.details ?? null,
       requestId: parsed.request_id ?? null,
+      fieldErrors: validationItems?.success
+        ? fieldErrorsFromValidationItems(validationItems.data)
+        : {},
       rawCause: body,
       retryAfterSeconds:
         retryAfterSeconds ?? retryAfterFromDetails(parsed.details),

@@ -6,32 +6,32 @@ import type {
 
 export const featureCards: FeatureCardContent[] = [
   {
-    title: "Disease Burden Analysis",
+    title: "Disease burden analysis",
     description:
       "Comprehensive disease burden assessment and epidemiological context for informed decision-making",
   },
   {
-    title: "Prescribing Information",
+    title: "Prescribing information",
     description:
       "Basic prescribing information including dosing, administration, and key product characteristics",
   },
   {
-    title: "Clinical Evidence Tables",
+    title: "Clinical evidence tables",
     description:
       "Detailed summary tables of published relevant clinical evidence and trial outcomes",
   },
   {
-    title: "Pharmacoeconomic Studies",
+    title: "Pharmacoeconomic studies",
     description:
       "Comprehensive cost-effectiveness analysis and pharmacoeconomic evidence for budget impact analysis",
   },
   {
-    title: "GRADE & CASP Assessment",
+    title: "GRADE & CASP assessment",
     description:
       "Direct grading of evidence level and quality assessment using GRADE and CASP checklists",
   },
   {
-    title: "HTA Agency Summaries",
+    title: "HTA agency summaries",
     description:
       "Summaries of published HTA reports from internationally recognized agencies worldwide",
   },
@@ -39,19 +39,19 @@ export const featureCards: FeatureCardContent[] = [
 
 export const whyCards: WhyCardContent[] = [
   {
-    title: "Drug-Specific Search",
+    title: "Drug-specific search",
     description:
       "Targeted searching by drug name and indication for precise, relevant results",
     imageUrl: "/landing/drugspecificsearch.png",
   },
   {
-    title: "Comprehensive Coverage",
+    title: "Comprehensive coverage",
     description:
       "Full evaluation packages covering clinical, economic, and HTA agency perspectives",
     imageUrl: "/landing/comprehensivecoverage.png",
   },
   {
-    title: "International HTA Insights",
+    title: "International HTA insights",
     description:
       "Access published reports from recognized HTA agencies in one place",
     imageUrl: "/landing/htainsights.png",
@@ -73,7 +73,7 @@ export const pricingPlans: PricingPlanContent[] = [
       "PDF & DOCX export",
       "Email support",
     ],
-    ctaLabel: "Get Started",
+    ctaLabel: "Get started",
     ctaHref: "/signup?plan=standard",
     ctaVariant: "secondary",
   },
@@ -88,13 +88,13 @@ export const pricingPlans: PricingPlanContent[] = [
     featured: true,
     features: [
       "All free + paid sources (Scopus, Embase, Clarivate)",
-      "AI Clinical Intelligence Engine",
+      "AI clinical intelligence engine",
       "PDF, DOCX, PowerPoint + AI presenter",
       "Dosage calculator",
       "Multi-HTA compliance",
       "Priority support",
     ],
-    ctaLabel: "Get Started",
+    ctaLabel: "Get started",
     ctaHref: "/signup?plan=enterprise",
     ctaVariant: "primary",
   },
@@ -103,8 +103,8 @@ export const pricingPlans: PricingPlanContent[] = [
     iconSrc: "/landing/pricing-custom.svg",
     name: "Custom",
     audience: "Large pharma & enterprise",
-    highlight: "Unlimited Users/ Unlimited Evaluations",
-    priceLabel: "Contact Us",
+    highlight: "Unlimited users / unlimited evaluations",
+    priceLabel: "Contact us",
     features: [
       "Everything in Enterprise",
       "Human-in-the-loop verification",
@@ -113,7 +113,7 @@ export const pricingPlans: PricingPlanContent[] = [
       "On-prem deployment option",
       "Account manager + SLA",
     ],
-    ctaLabel: "Contact Sales",
+    ctaLabel: "Contact sales",
     ctaHref: "/#contact",
     ctaVariant: "secondary",
   },
@@ -134,16 +134,16 @@ export const addOnFeaturesRight = [
 ];
 
 export const headerNavLinks = [
-  { label: "Why Us?", href: "#why-us" },
+  { label: "Why us?", href: "#why-us" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Get in Touch", href: "#contact" },
+  { label: "Get in touch", href: "#contact" },
 ] as const;
 
 export const footerNavLinks = [
-  { label: "Login", href: "/login" },
-  { label: "Why Us?", href: "#why-us" },
+  { label: "Log in", href: "/login" },
+  { label: "Why us?", href: "#why-us" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Get in Touch", href: "#contact" },
+  { label: "Get in touch", href: "#contact" },
   { label: "Terms", href: "#" },
   { label: "Privacy", href: "#" },
 ] as const;

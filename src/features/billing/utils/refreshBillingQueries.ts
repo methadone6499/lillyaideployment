@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { refetchAuthMe } from "@/features/auth";
+import { companyQuotaQueryKeys } from "@/features/company-quota";
 
 import { billingQueryKeys } from "../api/billingQueryKeys";
 import {
@@ -16,9 +17,9 @@ export async function invalidateBillingOverview(
     return;
   }
 
-  await queryClient.invalidateQueries({
-    queryKey: billingQueryKeys.overview(userId),
-  });
+  void queryClient.invalidateQueries({ queryKey: companyQuotaQueryKeys.company(userId) });
+  void queryClient.invalidateQueries({ queryKey: companyQuotaQueryKeys.own(userId) });
+  await queryClient.invalidateQueries({ queryKey: billingQueryKeys.overview(userId) });
 }
 
 export async function recoverBillingMutationFailure(

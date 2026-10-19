@@ -7,7 +7,7 @@ import {
   useDailyMedSuggestionsMutation,
   useDosingCalculationMutation,
 } from "../hooks/usePharmaCalculatorMutations";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type {
   ButtonHTMLAttributes,
   FormEvent,
@@ -17,6 +17,7 @@ import type {
   SelectHTMLAttributes,
 } from "react";
 import type { DailyMedSuggestionResponse } from "../schemas/pharmaCalculatorSchemas";
+import { getCalculatorFieldError } from "../utils/calculatorValidation";
 import {
   downloadBudgetImpactPdf,
   downloadCostAnalysisPdf,
@@ -137,29 +138,66 @@ const DEFAULT_BUDGET_INPUTS: BudgetImpactInputs = {
 const inputClassName =
   "h-10 w-full rounded-field border border-border-default bg-input-fill px-3 text-[13px] font-normal text-text-heading outline-none transition-colors placeholder:text-text-muted focus:border-brand-chip-border focus:ring-2 focus:ring-brand/10 disabled:cursor-not-allowed disabled:opacity-50";
 
+function validateCalculatorFields(container: HTMLElement | null, skipAssistance = false): boolean {
+  if (!container) return false;
+  let firstInvalid: HTMLInputElement | undefined;
+  for (const input of container.querySelectorAll<HTMLInputElement>("input")) {
+    if (skipAssistance && input.closest("[data-calculator-assistance]")) continue;
+    if (!input.checkValidity()) firstInvalid ??= input;
+  }
+  if (!firstInvalid) return true;
+  const details = firstInvalid.closest("details");
+  if (details) details.open = true;
+  firstInvalid.focus();
+  return false;
+}
+
 function Field({
   label,
   helper,
   suffix,
   className,
+  onChange,
+  onInvalid,
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   helper?: string;
   suffix?: string;
 }) {
+  const id = useId();
+  const [validation, setValidation] = useState<{ value: typeof props.value; message: string | null } | null>(null);
+  const error = validation && Object.is(validation.value, props.value) ? validation.message : null;
+  const helperId = `${id}-helper`;
+  const errorId = `${id}-error`;
   return (
     <label className="block min-w-0">
       <span className="mb-1.5 flex min-h-8 items-end justify-between gap-2 text-[11px] leading-4 font-medium text-text-body">
         <span>{label}</span>
         {suffix ? <span className="text-[10px] text-text-muted">{suffix}</span> : null}
       </span>
-      <input className={cn(inputClassName, className)} {...props} />
+      <input
+        {...props}
+        pattern={props.pattern ?? (props.required && props.type !== "number" ? ".*\\S.*" : undefined)}
+        className={cn(inputClassName, error && "border-[#D92244]", className)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={[props["aria-describedby"], helper ? helperId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined}
+        onInvalid={(event) => {
+          event.preventDefault();
+          setValidation({ value: props.value, message: getCalculatorFieldError(event.currentTarget, label) });
+          onInvalid?.(event);
+        }}
+        onChange={(event) => {
+          setValidation(null);
+          onChange?.(event);
+        }}
+      />
       {helper ? (
-        <span className="mt-1.5 block text-[10px] leading-4 text-text-muted">
+        <span id={helperId} className="mt-1.5 block text-[10px] leading-4 text-text-muted">
           {helper}
         </span>
       ) : null}
+      {error ? <span id={errorId} role="alert" className="mt-1.5 block text-helper leading-4 text-status-danger">{error}</span> : null}
     </label>
   );
 }
@@ -211,10 +249,12 @@ function NumberField({
 }) {
   return (
     <Field
+      required
+      step="any"
       {...props}
       type="number"
-      value={value}
-      onChange={(event) => onValueChange(Number(event.target.value))}
+      value={Number.isFinite(value) ? value : ""}
+      onChange={(event) => onValueChange(event.target.valueAsNumber)}
     />
   );
 }
@@ -223,13 +263,15 @@ function FormSection({
   title,
   helper,
   children,
+  assistance = false,
 }: {
   title: string;
   helper?: string;
   children: ReactNode;
+  assistance?: boolean;
 }) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" data-calculator-assistance={assistance || undefined}>
       <div className="space-y-1">
         <div className="flex items-center gap-3">
           <h3 className="shrink-0 text-[11px] font-semibold tracking-[0.02em] text-brand">
@@ -395,7 +437,13 @@ function CostInputPanel({
         title="Cost assumptions"
         description="Calculate acquisition, per-patient, and programme costs using the validated calculator API."
       />
-      <form onSubmit={onCalculate} className="space-y-7 p-5">
+      <form noValidate onSubmit={(event) => {
+        if (!validateCalculatorFields(event.currentTarget, true)) {
+          event.preventDefault();
+          return;
+        }
+        onCalculate(event);
+      }} className="space-y-7 p-5">
         <FormSection title="Drug details">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
@@ -454,6 +502,7 @@ function CostInputPanel({
           <div className="mt-5 space-y-6">
             <FormSection
               title="Optional label suggestions"
+              assistance
               helper="DailyMed suggestions never overwrite your values until you apply them."
             >
               <div className="grid gap-3 sm:grid-cols-2">
@@ -495,7 +544,9 @@ function CostInputPanel({
                 />
               </div>
               <ActionButton
-                onClick={onFindLabel}
+                onClick={(event) => {
+                  if (validateCalculatorFields(event.currentTarget.closest("section"))) onFindLabel();
+                }}
                 disabled={isLoadingLabel}
                 className="w-full border-border-default bg-surface-default text-text-heading hover:bg-surface-elevated sm:w-auto"
               >
@@ -580,7 +631,7 @@ function CostInputPanel({
               ) : null}
             </FormSection>
 
-            <FormSection title="Dosing calculation">
+            <FormSection title="Dosing calculation" assistance>
               <div className="grid grid-cols-2 gap-3">
                 <NumberField
                   label={`Unit cost (${symbol})`}
@@ -657,7 +708,9 @@ function CostInputPanel({
                 }
               />
               <ActionButton
-                onClick={onRunDosing}
+                onClick={(event) => {
+                  if (validateCalculatorFields(event.currentTarget.closest("section"))) onRunDosing();
+                }}
                 disabled={isCalculatingDosing}
                 className="w-full"
               >
@@ -739,16 +792,16 @@ function CostInputPanel({
             <div className="sm:col-span-2">
               <Field label="Comparator name" value={inputs.comparatorName} onChange={(event) => onInputsChange("comparatorName", event.target.value)} />
             </div>
-            <NumberField label={`Annual drug cost / patient (${symbol})`} min="0" value={inputs.comparatorAnnualCost} onValueChange={(value) => onInputsChange("comparatorAnnualCost", value)} />
-            <NumberField label={`Admin + monitoring (${symbol})`} min="0" value={inputs.comparatorExtraCost} onValueChange={(value) => onInputsChange("comparatorExtraCost", value)} />
-            <NumberField label={`Offsets (${symbol})`} min="0" value={inputs.comparatorOffsets} onValueChange={(value) => onInputsChange("comparatorOffsets", value)} />
+            <NumberField label={`Annual drug cost / patient (${symbol})`} required={Boolean(inputs.comparatorName.trim())} min="0" value={inputs.comparatorAnnualCost} onValueChange={(value) => onInputsChange("comparatorAnnualCost", value)} />
+            <NumberField label={`Admin + monitoring (${symbol})`} required={Boolean(inputs.comparatorName.trim())} min="0" value={inputs.comparatorExtraCost} onValueChange={(value) => onInputsChange("comparatorExtraCost", value)} />
+            <NumberField label={`Offsets (${symbol})`} required={Boolean(inputs.comparatorName.trim())} min="0" value={inputs.comparatorOffsets} onValueChange={(value) => onInputsChange("comparatorOffsets", value)} />
           </div>
         </FormSection>
 
         <FormSection title="Programme population">
           <div className="grid gap-4 sm:grid-cols-2">
             <NumberField label="New-treatment patients" min="1" step="1" value={inputs.estimatedPatients} onValueChange={(value) => onInputsChange("estimatedPatients", value)} />
-            <NumberField label="Comparator patients" min="0" step="1" value={inputs.comparatorPatients} onValueChange={(value) => onInputsChange("comparatorPatients", value)} />
+            <NumberField label="Comparator patients" required={Boolean(inputs.comparatorName.trim())} min="0" step="1" value={inputs.comparatorPatients} onValueChange={(value) => onInputsChange("comparatorPatients", value)} />
           </div>
         </FormSection>
 
@@ -794,7 +847,13 @@ function BudgetInputPanel({
         title="Budget impact analysis assumptions"
         description="Model one current treatment against the new treatment over three or five years."
       />
-      <form onSubmit={onCalculate} className="space-y-7 p-5">
+      <form noValidate onSubmit={(event) => {
+        if (!validateCalculatorFields(event.currentTarget)) {
+          event.preventDefault();
+          return;
+        }
+        onCalculate(event);
+      }} className="space-y-7 p-5">
         <FormSection title="Decision context">
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectField label="Perspective" value={inputs.perspective} onChange={(event) => onInputsChange("perspective", event.target.value)}>
@@ -1019,7 +1078,11 @@ export function PharmaCalculatorWorkspace() {
   const updateCostInputs = <K extends keyof CostAnalysisInputs>(
     field: K,
     value: CostAnalysisInputs[K],
-  ) => setCostInputs((current) => ({ ...current, [field]: value }));
+  ) => {
+    if (costMutation.isError) costMutation.reset();
+    if (labelMutation.isError && (field === "drugName" || field === "indication")) labelMutation.reset();
+    setCostInputs((current) => ({ ...current, [field]: value }));
+  };
 
   const updateDosingInputs = <K extends keyof DosingInputs>(
     field: K,
@@ -1040,16 +1103,21 @@ export function PharmaCalculatorWorkspace() {
   const updateBudgetInputs = <K extends keyof BudgetImpactInputs>(
     field: K,
     value: BudgetImpactInputs[K],
-  ) => setBudgetInputs((current) => ({ ...current, [field]: value }));
+  ) => {
+    if (budgetMutation.isError) budgetMutation.reset();
+    setBudgetInputs((current) => ({ ...current, [field]: value }));
+  };
 
   const updateCurrentTreatment = <K extends keyof CurrentTreatmentInputs>(
     field: K,
     value: CurrentTreatmentInputs[K],
-  ) =>
+  ) => {
+    if (budgetMutation.isError) budgetMutation.reset();
     setBudgetInputs((current) => ({
       ...current,
       currentTreatment: { ...current.currentTreatment, [field]: value },
     }));
+  };
 
   const handleCurrencyChange = (nextCurrency: PharmaCurrency) => {
     setCurrency(nextCurrency);
@@ -1167,7 +1235,7 @@ export function PharmaCalculatorWorkspace() {
               }
               labelError={
                 labelMutation.error
-                  ? getPharmaCalculatorErrorMessage(labelMutation.error)
+                  ? getPharmaCalculatorErrorMessage(labelMutation.error, "label")
                   : null
               }
               labelResult={labelMutation.data}

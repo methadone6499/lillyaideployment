@@ -58,7 +58,7 @@ type Notice = { tone: "success" | "warning"; message: string };
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-card bg-surface-subtle p-4">
+    <div className="rounded-surface bg-surface-subtle p-4">
       <dt className="text-helper text-text-muted">{label}</dt>
       <dd className="mt-1 break-words text-label font-medium text-white">{value}</dd>
     </div>
@@ -132,7 +132,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
       classified.kind === "not_found";
 
     return (
-      <Card className="mt-10 flex max-w-2xl flex-col gap-4 rounded-button p-6">
+      <Card className="mt-10 flex max-w-2xl flex-col gap-4 p-6">
         <p className="text-label text-text-body" role="alert">
           {isMissing
             ? "This Custom plan request could not be found."
@@ -142,7 +142,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
           {isMissing ? null : (
             <Button
               type="button"
-              className="h-11 text-label"
+              className="text-label"
               disabled={detailQuery.isFetching}
               onClick={() => {
                 void detailQuery.refetch();
@@ -153,7 +153,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
           )}
           <Link
             href={ADMIN_CUSTOM_REQUESTS_PATH}
-            className="inline-flex h-11 items-center rounded-button border border-border-default bg-surface-default px-4 text-label font-medium text-white hover:bg-surface-elevated"
+            className="inline-flex h-[52px] items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white hover:bg-surface-elevated"
           >
             Back to requests
           </Link>
@@ -352,7 +352,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
           <Button
             type="button"
             variant="secondary"
-            className="h-11 text-label"
+            size="small" className="text-label"
             disabled={isBusy}
             onClick={() => {
               void handleResaveStaleDraft();
@@ -363,7 +363,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
         ) : null}
       </CustomSubscriptionAlert>
 
-      <Card className="flex flex-col gap-6 rounded-button p-6">
+      <Card className="flex flex-col gap-6 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-card-title font-medium text-white">
@@ -406,7 +406,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
         </dl>
 
         {request.notes ? (
-          <div className="rounded-card bg-surface-subtle p-4">
+          <div className="rounded-surface bg-surface-subtle p-4">
             <p className="text-helper text-text-muted">Customer notes</p>
             <p className="mt-1 whitespace-pre-wrap text-label text-text-body">
               {request.notes}
@@ -415,7 +415,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
         ) : null}
 
         {request.action_required_message ? (
-          <div className="rounded-card border border-status-running/[0.12] bg-status-running/[0.08] p-4">
+          <div className="rounded-surface border border-status-running/[0.12] bg-status-running/[0.08] p-4">
             <p className="text-helper text-text-muted">Waiting on the customer</p>
             <p className="mt-1 whitespace-pre-wrap text-label text-white">
               {request.action_required_message}
@@ -427,7 +427,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
           {actions.canStartReview ? (
             <Button
               type="button"
-              className="h-11 text-label"
+              size="small" className="text-label"
               disabled={isBusy}
               onClick={() => {
                 void runAction(
@@ -442,7 +442,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
           {actions.canCreateDraft && !isCreatingDraft ? (
             <Button
               type="button"
-              className="h-11 text-label"
+              size="small" className="text-label"
               disabled={isBusy}
               onClick={() => setIsCreatingDraft(true)}
             >
@@ -453,7 +453,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
             <Button
               type="button"
               variant="secondary"
-              className="h-11 text-label"
+              size="small" className="text-label"
               disabled={isBusy}
               onClick={() => {
                 setDialogError(null);
@@ -467,7 +467,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
             <Button
               type="button"
               variant="secondary"
-              className="h-11 text-label"
+              size="small" className="text-label"
               disabled={isBusy}
               onClick={() => {
                 setDialogError(null);
@@ -494,7 +494,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
         ) : null}
 
         {request.status === "closed" && closeEmail ? (
-          <div className="flex flex-wrap items-center gap-3 rounded-card bg-surface-subtle p-4">
+          <div className="flex flex-wrap items-center gap-3 rounded-surface bg-surface-subtle p-4">
             <span className="text-label text-text-body">
               Closure email to {closeEmail.recipient_email}
             </span>
@@ -503,7 +503,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
               <Button
                 type="button"
                 variant="secondary"
-                className="h-11 text-label"
+                size="small" className="text-label"
                 disabled={
                   resendCloseMutation.isPending ||
                   closeEmailCooldown.isCoolingDown ||
@@ -524,7 +524,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
         ) : null}
       </Card>
 
-      <Card className="flex flex-col gap-4 rounded-button p-6">
+      <Card className="flex flex-col gap-4 p-6">
         <h2 className="text-card-title font-medium text-white">Offers</h2>
         <AdminCustomOfferList
           offers={offers}
@@ -561,7 +561,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
         />
       </Card>
 
-      <Card className="flex flex-col gap-4 rounded-button p-6">
+      <Card className="flex flex-col gap-4 p-6">
         <h2 className="text-card-title font-medium text-white">
           Messages and internal notes
         </h2>
@@ -581,7 +581,7 @@ export function AdminCustomRequestDetailView({ requestId }: { requestId: string 
           />
           <Button
             type="button"
-            className="h-11 w-fit text-label"
+            size="small" className="w-fit text-label"
             disabled={noteMutation.isPending || !noteMessage.trim()}
             onClick={() => {
               void handleAddNote();

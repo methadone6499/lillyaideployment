@@ -19,7 +19,7 @@ export const currencyCodeSchema = z
 
 export const nonEmptyIdSchema = z.string().min(1);
 
-export const companyNameSchema = z.string().trim().min(1).max(200);
+export const companyNameSchema = z.string({ error: "Enter a company name." }).trim().min(1, "Enter a company name.").max(200, "Use 200 characters or fewer for the company name.");
 
 export const nullableHttpUrlSchema = z.url().nullable();
 
@@ -86,6 +86,8 @@ export const billingErrorCodeSchema = z.enum([
   "checkout_payment_pending",
   "checkout_state_conflict",
   "billing_owner_required",
+  "subscription_purchase_suspended",
+  "subscription_resume_not_available",
   "unsupported_plan_change",
   "subscription_cancellation_pending",
   "subscription_change_pending",
@@ -163,6 +165,12 @@ export const subscriptionQuotaSchema = z.object({
   period_end: utcIsoDateTimeSchema,
 });
 
+export const subscriptionPurchaseRestrictionSchema = z.object({
+  reason: z.literal("subscription_purchase_suspended"),
+  restricted_at: utcIsoDateTimeSchema,
+  paid_access_ends_at: utcIsoDateTimeSchema.nullable(),
+});
+
 export const subscriptionOverviewSchema = z.object({
   subscription: subscriptionSummarySchema.nullable(),
   checkout: checkoutStateSchema.nullable(),
@@ -170,6 +178,7 @@ export const subscriptionOverviewSchema = z.object({
   quota: subscriptionQuotaSchema.nullable(),
   can_use_paid_features: z.boolean(),
   operation_lock: operationLockSchema.nullable().default(null),
+  purchase_restriction: subscriptionPurchaseRestrictionSchema.nullable().default(null),
 });
 
 export const checkoutRequestSchema = z.discriminatedUnion("plan_type", [
@@ -254,6 +263,9 @@ export type CheckoutState = z.infer<typeof checkoutStateSchema>;
 export type PlanChangeState = z.infer<typeof planChangeStateSchema>;
 export type SubscriptionQuota = z.infer<typeof subscriptionQuotaSchema>;
 export type SubscriptionOverview = z.infer<typeof subscriptionOverviewSchema>;
+export type SubscriptionPurchaseRestriction = z.infer<
+  typeof subscriptionPurchaseRestrictionSchema
+>;
 export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
 export type CheckoutResponse = z.infer<typeof checkoutResponseSchema>;
 export type PortalResponse = z.infer<typeof portalResponseSchema>;

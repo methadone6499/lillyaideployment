@@ -1,6 +1,8 @@
 "use client";
 
-import { TextField } from "@/components/ui";
+import { formatDisplayCount } from "@/lib/formatDisplay";
+
+import { Button, TextField } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useState, type FormEvent } from "react";
 import {
@@ -66,14 +68,14 @@ export function EditSeatDialog({
 
   const quotaHelper = canChangeQuota
     ? [
-        `Used: ${seat.report_quota_used}. Set the absolute report total for this seat.`,
+        `Used: ${formatDisplayCount(seat.report_quota_used)}. Set the absolute report total for this seat.`,
         quotaUnallocated == null
           ? null
-          : `${quotaUnallocated} unallocated in the company pool.`,
+          : `${formatDisplayCount(quotaUnallocated)} unallocated in the company pool.`,
       ]
         .filter(Boolean)
         .join(" ")
-    : `${seat.report_quota_used} used · ${seat.report_quota_remaining} remaining.`;
+    : `${formatDisplayCount(seat.report_quota_used)} used · ${formatDisplayCount(seat.report_quota_remaining)} remaining.`;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -219,10 +221,10 @@ export function EditSeatDialog({
                   <label
                     key={value}
                     className={cn(
-                      "flex h-14 cursor-pointer items-center justify-center rounded-card border text-body-lg text-white transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand",
+                      "flex h-14 cursor-pointer items-center justify-center rounded-field border text-body-lg transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand",
                       isSelected
-                        ? "border-brand-chip-border bg-brand"
-                        : "border-border-default bg-surface-default hover:bg-surface-elevated",
+                        ? "border-brand-chip-border bg-brand text-brand-foreground"
+                        : "border-border-default bg-surface-default text-white hover:bg-surface-elevated",
                     )}
                   >
                     <input
@@ -265,14 +267,15 @@ export function EditSeatDialog({
         seat.can_manage &&
         seat.status !== "removed" &&
         !seatChangesLocked ? (
-          <button
-            type="button"
+          <Button
+            variant="destructive"
+            size="table"
             disabled={isPending}
             onClick={() => onRequestRemove(seat)}
-            className="self-start text-label font-medium text-[#d92244] transition-colors hover:text-[#fb4141] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d92244] disabled:cursor-not-allowed disabled:opacity-50"
+            className="self-start"
           >
             Remove seat
-          </button>
+          </Button>
         ) : null}
 
         {formError ? (

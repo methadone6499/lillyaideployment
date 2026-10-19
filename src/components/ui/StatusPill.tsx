@@ -27,7 +27,7 @@ const statusConfig: Record<
     className: "text-status-partial",
   },
   completed: { label: "Completed", className: "text-status-success" },
-  failed: { label: "Failed", className: "text-red-400" },
+  failed: { label: "Failed", className: "text-status-danger" },
 };
 
 export function StatusPill({ status, className }: StatusPillProps) {

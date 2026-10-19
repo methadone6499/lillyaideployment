@@ -36,3 +36,5 @@ export {
   resetReportWizard,
   syncWizardWithAuthSession,
 } from "./store/reportWizardSession";
+export { clearCompanyGenerationQueries } from "./store/reportWizardSession";
+export { getReportRequestErrorMessage } from "./utils/getReportRequestErrorMessage";

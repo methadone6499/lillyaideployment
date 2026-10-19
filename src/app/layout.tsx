@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { AuthSessionProvider } from "@/features/auth";
+import { BRAND } from "@/lib/brand";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { UserSessionIsolationProvider } from "@/providers/UserSessionIsolationProvider";
+import { CompanyMembershipBoundary } from "@/providers/CompanyMembershipBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,7 +24,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Lilly AI",
+  title: BRAND.name,
   description: "AI clinical intelligence for HTA-compliant evidence reports",
 };
 
@@ -39,7 +41,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <QueryProvider>
           <AuthSessionProvider>
-            <UserSessionIsolationProvider>{children}</UserSessionIsolationProvider>
+            <UserSessionIsolationProvider><CompanyMembershipBoundary>{children}</CompanyMembershipBoundary></UserSessionIsolationProvider>
           </AuthSessionProvider>
         </QueryProvider>
       </body>

@@ -177,7 +177,6 @@ export {
   type ReviewerDataSource,
   type ReviewerKpiCard,
   type ReviewerKpiId,
-  type ReviewerNotification,
   type ReviewerReportContentBlock,
   type ReviewerReportDetail,
   type ReviewerReportSection,

@@ -18,7 +18,9 @@ export function SubscriptionAdminNavigation({
     hasPermission(authMe, "admin:subscriptions_manage")
       ? { href: CUSTOM_REQUESTS_HREF, label: "Custom requests" }
       : null,
-    { href: SUBSCRIPTIONS_HREF, label: "Subscriptions" },
+    hasPermission(authMe, "admin:subscriptions_read")
+      ? { href: SUBSCRIPTIONS_HREF, label: "Subscriptions" }
+      : null,
   ].filter((link): link is { href: string; label: string } => link !== null);
 
   return (
@@ -32,7 +34,7 @@ export function SubscriptionAdminNavigation({
           href={link.href}
           aria-current={link.href === activeHref ? "page" : undefined}
           className={cn(
-            "rounded-button border px-4 py-2 text-label font-medium transition-colors",
+            "rounded-field border px-4 py-2 text-label font-medium transition-colors",
             link.href === activeHref
               ? "border-brand bg-brand-bg text-white"
               : "border-border-default bg-surface-default text-text-body hover:bg-surface-elevated",

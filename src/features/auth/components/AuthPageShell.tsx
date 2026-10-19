@@ -1,6 +1,7 @@
 "use client";
 
 import { LogoLink } from "@/components/shared/LogoLink";
+import { BRAND } from "@/lib/brand";
 import type { ReactNode } from "react";
 
 type AuthPageShellProps = {
@@ -10,7 +11,7 @@ type AuthPageShellProps = {
 
 export function AuthPageShell({ title, children }: AuthPageShellProps) {
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-landing-background">
+    <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-landing-background font-[family-name:var(--font-inter)]">
       <div
         aria-hidden
         className="pointer-events-none absolute top-[var(--layout-auth-header-height)] bottom-0 left-[var(--layout-auth-guide-inset)] hidden w-px bg-white/10 lg:block"
@@ -28,15 +29,15 @@ export function AuthPageShell({ title, children }: AuthPageShellProps) {
 
       <main className="relative z-10 flex flex-1 flex-col items-center px-6 pt-[var(--layout-auth-main-top)] pb-[var(--layout-auth-main-bottom)]">
         <div className="flex w-full max-w-[var(--layout-auth-form-width)] flex-col items-stretch gap-[var(--layout-auth-title-form-gap)]">
-          <h1 className="text-center text-[length:var(--text-auth-title)] leading-none font-normal text-landing-text-heading">
+          <h1 className="text-center text-[length:var(--text-auth-title)] leading-none font-medium text-landing-text-heading">
             {title}
           </h1>
           {children}
         </div>
       </main>
 
-      <p className="relative z-10 shrink-0 px-6 pb-[var(--layout-auth-footer-bottom)] text-center font-inter text-[length:var(--text-auth-footer)] leading-normal text-white/32">
-        © 2026 LillyAI - All rights reserved. - Powered by VelueMED Consultants
+      <p className="relative z-10 shrink-0 px-6 pb-[var(--layout-auth-footer-bottom)] text-center font-inter text-[length:var(--text-auth-footer)] leading-normal text-text-muted">
+        © 2026 {BRAND.name}. All rights reserved. Powered by {BRAND.partner}.
       </p>
     </div>
   );

@@ -18,7 +18,7 @@ export function Step1DrugIntake() {
     validation.suggestion !== null;
 
   return (
-    <Card variant="default" className="w-full max-w-[744px] p-6">
+    <Card variant="default" className="w-full max-w-[640px] p-6">
       <div className="flex flex-col gap-8">
         <TextField
           label="Drug name"

@@ -11,7 +11,17 @@ type LandingCtaButtonProps = {
   showArrow?: boolean;
   onClick?: () => void;
   type?: "button" | "submit";
+  size?: "default" | "compact" | "hero";
 };
+
+const buttonClasses =
+  "inline-flex min-w-0 items-center justify-center gap-2 px-5 text-label font-medium leading-6 transition-[color,background-color,border-color,opacity] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none disabled:cursor-not-allowed disabled:border-white/8 disabled:bg-surface-default disabled:text-text-muted";
+
+const sizeClasses = {
+  default: "h-[52px] rounded-[var(--landing-radius-button)]",
+  compact: "h-10 rounded-[10.5px]",
+  hero: "h-[58px] rounded-field",
+} as const;
 
 export function LandingCtaButton({
   children,
@@ -21,17 +31,20 @@ export function LandingCtaButton({
   showArrow = true,
   onClick,
   type = "button",
+  size = "default",
 }: LandingCtaButtonProps) {
   const classes = cn(
-    "inline-flex h-[58px] items-center justify-center gap-1.5 rounded-field border-[1.75px] border-[rgba(1,176,89,0.72)] bg-landing-emerald-gradient px-6 text-label font-medium text-white shadow-landing-emerald-glow transition-opacity hover:opacity-95",
-    fullWidth && "w-full",
+    buttonClasses,
+    sizeClasses[size],
+    "border-[1.75px] border-[rgba(1,176,89,0.72)] bg-[image:var(--landing-emerald-gradient)] text-brand-foreground shadow-[var(--landing-emerald-glow)] hover:opacity-95 disabled:bg-none disabled:shadow-none disabled:hover:opacity-100",
+    fullWidth ? "w-full" : "shrink-0",
     className,
   );
 
   const content = (
     <>
       {children}
-      {showArrow && <ArrowNarrowRightSmallIcon />}
+      {showArrow && <ArrowNarrowRightSmallIcon className="size-5" />}
     </>
   );
 
@@ -55,17 +68,18 @@ export function LandingSecondaryButton({
   href,
   className,
   fullWidth = false,
-  featured = false,
   onClick,
+  size = "default",
+  variant = "default",
 }: Omit<LandingCtaButtonProps, "showArrow" | "type"> & {
-  featured?: boolean;
+  variant?: "default" | "pricing";
 }) {
   const classes = cn(
-    "inline-flex h-[52px] items-center justify-center rounded-button px-5 text-label font-medium text-white transition-colors",
-    featured
-      ? "border border-border-subtle bg-landing-emerald-gradient shadow-landing-emerald-glow hover:opacity-95"
-      : "border border-border-subtle bg-surface-default hover:bg-surface-elevated",
-    fullWidth && "w-full",
+    buttonClasses,
+    variant === "pricing" ? "h-[52px] rounded-button" : sizeClasses[size],
+    variant === "pricing" ? "border-white/8" : "border-border-default",
+    "border bg-none bg-surface-default text-white shadow-none hover:border-white/20 hover:bg-surface-elevated",
+    fullWidth ? "w-full" : "shrink-0",
     className,
   );
 

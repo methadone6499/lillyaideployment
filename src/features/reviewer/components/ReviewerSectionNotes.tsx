@@ -47,7 +47,7 @@ export function ReviewerSectionNotes({
           setDraft(platformReportId, sectionId, event.target.value)
         }
         placeholder="Write your notes here..."
-        className="mt-3.5 h-[200px] w-full resize-y rounded-card border border-border-default bg-landing-surface-input px-4 py-4 text-body-lg leading-[26px] text-text-body outline-none placeholder:text-text-body focus:border-brand/60 sm:px-[23px] sm:py-[23px]"
+        className="mt-3.5 h-[200px] w-full resize-y rounded-field border border-border-default bg-landing-surface-input px-4 py-4 text-body-lg leading-[26px] text-text-body outline-none transition-[border-color,box-shadow] placeholder:text-text-body focus-visible:border-brand/60 focus-visible:ring-2 focus-visible:ring-brand/35 sm:px-[23px] sm:py-[23px]"
       />
       <div className="mt-6 flex flex-wrap items-center justify-end gap-4">
         <p

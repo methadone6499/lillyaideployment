@@ -22,7 +22,7 @@ export function AdminReviewerSettings() {
   return (
     <>
       <ReviewerAdminNavigation activeHref="/super-admin/review-settings" />
-      <section className="mt-8 max-w-[760px] rounded-button border border-border-default bg-surface-default p-6" aria-labelledby="review-settings-title">
+      <section className="mt-8 max-w-[640px] rounded-surface border border-border-default bg-surface-default p-6" aria-labelledby="review-settings-title">
         <h2 id="review-settings-title" className="text-card-title font-medium text-white">Automatic assignment policy</h2>
         <p className="mt-3 text-label leading-6 text-text-body">
           Changes apply to new and reassigned work. Existing due dates are not recalculated.
@@ -33,7 +33,7 @@ export function AdminReviewerSettings() {
         ) : settingsQuery.isError ? (
           <div className="mt-8 flex items-center gap-4">
             <p className="text-label text-red-400" role="alert">{classifyReviewerError(settingsQuery.error).message}</p>
-            <button type="button" className="text-label font-medium text-brand hover:underline" onClick={() => void settingsQuery.refetch()}>Try again</button>
+            <Button variant="table" size="table" onClick={() => void settingsQuery.refetch()}>Try again</Button>
           </div>
         ) : settingsQuery.data ? (
           <ReviewerSettingsForm key={settingsQuery.data.version} settings={settingsQuery.data} onRefresh={() => settingsQuery.refetch()} />
@@ -97,7 +97,7 @@ function ReviewerSettingsForm({
           required
           value={overdueDays}
           onChange={(event) => setOverdueDays(event.target.value)}
-          className="h-12 rounded-button border border-border-default bg-surface-subtle px-4 text-body-lg text-white outline-none focus:border-brand"
+          className="h-12 rounded-field border border-border-default bg-surface-subtle px-4 text-label text-white outline-none focus:border-brand"
         />
       </label>
       <label className="flex flex-col gap-2 text-label text-text-muted">
@@ -109,7 +109,7 @@ function ReviewerSettingsForm({
           required
           value={capacity}
           onChange={(event) => setCapacity(event.target.value)}
-          className="h-12 rounded-button border border-border-default bg-surface-subtle px-4 text-body-lg text-white outline-none focus:border-brand"
+          className="h-12 rounded-field border border-border-default bg-surface-subtle px-4 text-label text-white outline-none focus:border-brand"
         />
       </label>
       {feedback ? (

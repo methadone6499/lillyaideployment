@@ -47,6 +47,7 @@ const SUPER_ADMIN_PERMISSIONS = [
   "admin:reports_read",
   "admin:reviewers_manage",
   "admin:subscriptions_manage",
+  "admin:subscriptions_read",
   "admin:users_read",
   "admin:users_manage",
 ] as const satisfies readonly Permission[];

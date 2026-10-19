@@ -68,7 +68,7 @@ export function statusPillClass(status: string): string {
   }
 
   if (status === "trialing" || status === "pending_verification") {
-    return "bg-[rgba(0,101,248,0.12)] text-[#62a0ff]";
+    return "bg-[rgba(0,101,248,0.12)] text-status-info";
   }
 
   if (status === "past_due" || status === "suspended") {
@@ -76,20 +76,10 @@ export function statusPillClass(status: string): string {
   }
 
   if (status === "disabled") {
-    return "bg-[rgba(217,34,68,0.12)] text-[#f0627d]";
+    return "bg-[rgba(217,34,68,0.12)] text-status-danger";
   }
 
   return "bg-white/10 text-text-muted";
 }
 
-export function formatAdminDateTime(value: string | null | undefined): string {
-  if (!value) return "—";
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return value;
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(parsed);
-}
+export { formatDisplayDateTime as formatAdminDateTime } from "@/lib/formatDisplay";

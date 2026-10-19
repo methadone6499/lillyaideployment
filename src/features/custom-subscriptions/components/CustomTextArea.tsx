@@ -40,7 +40,7 @@ export function CustomTextArea({
         aria-describedby={[helperId, errorId].filter(Boolean).join(" ") || undefined}
         aria-invalid={hasError || undefined}
         className={cn(
-          "w-full rounded-card border border-border-default bg-input-fill px-[19px] py-3 text-input text-white placeholder:text-text-muted outline-none focus:border-brand-chip-border",
+          "w-full rounded-field border border-border-default bg-input-fill px-[19px] py-3 text-input text-white outline-none transition-[border-color,box-shadow] placeholder:text-text-muted focus-visible:border-brand-chip-border focus-visible:ring-2 focus-visible:ring-brand/35",
           hasError && "border-status-running",
           className,
         )}

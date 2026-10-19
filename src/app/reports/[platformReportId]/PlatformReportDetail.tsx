@@ -107,7 +107,7 @@ export function PlatformReportDetail({
     return (
       <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
         <AppHeader />
-        <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-[var(--layout-page-padding)] py-6">
+        <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
           <p className="text-body-lg text-text-muted">Loading report…</p>
         </main>
       </div>
@@ -120,7 +120,7 @@ export function PlatformReportDetail({
     return (
       <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
         <AppHeader />
-        <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col gap-8 px-[var(--layout-page-padding)] py-6">
+        <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-12">
           <div className="flex flex-col gap-4">
             <h1 className="text-page-title font-medium text-text-heading">
               {title}
@@ -146,7 +146,7 @@ export function PlatformReportDetail({
     return (
       <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
         <AppHeader />
-        <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-[var(--layout-page-padding)] py-6">
+        <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
           <p className="text-body-lg text-text-muted">Loading report…</p>
         </main>
       </div>
@@ -192,9 +192,9 @@ export function PlatformReportDetail({
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
       <AppHeader />
-      <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-[var(--layout-page-padding)] py-6">
+      <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
         {canSubmitForReview ? (
-          <section className="mb-8 flex flex-col gap-4 rounded-card border border-brand/30 bg-brand-bg px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <section className="mb-8 flex flex-col gap-4 rounded-surface border border-brand/30 bg-brand-bg px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-card-title font-medium text-white">
                 Ready for independent review?
@@ -217,7 +217,7 @@ export function PlatformReportDetail({
             </Button>
           </section>
         ) : !report.is_editable ? (
-          <section className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-card border border-border-default bg-surface-default px-6 py-5">
+          <section className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-surface border border-border-default bg-surface-default px-6 py-5">
             <div>
               <h2 className="text-card-title font-medium text-white">Locked for review</h2>
               <p className="mt-2 text-label text-text-body">
@@ -226,13 +226,13 @@ export function PlatformReportDetail({
             </div>
             <span className="flex flex-wrap items-center gap-2">
               <DashboardStatusPill status={report.review_status} />
-              {report.is_overdue ? <span className="rounded-card bg-red-400/10 px-3 py-2 text-label font-medium text-red-400">Overdue</span> : null}
+              {report.is_overdue ? <span className="rounded-field bg-[rgba(217,34,68,0.12)] px-3 py-2 text-label font-medium text-status-danger">Overdue</span> : null}
             </span>
           </section>
         ) : null}
 
         {submissionError ? (
-          <p className="mb-6 rounded-card border border-red-400/30 bg-red-400/10 px-5 py-4 text-label text-red-400" role="alert">
+          <p className="mb-6 rounded-surface border border-red-400/30 bg-red-400/10 px-5 py-4 text-label text-red-400" role="alert">
             {submissionError}
           </p>
         ) : null}

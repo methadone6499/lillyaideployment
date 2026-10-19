@@ -15,22 +15,19 @@ import {
   reportHasDirtyNotes,
   useReviewerSessionStore,
 } from "../store/useReviewerSessionStore";
-import type { ReviewerNotification, ReviewerReportDetail } from "../types";
+import type { ReviewerReportDetail } from "../types";
 import { toReviewerSectionPresentationItems } from "../utils/mapReviewerReportContent";
 import { ReviewerSectionNotes } from "./ReviewerSectionNotes";
 import { ReviewerUnsavedNotesDialog } from "./ReviewerUnsavedNotesDialog";
 
 const REVIEWER_DASHBOARD_HREF = "/reviewer/assignments";
-const EMPTY_NOTIFICATIONS: readonly ReviewerNotification[] = [];
 
 type ReviewerReportShellProps = {
   report: ReviewerReportDetail | null;
-  notifications?: readonly ReviewerNotification[];
 };
 
 export function ReviewerReportShell({
   report,
-  notifications = EMPTY_NOTIFICATIONS,
 }: ReviewerReportShellProps) {
   const router = useRouter();
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
@@ -99,7 +96,7 @@ export function ReviewerReportShell({
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-text-body">
       <AppHeader
-        actions={<DashboardHeaderActions notifications={notifications} />}
+        actions={<DashboardHeaderActions />}
       />
 
       <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 pt-10 pb-14 sm:px-6 lg:px-12 lg:pt-12">

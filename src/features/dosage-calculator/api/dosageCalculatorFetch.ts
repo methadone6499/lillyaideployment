@@ -1,14 +1,23 @@
 import { ensureAuthenticatedSession } from "@/features/auth";
 import { getReportApiBaseUrl } from "@/lib/reportApiBaseUrl";
 import type { z } from "zod";
+import { getCalculatorApiValidationMessages } from "../utils/calculatorValidation";
 
 export class DosageCalculatorApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
+    public readonly validationMessages: readonly string[] = [],
   ) {
     super(message);
     this.name = "DosageCalculatorApiError";
+  }
+}
+
+export class DosageCalculatorResponseError extends Error {
+  constructor() {
+    super("The calculator returned incomplete results. Try the calculation again. If this continues, contact support.");
+    this.name = "DosageCalculatorResponseError";
   }
 }
 
@@ -17,17 +26,19 @@ function buildUrl(path: string): string {
   return `${getReportApiBaseUrl()}${normalizedPath}`;
 }
 
-async function parseErrorMessage(response: Response): Promise<string> {
+async function parseErrorMessage(response: Response): Promise<{ message: string; validationMessages: string[] }> {
   try {
     const body: unknown = await response.json();
+    const validationMessages = getCalculatorApiValidationMessages(body);
+    const result = (message: string) => ({ message, validationMessages });
     if (typeof body === "object" && body !== null) {
       if ("detail" in body) {
         const { detail } = body as { detail: unknown };
         if (typeof detail === "string") {
-          return detail;
+          return result(detail);
         }
         if (Array.isArray(detail)) {
-          return detail
+          return result(detail
             .map((item) =>
               typeof item === "object" &&
               item !== null &&
@@ -36,7 +47,7 @@ async function parseErrorMessage(response: Response): Promise<string> {
                 ? item.msg
                 : JSON.stringify(item),
             )
-            .join("; ");
+            .join("; "));
         }
         if (
           typeof detail === "object" &&
@@ -44,18 +55,18 @@ async function parseErrorMessage(response: Response): Promise<string> {
           "message" in detail &&
           typeof detail.message === "string"
         ) {
-          return detail.message;
+          return result(detail.message);
         }
       }
       if ("message" in body && typeof body.message === "string") {
-        return body.message;
+        return result(body.message);
       }
     }
   } catch {
     // Response body is not JSON — fall back to status text.
   }
 
-  return response.statusText || `Request failed with status ${response.status}`;
+  return { message: response.statusText || `Request failed with status ${response.status}`, validationMessages: [] };
 }
 
 type DosageCalculatorFetchOptions<TSchema extends z.ZodType> = {
@@ -89,12 +100,22 @@ export async function dosageCalculatorFetch<TSchema extends z.ZodType>(
   });
 
   if (!response.ok) {
+    const error = await parseErrorMessage(response);
     throw new DosageCalculatorApiError(
       response.status,
-      await parseErrorMessage(response),
+      error.message,
+      error.validationMessages,
     );
   }
 
-  const json: unknown = await response.json();
-  return options.schema.parse(json);
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch (error) {
+    if (options.signal?.aborted || (error instanceof Error && error.name === "AbortError")) throw error;
+    throw new DosageCalculatorResponseError();
+  }
+  const parsed = options.schema.safeParse(json);
+  if (!parsed.success) throw new DosageCalculatorResponseError();
+  return parsed.data;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Card } from "@/components/ui";
+import { formatDisplayCount } from "@/lib/formatDisplay";
 
 import type {
   PlanChangeState,
@@ -30,7 +31,7 @@ export function ScheduledDowngradeCard({
     : "your next renewal";
 
   return (
-    <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 rounded-button p-6">
+    <Card className="mt-12 flex max-w-[1488px] flex-col gap-4 p-6">
       <h2 className="text-card-title font-medium text-white">
         Enterprise downgrade scheduled
       </h2>
@@ -39,15 +40,15 @@ export function ScheduledDowngradeCard({
         Custom plan remains active until then.
       </p>
       <dl className="grid gap-3 text-input sm:grid-cols-2">
-        <div className="rounded-card bg-surface-subtle p-4">
+        <div className="rounded-surface bg-surface-subtle p-4">
           <dt className="text-helper text-text-muted">Active now (Custom)</dt>
-          <dd className="mt-1 font-medium text-white">
+          <dd className="mt-1 tabular-nums font-medium text-white">
             {subscription
-              ? `${subscription.limits.seats} seats · ${subscription.limits.reports} reports / month`
+              ? `${formatDisplayCount(subscription.limits.seats)} seats · ${formatDisplayCount(subscription.limits.reports)} reports / month`
               : "Custom limits"}
           </dd>
         </div>
-        <div className="rounded-card bg-surface-subtle p-4">
+        <div className="rounded-surface bg-surface-subtle p-4">
           <dt className="text-helper text-text-muted">
             From {effectiveLabel} (Enterprise)
           </dt>
@@ -64,7 +65,7 @@ export function ScheduledDowngradeCard({
         <Button
           type="button"
           variant="secondary"
-          className="h-12 w-fit text-label"
+          size="table" className="w-fit text-label"
           disabled={disabled}
           onClick={onCancelDowngrade}
         >

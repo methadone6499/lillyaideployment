@@ -133,3 +133,4 @@ export {
   syncPendingPlatformSavesWithAuthSession,
 } from "./utils/clearPlatformReportSession";
 export { savePlatformReportWithRetry } from "./utils/savePlatformReportWithRetry";
+export { clearCompanyReportContext } from "./utils/clearPlatformReportSession";

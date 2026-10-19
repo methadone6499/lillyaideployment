@@ -1,9 +1,11 @@
 "use client";
 
+import { formatDisplayDateTime } from "@/lib/formatDisplay";
+
 import { CloseIcon } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ReportApiError } from "../../api/reportApiError";
+import { getReportRequestErrorMessage } from "../../utils/getReportRequestErrorMessage";
 import {
   useRestoreRevisionMutation,
   useSectionRevision,
@@ -26,11 +28,6 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-const revisionDateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
 type RevisionView = "changes" | "preview";
 
 type RevisionHistoryModalProps = {
@@ -50,15 +47,11 @@ function formatRevisionDate(value: string | null): string | null {
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : revisionDateFormatter.format(date);
+  return Number.isNaN(date.getTime()) ? null : formatDisplayDateTime(date);
 }
 
 function getRevisionErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof ReportApiError || error instanceof Error) {
-    return error.message || fallback;
-  }
-
-  return fallback;
+  return getReportRequestErrorMessage(error, fallback);
 }
 
 function getVersionLabel(revision: number): string {
@@ -282,7 +275,7 @@ export function RevisionHistoryModal({
       onClose();
     } catch (error) {
       setRestoreError(
-        getRevisionErrorMessage(error, "Unable to restore this version."),
+        getRevisionErrorMessage(error, "We could not confirm the version was restored. Reload the version history to check before trying again."),
       );
       setIsConfirmingRestore(false);
     }
@@ -310,7 +303,7 @@ export function RevisionHistoryModal({
         aria-describedby={descriptionId}
         aria-busy={isRestoring}
         tabIndex={-1}
-        className="flex h-[calc(100dvh-2rem)] max-h-[720px] w-full max-w-[1040px] flex-col overflow-hidden rounded-card border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white shadow-2xl"
+        className="flex h-[calc(100dvh-2rem)] max-h-[720px] w-full max-w-[1040px] flex-col overflow-hidden rounded-surface border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white shadow-2xl"
       >
         <header className="flex min-h-[67px] shrink-0 items-center justify-between border-b border-border-default px-5 sm:px-6">
           <div className="min-w-0">
@@ -329,7 +322,7 @@ export function RevisionHistoryModal({
             type="button"
             onClick={requestClose}
             disabled={isRestoring}
-            className="inline-flex size-10 items-center justify-center text-white transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex size-10 items-center justify-center rounded-field text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-text-muted"
             aria-label="Close revision history"
           >
             <CloseIcon className="size-5" />
@@ -356,7 +349,7 @@ export function RevisionHistoryModal({
                     aria-pressed={isSelected}
                     onClick={() => selectRevision(item.revision)}
                     className={cn(
-                      "min-h-16 rounded-button border px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+                      "min-h-16 rounded-field border px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
                       isSelected
                         ? "border-border-default bg-surface-elevated"
                         : "border-transparent hover:bg-surface-default",
@@ -365,11 +358,11 @@ export function RevisionHistoryModal({
                     <span className="flex items-center gap-2 text-input font-medium text-white">
                       {getVersionLabel(item.revision)}
                       {item.isCurrent ? (
-                        <span className="rounded-full bg-brand-bg px-2 py-0.5 text-helper font-normal text-brand">
+                        <span className="rounded-field bg-brand-bg px-2 py-0.5 text-helper font-normal text-brand">
                           Current
                         </span>
                       ) : item.isOriginal ? (
-                        <span className="rounded-full bg-surface-elevated px-2 py-0.5 text-helper font-normal text-text-body">
+                        <span className="rounded-field bg-surface-elevated px-2 py-0.5 text-helper font-normal text-text-body">
                           Original
                         </span>
                       ) : null}
@@ -395,7 +388,7 @@ export function RevisionHistoryModal({
                 <p className="text-helper text-red-400" role="alert">
                   {getRevisionErrorMessage(
                     revisionsQuery.error,
-                    "Unable to load all versions.",
+                    "We could not load the version history. Select Retry to try again.",
                   )}
                 </p>
                 <button
@@ -424,7 +417,7 @@ export function RevisionHistoryModal({
                 </p>
               </div>
               <div
-                className="inline-flex rounded-button border border-border-default bg-black/15 p-1"
+                className="inline-flex rounded-field border border-border-default bg-black/15 p-1"
                 aria-label="Revision view"
               >
                 <button
@@ -432,7 +425,7 @@ export function RevisionHistoryModal({
                   aria-pressed={view === "changes"}
                   onClick={() => setView("changes")}
                   className={cn(
-                    "h-8 rounded-button px-3 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+                    "h-8 rounded-field px-3 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
                     view === "changes"
                       ? "bg-surface-elevated text-white"
                       : "text-text-muted hover:text-white",
@@ -445,7 +438,7 @@ export function RevisionHistoryModal({
                   aria-pressed={view === "preview"}
                   onClick={() => setView("preview")}
                   className={cn(
-                    "h-8 rounded-button px-3 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+                    "h-8 rounded-field px-3 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
                     view === "preview"
                       ? "bg-surface-elevated text-white"
                       : "text-text-muted hover:text-white",
@@ -466,7 +459,7 @@ export function RevisionHistoryModal({
                 <p className="text-body-lg text-red-400" role="alert">
                   {getRevisionErrorMessage(
                     contentError,
-                    "Unable to load this version.",
+                    "We could not load this version. Select the version again or reopen the version history.",
                   )}
                 </p>
               )}
@@ -484,11 +477,11 @@ export function RevisionHistoryModal({
                   )}
 
                   {comparisonRevision === null ? (
-                    <p className="rounded-button border border-border-default bg-surface-subtle px-4 py-4 text-label text-text-body">
+                    <p className="rounded-surface border border-border-default bg-surface-subtle px-4 py-4 text-label text-text-body">
                       There are no earlier changes to compare.
                     </p>
                   ) : textDiff.length === 0 ? (
-                    <p className="rounded-button border border-border-default bg-surface-subtle px-4 py-4 text-label text-text-body">
+                    <p className="rounded-surface border border-border-default bg-surface-subtle px-4 py-4 text-label text-text-body">
                       No text differences were found between these versions.
                     </p>
                   ) : (
@@ -496,7 +489,7 @@ export function RevisionHistoryModal({
                       {textDiff.map((change) => (
                         <article
                           key={change.key}
-                          className="rounded-button border border-border-default bg-surface-subtle px-4 py-4"
+                          className="rounded-surface border border-border-default bg-surface-subtle px-4 py-4"
                         >
                           <h4 className="mb-3 text-helper font-medium uppercase tracking-wide text-text-muted">
                             {change.label}
@@ -552,7 +545,7 @@ export function RevisionHistoryModal({
             type="button"
             onClick={requestClose}
             disabled={isRestoring}
-            className="inline-flex h-10 items-center px-3 text-label font-medium text-white/72 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-12 items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
           >
             {isConfirmingRestore ? "Cancel" : "Close"}
           </button>
@@ -563,7 +556,7 @@ export function RevisionHistoryModal({
                 setRestoreError(null);
                 setIsConfirmingRestore(true);
               }}
-              className="inline-flex h-10 items-center rounded-button bg-brand px-4 text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="inline-flex h-12 items-center rounded-button bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               {selectedRevision === 0
                 ? "Restore original"
@@ -575,7 +568,7 @@ export function RevisionHistoryModal({
               type="button"
               onClick={() => void restoreSelectedRevision()}
               disabled={isRestoring}
-              className="inline-flex h-10 items-center rounded-button bg-brand px-4 text-label font-medium text-white transition-colors hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-12 items-center rounded-button bg-brand px-5 text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted"
             >
               {isRestoring
                 ? "Restoring…"

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getCalculatorValidationMessage } from "@/features/dosage-calculator";
 import {
   reportBudgetImpactSelectionSchema,
   reportCostAnalysisSelectionSchema,
@@ -361,16 +362,13 @@ export function mapReportCalculatorDraft(
 
 export function formatReportCalculatorValidationError(error: unknown): string {
   if (error instanceof z.ZodError) {
-    return error.issues
-      .map((issue) => {
-        const path = issue.path.length > 0 ? issue.path.join(".") : "inputs";
-        return `${path}: ${issue.message}`;
-      })
-      .join("; ");
-  }
-
-  if (error instanceof Error) {
-    return error.message;
+    if (error.issues.some((issue) => issue.code === "custom" && issue.path[0] === "costAnalysis" && issue.path[1] === "drugAcquisition")) {
+      return "Enter the annual drug acquisition cost, or enable Dosing to calculate it.";
+    }
+    if (error.issues.some((issue) => issue.code === "custom" && issue.path[0] === "budgetImpact")) {
+      return "Enter the four new-treatment costs in Budget Impact Analysis, or enable Cost Analysis to supply them.";
+    }
+    return getCalculatorValidationMessage(error);
   }
 
   return "Review the calculation inputs and try again.";

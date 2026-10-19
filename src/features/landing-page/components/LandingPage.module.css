@@ -1,0 +1,87 @@
+.page {
+  /* Scope the landing rollout so other features retain their current tokens. */
+  --landing-background: #000000;
+  --landing-surface-card: var(--surface-default);
+  --landing-surface-panel: #111518;
+  --landing-text-heading: #ffffff;
+  --landing-text-subtle: rgba(255, 255, 255, 0.72);
+  --landing-radius-button: 4px;
+  --landing-radius-card: 12px;
+  --landing-radius-badge: 8px;
+
+  --layout-landing-section-width: 1440px;
+  --layout-landing-grid-width: 1440px;
+  --layout-landing-pricing-width: 1440px;
+  --layout-landing-header-height: 80px;
+  --layout-landing-header-padding-x: 24px;
+  --layout-landing-section-padding-x: 24px;
+  --layout-landing-section-padding-y: 64px;
+  --layout-landing-hero-gap: 32px;
+  --layout-landing-hero-title-gap: 24px;
+
+  /* Fixed type sizes; change display size at breakpoints rather than with vw. */
+  --text-landing-hero: 40px;
+  --leading-landing-hero: 48px;
+  --text-landing-section: 32px;
+  --leading-landing-section: 40px;
+  --text-landing-cta: 32px;
+  --leading-landing-cta: 40px;
+  --text-landing-body-lg: 18px;
+  --leading-landing-body-lg: 28px;
+  --text-landing-body: 16px;
+  --leading-landing-body: 24px;
+  --text-landing-price: 40px;
+  --text-landing-price-suffix: 20px;
+
+  color-scheme: dark;
+}
+
+.loginButton {
+  width: 108px;
+  gap: 6px;
+  padding-inline: 24px 18px;
+  /* Figma's inside stroke does not reduce the space available for the label. */
+  border-width: 0;
+  box-shadow:
+    inset 0 0 0 1.75px rgba(1, 176, 89, 0.72),
+    var(--landing-emerald-glow);
+}
+
+.pricingSection {
+  padding-block-end: 0;
+}
+
+.addOnsSection {
+  padding-block-start: 64px;
+}
+
+.page :where(a[href], button:enabled) {
+  cursor: pointer;
+}
+
+.page :where(a, button):focus-visible {
+  outline: 2px solid var(--brand-emerald);
+  outline-offset: 2px;
+}
+
+.page ::selection {
+  color: var(--text-heading);
+  background: var(--brand-emerald-highlight);
+}
+
+@media (min-width: 768px) {
+  .page {
+    --text-landing-hero: 72px;
+    --leading-landing-hero: 80px;
+    --text-landing-section: 40px;
+    --leading-landing-section: 48px;
+    --layout-landing-section-padding-y: 96px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .page {
+    --layout-landing-header-padding-x: 32px;
+    --layout-landing-section-padding-x: 32px;
+  }
+}

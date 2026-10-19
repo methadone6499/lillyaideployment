@@ -14,7 +14,7 @@ export function AuthSessionUnavailable({
       </p>
       <button
         type="button"
-        className="rounded-field border border-border-default bg-surface-elevated px-4 py-2 text-label font-medium text-text-heading transition-colors hover:bg-input-fill disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-button border border-border-default bg-surface-elevated px-4 py-2 text-label font-medium text-text-heading transition-colors hover:bg-input-fill disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
         onClick={onRetry}
         disabled={isRetrying}
       >

@@ -67,7 +67,7 @@ export function PaidFeatureGate({ feature, children }: PaidFeatureGateProps) {
         {classified?.retryable || !classified ? (
           <Button
             type="button"
-            className="h-12 w-fit text-label"
+            size="table" className="w-fit text-label"
             onClick={() => {
               void overviewQuery.refetch();
             }}

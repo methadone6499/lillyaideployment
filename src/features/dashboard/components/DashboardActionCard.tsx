@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 type DashboardActionCardVariant = "default" | "highlight" | "admin";
 
 type DashboardActionCardProps = {
+  className?: string;
   variant?: DashboardActionCardVariant;
   title: string;
   description: string;
@@ -33,12 +34,12 @@ function ActionCardCta({
   disabledReason?: string;
 }) {
   const className = cn(
-    "mt-auto flex h-[52px] w-full items-center justify-between rounded-step-badge px-5 text-label font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-    variant === "highlight" && "bg-brand text-white hover:bg-brand/90",
+    "mt-auto flex h-[52px] w-full items-center justify-between gap-2.5 rounded-button px-5 text-label font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border disabled:border-border-subtle disabled:bg-surface-default disabled:text-text-muted",
+    variant === "highlight" && "bg-brand text-brand-foreground hover:bg-[#059669]",
     variant === "admin" &&
-      "border border-dashed border-brand/28 bg-brand/9 text-white hover:bg-brand/16",
+      "border border-border-default bg-surface-default text-white hover:border-white/20 hover:bg-surface-elevated",
     variant === "default" &&
-      "border border-dashed border-white/28 bg-surface-default text-text-heading hover:bg-surface-elevated",
+      "border border-border-default bg-surface-default text-text-heading hover:border-white/20 hover:bg-surface-elevated",
   );
 
   const content = (
@@ -70,6 +71,7 @@ function ActionCardCta({
 }
 
 export function DashboardActionCard({
+  className,
   variant = "default",
   title,
   description,
@@ -82,7 +84,7 @@ export function DashboardActionCard({
   const titleNode: ReactNode = (
     <p
       className={cn(
-        "text-[32px] font-medium leading-none tracking-[-0.02em]",
+        "text-dashboard-card-title font-medium leading-none tracking-[-0.02em]",
         variant === "default" ? "text-brand" : "text-text-heading",
       )}
     >
@@ -93,9 +95,10 @@ export function DashboardActionCard({
   return (
     <Card
       className={cn(
-        "flex min-h-[231px] flex-col rounded-button p-6",
+        "flex min-h-[231px] min-w-0 flex-col p-6",
         variant === "highlight" &&
-          "border-2 border-brand/25 bg-brand-badge",
+          "border-brand/25 bg-brand-badge",
+        className,
       )}
     >
       <div className="flex flex-col gap-6">

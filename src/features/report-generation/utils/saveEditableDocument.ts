@@ -1,13 +1,11 @@
-import {
-  getEditingErrorCode,
-  isReportApiError,
-} from "../api/reportApiError";
+import { getEditingErrorCode } from "../api/reportApiError";
 import type {
   EditableDocumentResponse,
   EditingActor,
   EditingErrorCode,
   SaveEditableDocumentInput,
 } from "../types";
+import { getReportRequestErrorMessage } from "./getReportRequestErrorMessage";
 
 export const SAVE_EDITABLE_DOCUMENT_MISSING_ACTOR_MESSAGE =
   "Your account is required to save edits.";
@@ -28,7 +26,7 @@ export const SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES: Record<
   report_not_editable:
     "This report cannot be edited in its current status.",
   validation_failed:
-    "These edits could not be saved because they change compiler-owned structure.",
+    "These edits change a protected part of the report. Keep the original structure and try saving again.",
   section_not_ready: "This section is not ready to edit yet.",
 };
 
@@ -86,17 +84,12 @@ export function shouldRetrySaveEditableDocument(): boolean {
 
 export function getSaveEditableDocumentFailureMessage(error: unknown): string {
   const code = getEditingErrorCode(error);
-  if (isReportApiError(error) && error.message.trim()) {
-    return error.message;
-  }
-
   if (code) {
     return SAVE_EDITABLE_DOCUMENT_ERROR_MESSAGES[code];
   }
 
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
+  if (error instanceof Error && "code" in error && error.code === "invalid_response") {
+    return "We could not confirm this section was saved. Check the latest version before trying again.";
   }
-
-  return SAVE_EDITABLE_DOCUMENT_GENERIC_FAILURE_MESSAGE;
+  return getReportRequestErrorMessage(error, SAVE_EDITABLE_DOCUMENT_GENERIC_FAILURE_MESSAGE);
 }

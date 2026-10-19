@@ -1,3 +1,4 @@
+import { formatDisplayCount } from "@/lib/formatDisplay";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
 import type { ReviewerDashboardStats } from "../schemas/reviewerSchemas";
@@ -11,16 +12,12 @@ const kpis = [
   { key: "assigned_reports", label: "Pending Assignments", className: "text-status-in-queue" },
   { key: "in_review", label: "In Review", className: "text-status-running" },
   { key: "completed_reports", label: "Completed Assignments", className: "text-brand" },
-  { key: "overdue_reports", label: "Overdue Assignments", className: "text-[#d92244]" },
+  { key: "overdue_reports", label: "Overdue Assignments", className: "text-status-danger" },
 ] as const satisfies readonly {
   key: keyof ReviewerDashboardStats;
   label: string;
   className: string;
 }[];
-
-function formatKpiValue(value: number): string {
-  return String(value).padStart(2, "0");
-}
 
 export function ReviewerKpiGrid({ stats }: ReviewerKpiGridProps) {
   return (
@@ -31,16 +28,16 @@ export function ReviewerKpiGrid({ stats }: ReviewerKpiGridProps) {
       {kpis.map((kpi) => (
         <Card
           key={kpi.key}
-          className="flex min-h-[150px] min-w-0 flex-col justify-between rounded-button p-6"
+          className="flex min-h-[150px] min-w-0 flex-col justify-between p-6"
         >
           <p className="text-card-title font-medium text-white">{kpi.label}</p>
           <p
             className={cn(
-              "text-[64px] font-medium leading-none tracking-[-0.02em]",
+              "tabular-nums text-kpi font-medium leading-none tracking-[-0.02em]",
               kpi.className,
             )}
           >
-            {formatKpiValue(stats[kpi.key])}
+            {formatDisplayCount(stats[kpi.key])}
           </p>
         </Card>
       ))}

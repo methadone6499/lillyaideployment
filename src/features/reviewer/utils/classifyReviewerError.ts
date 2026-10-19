@@ -91,3 +91,13 @@ export function classifyReviewerError(error: unknown): ReviewerError {
     retryable: true,
   };
 }
+
+export function getReviewerRequestErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiRequestError) {
+    if (error.code && MESSAGES[error.code]) return MESSAGES[error.code];
+    if (error.status === 401) return "Your session has expired. Sign in again to continue.";
+    if (error.status === 403) return "You do not have permission to view this information.";
+    if (error.status === 429) return "Too many requests. Wait a moment, then try again.";
+  }
+  return fallback;
+}

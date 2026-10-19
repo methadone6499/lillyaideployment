@@ -259,6 +259,32 @@ export function isSectionAvailable(
   return true;
 }
 
+/** User-facing reason shown beside a Step 5 section that cannot be selected. */
+export function getSectionUnavailableReason(
+  id: WizardSectionId,
+  inputs: SectionSelectionInputs,
+  selectedSectionIds: readonly WizardSectionId[],
+): string | null {
+  if (isSectionAvailable(id, inputs, selectedSectionIds)) {
+    return null;
+  }
+
+  if (id === "clinical") {
+    return "Select at least one clinical study in Step 3 to include this section.";
+  }
+  if (id === "economic") {
+    return "Select economic evidence or add calculation inputs to include this section.";
+  }
+  if (id === "comparator") {
+    return "Select at least one comparator in Step 4 to include this section.";
+  }
+  if (id === "critical_appraisal") {
+    return "Include Clinical Evidence or Economic Evidence to enable this section.";
+  }
+
+  return "This section is unavailable for the current report inputs.";
+}
+
 /** Step 5 section IDs the user can select, preserving definition order. */
 export function getToggleableSectionIds(
   inputs: SectionSelectionInputs,

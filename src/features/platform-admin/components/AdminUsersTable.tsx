@@ -1,6 +1,7 @@
 "use client";
 
 import { SearchIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui";
 import {
   hasPermission,
   useAuthUser,
@@ -29,7 +30,7 @@ const MAX_SEARCH_LENGTH = 100;
 type AdminUserStatusFilterValue = UserStatus | "all";
 
 const ADMIN_USER_STATUS_FILTER_OPTIONS = [
-  { value: "all", label: "All Status" },
+  { value: "all", label: "All statuses" },
   { value: "pending_verification", label: "Pending Verification" },
   { value: "active", label: "Active" },
   { value: "disabled", label: "Disabled" },
@@ -49,7 +50,7 @@ const USER_STATUS_PILL_CONFIG: Record<
 > = {
   pending_verification: {
     label: "Pending Verification",
-    className: "bg-[rgba(0,101,248,0.12)] text-[#0065f8]",
+    className: "bg-[rgba(0,101,248,0.12)] text-status-info",
   },
   active: {
     label: "Active",
@@ -57,7 +58,7 @@ const USER_STATUS_PILL_CONFIG: Record<
   },
   disabled: {
     label: "Disabled",
-    className: "bg-[rgba(217,34,68,0.12)] text-[#d92244]",
+    className: "bg-[rgba(217,34,68,0.12)] text-status-danger",
   },
 };
 
@@ -197,14 +198,14 @@ export function AdminUsersTable() {
       aria-busy={usersQuery.isFetching}
       className="mt-12 lg:mt-14"
     >
-      <div className="overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <div className="overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-card-title font-medium text-white">Users</h2>
 
           <div className="flex w-full flex-col gap-3 sm:max-w-[664px] sm:flex-1 sm:flex-row sm:items-center sm:gap-4">
             <label className="relative block w-full sm:flex-1">
               <span className="sr-only">Search name or email</span>
-              <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-white/28">
+              <span className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-text-muted">
                 <SearchIcon />
               </span>
               <input
@@ -213,7 +214,7 @@ export function AdminUsersTable() {
                 maxLength={MAX_SEARCH_LENGTH}
                 placeholder="Search name or email"
                 onChange={(event) => handleSearchChange(event.target.value)}
-                className="h-14 w-full rounded-button bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none placeholder:text-white/28 focus:ring-1 focus:ring-border-default"
+                className="h-14 w-full rounded-surface bg-surface-subtle py-4 pr-5 pl-14 text-body-lg text-white outline-none transition-[box-shadow] placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-brand/35"
               />
             </label>
 
@@ -257,15 +258,15 @@ export function AdminUsersTable() {
               >
                 <p>{getListErrorMessage(usersQuery.error)}</p>
                 <AdminRequestId requestId={getRequestId(usersQuery.error)} />
-                <button
-                  type="button"
-                  className="rounded-button border border-border-default px-4 py-2 font-medium text-white transition-colors hover:bg-surface-elevated"
+                <Button
+                  variant="table"
+                  size="table"
                   onClick={() => {
                     void usersQuery.refetch();
                   }}
                 >
                   Try again
-                </button>
+                </Button>
               </div>
             ) : showEmpty ? (
               <p className="px-6 py-10 text-center text-label text-text-muted">
@@ -286,7 +287,7 @@ export function AdminUsersTable() {
                     )}
                   >
                     <span className="flex min-w-0 items-center gap-4">
-                      <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-toggle-knob bg-surface-elevated text-input font-medium text-white">
+                      <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-row-index bg-surface-elevated text-input font-medium text-white">
                         {(safeCurrentPage - 1) * ROWS_PER_PAGE + index + 1}
                       </span>
                       <span className="truncate text-label font-medium text-white">
@@ -319,7 +320,7 @@ export function AdminUsersTable() {
 
                     <Link
                       href={`/admin/users/${encodeURIComponent(user.id)}`}
-                      className="justify-self-end rounded-button border border-border-default px-3 py-2 text-input font-medium text-white hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      className="inline-flex h-12 items-center justify-center justify-self-end rounded-button border border-border-default bg-surface-subtle px-5 text-label font-medium text-white hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
                       View
                     </Link>
@@ -342,16 +343,16 @@ export function AdminUsersTable() {
         >
           <span>{getListErrorMessage(usersQuery.error)}</span>
           <AdminRequestId requestId={getRequestId(usersQuery.error)} />
-          <button
-            type="button"
-            className="rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"
+          <Button
+            variant="table"
+            size="compact"
             disabled={usersQuery.isFetchingNextPage}
             onClick={() => {
               void usersQuery.fetchNextPage();
             }}
           >
             Retry
-          </button>
+          </Button>
         </div>
       ) : null}
 

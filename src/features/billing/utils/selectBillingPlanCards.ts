@@ -2,6 +2,7 @@ import type { PlanType, SubscriptionOverview } from "../schemas/billingSchemas";
 import {
   formatAmountMinor,
   formatBillingIntervalSuffix,
+  formatCountLabel,
   formatLocalDate,
 } from "./formatBilling";
 import {
@@ -94,6 +95,10 @@ function selectPlanAction(
     return { action: "none", ctaLabel: "Current Plan", helper: null };
   }
 
+  if (overview.purchase_restriction) {
+    return { action: "none", ctaLabel: "Subscription changes suspended", helper: null };
+  }
+
   if (plan === "custom") {
     if (!capabilities.canRequestCustom) {
       return {
@@ -181,10 +186,10 @@ function selectPlanAction(
       return {
         action: "portal",
         ctaLabel: capabilities.requiresPortalBeforeUpgrade
-          ? "Resume plan to upgrade"
+          ? "Review cancellation"
           : "Manage billing",
         helper: capabilities.requiresPortalBeforeUpgrade
-          ? "Resume your Standard subscription in the billing portal before upgrading."
+          ? "Use Resume subscription on your current plan before upgrading."
           : "Review your Standard subscription in the billing portal before upgrading.",
       };
     }
@@ -216,7 +221,7 @@ export function selectBillingPlanCards(
         ? formatBillingIntervalSuffix(subscription.billing_interval)
         : plan.priceSuffix,
       allowance: subscription
-        ? `${subscription.limits.reports} reports / period · ${subscription.limits.seats} ${subscription.limits.seats === 1 ? "seat" : "seats"}`
+        ? `${formatCountLabel(subscription.limits.reports, "report")} / period · ${formatCountLabel(subscription.limits.seats, "seat")}`
         : plan.allowance,
       ...action,
       current,

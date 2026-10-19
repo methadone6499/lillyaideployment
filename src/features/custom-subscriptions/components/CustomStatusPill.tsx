@@ -12,10 +12,10 @@ import {
 } from "../utils/formatCustomSubscription";
 
 const NEUTRAL_TONE = "bg-white/10 text-text-muted";
-const INFO_TONE = "bg-[rgba(0,101,248,0.12)] text-[#0065f8]";
+const INFO_TONE = "bg-[rgba(0,101,248,0.12)] text-status-info";
 const WARNING_TONE = "bg-[rgba(255,200,92,0.12)] text-status-running";
 const SUCCESS_TONE = "bg-[rgba(16,185,129,0.12)] text-status-success";
-const DANGER_TONE = "bg-[rgba(217,34,68,0.12)] text-[#d92244]";
+const DANGER_TONE = "bg-[rgba(217,34,68,0.12)] text-status-danger";
 
 const REQUEST_STATUS_TONES: Record<CustomRequestStatus, string> = {
   submitted: INFO_TONE,
@@ -58,7 +58,7 @@ function Pill({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-card p-2.5 text-input font-medium whitespace-nowrap",
+        "inline-flex items-center justify-center rounded-field p-2.5 text-input font-medium whitespace-nowrap",
         toneClassName,
         className,
       )}

@@ -48,6 +48,13 @@ export const adminUserResponseSchema = z.object({
   created_at: isoDateTimeSchema,
   access: adminUserAccessSchema,
   access_subscription: adminUserAccessSubscriptionSchema.nullable(),
+  subscription_restriction: z.object({
+    status: z.enum(["pending_cancellation", "active"]),
+    restricted_at: isoDateTimeSchema,
+    restricted_by_user_id: z.string(),
+    target_subscription_id: z.string().nullable(),
+    paid_access_ends_at: isoDateTimeSchema.nullable(),
+  }).nullable(),
 });
 
 export const adminUserListResponseSchema = z.object({

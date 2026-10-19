@@ -5,10 +5,12 @@ import { cn } from "@/lib/cn";
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import type { DashboardStatusFilterValue } from "../types";
 
 export type { DashboardStatusFilterValue };
@@ -44,6 +46,8 @@ export function DashboardStatusFilter<
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const id = useId();
   const listboxId = `${id}-listbox`;
   const resolvedOptions = (options ??
@@ -58,15 +62,105 @@ export function DashboardStatusFilter<
   };
 
   const openMenu = () => {
+    if (resolvedOptions.length === 0) return;
+
     setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
     setOpen(true);
   };
 
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const trigger = triggerRef.current;
+    const menu = menuRef.current;
+    if (!trigger || !menu) return;
+
+    const updatePosition = () => {
+      const rect = trigger.getBoundingClientRect();
+      const viewportWidth = document.documentElement.clientWidth;
+      const viewportHeight = window.innerHeight;
+      const gutter = 8;
+      const gap = 4;
+      const availableWidth = Math.max(0, viewportWidth - gutter * 2);
+
+      menu.style.fontFamily = window.getComputedStyle(trigger).fontFamily;
+      menu.style.minWidth = `${Math.min(rect.width, availableWidth)}px`;
+      menu.style.maxWidth = `${availableWidth}px`;
+
+      const menuHeight = menu.scrollHeight + 2;
+      const spaceBelow = Math.max(0, viewportHeight - rect.bottom - gap - gutter);
+      const spaceAbove = Math.max(0, rect.top - gap - gutter);
+      const openAbove = menuHeight > spaceBelow && spaceAbove > spaceBelow;
+      const availableHeight = openAbove ? spaceAbove : spaceBelow;
+
+      menu.style.maxHeight = `${availableHeight}px`;
+      const menuWidth = menu.getBoundingClientRect().width;
+      menu.style.left = `${Math.max(
+        gutter,
+        Math.min(rect.right - menuWidth, viewportWidth - menuWidth - gutter),
+      )}px`;
+      menu.style.top = `${
+        openAbove
+          ? rect.top - gap - Math.min(menuHeight, availableHeight)
+          : rect.bottom + gap
+      }px`;
+    };
+
+    const handleScroll = (event: Event) => {
+      if (menu.contains(event.target as Node)) return;
+
+      const rect = trigger.getBoundingClientRect();
+      if (
+        rect.bottom <= 0 ||
+        rect.top >= window.innerHeight ||
+        rect.right <= 0 ||
+        rect.left >= document.documentElement.clientWidth
+      ) {
+        closeMenu();
+        return;
+      }
+      updatePosition();
+    };
+
+    updatePosition();
+    const resizeObserver = new ResizeObserver(updatePosition);
+    resizeObserver.observe(trigger);
+    resizeObserver.observe(menu);
+    window.addEventListener("resize", updatePosition);
+    document.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updatePosition);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const menu = menuRef.current;
+    const option = menu?.children[activeIndex];
+    if (!menu || !(option instanceof HTMLElement)) return;
+
+    if (option.offsetTop < menu.scrollTop) {
+      menu.scrollTop = option.offsetTop;
+    } else if (
+      option.offsetTop + option.offsetHeight > menu.scrollTop + menu.clientHeight
+    ) {
+      menu.scrollTop = option.offsetTop + option.offsetHeight - menu.clientHeight;
+    }
+  }, [open, activeIndex]);
+
   useEffect(() => {
     if (!open) return;
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
+    const handleClickOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        !containerRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
         closeMenu();
       }
     };
@@ -77,17 +171,18 @@ export function DashboardStatusFilter<
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("pointerdown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
 
   const handleSelect = (optionValue: T) => {
     closeMenu();
+    triggerRef.current?.focus();
     onChange(optionValue);
   };
 
@@ -154,6 +249,7 @@ export function DashboardStatusFilter<
     <div className="relative w-full shrink-0 sm:inline-block sm:w-auto" ref={containerRef}>
       <button
         type="button"
+        ref={triggerRef}
         id={id}
         role="combobox"
         aria-haspopup="listbox"
@@ -161,7 +257,7 @@ export function DashboardStatusFilter<
         aria-controls={listboxId}
         aria-activedescendant={activeOptionId}
         aria-label="Filter by status"
-        className="flex h-14 w-full shrink-0 items-center justify-between gap-4 rounded-button bg-surface-subtle px-5 text-body-lg font-medium text-white/80 outline-none transition-colors hover:bg-surface-elevated focus-visible:ring-1 focus-visible:ring-border-default sm:w-auto"
+        className="flex h-14 w-full shrink-0 cursor-pointer items-center justify-between gap-4 rounded-surface bg-surface-subtle px-5 text-body-lg font-medium text-white/80 outline-none transition-[background-color,box-shadow] hover:bg-surface-elevated focus-visible:ring-2 focus-visible:ring-brand/35 sm:w-auto"
         onClick={() => {
           if (open) {
             closeMenu();
@@ -178,16 +274,17 @@ export function DashboardStatusFilter<
         <ChevronDownIcon
           className={cn(
             "size-5 shrink-0 transition-transform",
-            !open && "rotate-180",
+            open && "rotate-180",
           )}
         />
       </button>
-      {open ? (
+      {open ? createPortal(
         <ul
+          ref={menuRef}
           id={listboxId}
           role="listbox"
           aria-labelledby={id}
-          className="absolute right-0 top-full z-50 mt-1 min-w-full overflow-hidden rounded-card border border-border-default bg-input-fill shadow-lg"
+          className="fixed z-50 w-max overflow-x-hidden overflow-y-auto overscroll-contain rounded-surface border border-border-default bg-input-fill shadow-lg"
         >
           {resolvedOptions.map((option, index) => (
             <li
@@ -205,13 +302,15 @@ export function DashboardStatusFilter<
                   value !== option.value &&
                   "bg-surface-elevated",
               )}
+              onMouseDown={(event) => event.preventDefault()}
               onMouseMove={() => setActiveIndex(index)}
               onClick={() => handleSelect(option.value)}
             >
               {option.label}
             </li>
           ))}
-        </ul>
+        </ul>,
+        document.body,
       ) : null}
     </div>
   );

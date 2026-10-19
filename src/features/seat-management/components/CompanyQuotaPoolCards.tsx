@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/Button";
 import { UsageProgressCard } from "./UsageProgressCard";
 
 type CompanyQuotaPoolCardsProps = {
@@ -36,13 +37,9 @@ export function CompanyQuotaPoolCards({
         >
           <p>{errorMessage ?? "Unable to load company quota."}</p>
           {onRetry ? (
-            <button
-              type="button"
-              className="rounded-button border border-border-default px-3 py-1.5 font-medium text-white transition-colors hover:bg-surface-elevated"
-              onClick={onRetry}
-            >
+            <Button variant="table" size="table" onClick={onRetry}>
               Try again
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

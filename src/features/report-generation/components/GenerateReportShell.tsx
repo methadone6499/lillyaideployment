@@ -1,6 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/shared/AppHeader";
+import { RequestErrorState } from "@/components/ui";
 import { useIsAuthenticated } from "@/features/auth";
 import {
   OperationLockBanner,
@@ -23,7 +24,7 @@ import {
   type CreateReportInput,
 } from "@/features/reports";
 import { ApiRequestError } from "@/services/ApiRequestError";
-import { useIsMutating, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ZodError } from "zod";
@@ -32,7 +33,6 @@ import {
   discoverClinicalArticles,
   discoverComparators,
   discoverEconomicArticles,
-  ReportApiError,
 } from "../api/reportApi";
 import { reportQueryKeys } from "../api/reportQueryKeys";
 import {
@@ -49,6 +49,7 @@ import { buildSelectedArticleUploads } from "../utils/articleUploads";
 import { mapFiltersToBackend } from "../utils/mapFiltersToBackend";
 import { mapReportCalculatorDraft } from "../utils/reportCalculator";
 import { buildApiSectionTypes } from "../utils/sectionOrdering";
+import { getReportRequestErrorMessage } from "../utils/getReportRequestErrorMessage";
 import { ReportResults } from "./results/ReportResults";
 import { Stepper } from "./Stepper";
 import { Step1DrugIntake } from "./steps/Step1DrugIntake";
@@ -57,16 +58,6 @@ import { Step3Evidence } from "./steps/Step3Evidence";
 import { Step4Comparators } from "./steps/Step4Comparators";
 import { Step5Sections } from "./steps/Step5Sections";
 import { WizardFooter } from "./WizardFooter";
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof ReportApiError) {
-    return error.message;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "Something went wrong. Please try again.";
-}
 
 function formatValidationDiagnostic(error: unknown): string {
   if (error instanceof ZodError) {
@@ -86,9 +77,9 @@ function formatValidationDiagnostic(error: unknown): string {
 }
 
 const DISCOVERY_PREFETCH_LABELS = [
-  "Clinical article discovery",
-  "Economic article discovery",
-  "Comparator discovery",
+  "Clinical evidence",
+  "Economic evidence",
+  "Comparator suggestions",
 ] as const;
 
 function canContinueStep(
@@ -168,8 +159,31 @@ export function GenerateReportShell() {
 
   const [step2Error, setStep2Error] = useState<string | null>(null);
   const [step5Error, setStep5Error] = useState<string | null>(null);
-  const [discoveryWarnings, setDiscoveryWarnings] = useState<string[]>([]);
   const [isPrefetchingDiscovery, setIsPrefetchingDiscovery] = useState(false);
+  // Observe discovery results without starting extra requests. Step retries update
+  // these same cache entries, so resolved warnings disappear automatically.
+  const discoveryQueries = useQueries({
+    queries: [
+      {
+        queryKey: reportQueryKeys.clinicalArticles(reportServiceId ?? ""),
+        queryFn: ({ signal }: { signal: AbortSignal }) => discoverClinicalArticles(reportServiceId!, signal),
+        enabled: false,
+      },
+      {
+        queryKey: reportQueryKeys.economicArticles(reportServiceId ?? ""),
+        queryFn: ({ signal }: { signal: AbortSignal }) => discoverEconomicArticles(reportServiceId!, signal),
+        enabled: false,
+      },
+      {
+        queryKey: reportQueryKeys.comparators(reportServiceId ?? ""),
+        queryFn: ({ signal }: { signal: AbortSignal }) => discoverComparators(reportServiceId!, signal),
+        enabled: false,
+      },
+    ],
+  });
+  const discoveryWarnings = reportServiceId
+    ? discoveryQueries.flatMap((query, index) => query.isError ? [DISCOVERY_PREFETCH_LABELS[index]] : [])
+    : [];
 
   const createReportMutation = useMutation({
     mutationFn: (input: Parameters<typeof createReport>[0]) => createReport(input),
@@ -195,7 +209,6 @@ export function GenerateReportShell() {
     if (nextStepNumber <= 2 && reportServiceId) {
       clearReportQueriesForReport(queryClient, reportServiceId);
       resetReportPipeline();
-      setDiscoveryWarnings([]);
       setStep2Error(null);
       setStep5Error(null);
     }
@@ -210,7 +223,6 @@ export function GenerateReportShell() {
       }
 
       setStep2Error(null);
-      setDiscoveryWarnings([]);
 
       if (overview && !canUseFeature("report_generation")) {
         router.replace(
@@ -229,35 +241,24 @@ export function GenerateReportShell() {
         setReportServiceId(report.report_id);
         setIsPrefetchingDiscovery(true);
 
-        const prefetchResults = await Promise.allSettled([
-          queryClient.prefetchQuery({
+        await Promise.allSettled([
+          queryClient.fetchQuery({
             queryKey: reportQueryKeys.clinicalArticles(report.report_id),
             queryFn: ({ signal }) =>
               discoverClinicalArticles(report.report_id, signal),
           }),
-          queryClient.prefetchQuery({
+          queryClient.fetchQuery({
             queryKey: reportQueryKeys.economicArticles(report.report_id),
             queryFn: ({ signal }) =>
               discoverEconomicArticles(report.report_id, signal),
           }),
-          queryClient.prefetchQuery({
+          queryClient.fetchQuery({
             queryKey: reportQueryKeys.comparators(report.report_id),
             queryFn: ({ signal }) =>
               discoverComparators(report.report_id, signal),
           }),
         ]);
 
-        const warnings = prefetchResults.flatMap((result, index) => {
-          if (result.status === "fulfilled") {
-            return [];
-          }
-
-          return [
-            `${DISCOVERY_PREFETCH_LABELS[index]} failed: ${getErrorMessage(result.reason)}`,
-          ];
-        });
-
-        setDiscoveryWarnings(warnings);
         setStep(3);
       } catch (error) {
         const paidFailurePath = resolvePaidActionErrorPath(error, overview);
@@ -266,7 +267,7 @@ export function GenerateReportShell() {
           return;
         }
 
-        setStep2Error(getErrorMessage(error));
+        setStep2Error(getReportRequestErrorMessage(error, "We couldn’t configure your report. Your inputs have been kept. Try Continue again."));
       } finally {
         setIsPrefetchingDiscovery(false);
       }
@@ -335,8 +336,8 @@ export function GenerateReportShell() {
 
         setStep5Error(
           error instanceof ZodError
-            ? formatValidationDiagnostic(error)
-            : getErrorMessage(error),
+            ? "Some report settings are invalid. Check your evidence, comparators, and selected sections, then try again."
+            : getReportRequestErrorMessage(error, "We couldn’t save your report settings. Your selections have been kept. Try Generate Report again."),
         );
         return;
       }
@@ -352,7 +353,7 @@ export function GenerateReportShell() {
 
         if (result.report_id !== reportServiceId) {
           setStep5Error(
-            `Report Service ID mismatch: expected ${reportServiceId}, got ${result.report_id}.`,
+            "We couldn’t confirm which report started generating. Check your dashboard before starting another report.",
           );
           return;
         }
@@ -415,7 +416,7 @@ export function GenerateReportShell() {
 
         if (!originatingUserId) {
           setStep5Error(
-            "Authenticated user is unavailable. Please refresh and try again.",
+            "We couldn’t confirm your account. Sign in again before continuing.",
           );
           return;
         }
@@ -471,7 +472,7 @@ export function GenerateReportShell() {
           return;
         }
 
-        setStep5Error(getErrorMessage(error));
+        setStep5Error(getReportRequestErrorMessage(error, "We couldn’t confirm report generation. Check your dashboard before trying again. Your selections have been kept."));
       }
 
       return;
@@ -491,11 +492,23 @@ export function GenerateReportShell() {
     createReportMutation.isPending || isPrefetchingDiscovery;
 
   const isResultsStep = currentStep === 6;
+  const continueDisabledReason =
+    currentStep === 1 && !drugName.trim() && !indications.trim()
+      ? "Enter a drug name and indication to continue."
+      : currentStep === 1 && !drugName.trim()
+        ? "Enter a drug name to continue."
+        : currentStep === 1 && !indications.trim()
+          ? "Enter at least one indication to continue."
+          : currentStep === 5 && selectedSectionIds.length === 0
+            ? "Select at least one report section to continue."
+            : currentStep === 5 && isReportGenerationPaused
+              ? "Report generation is temporarily unavailable."
+              : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
       <AppHeader />
-      <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-[var(--layout-page-padding)] py-6">
+      <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
         {!isResultsStep && (
           <div className="mb-12 flex max-w-[var(--layout-inner-width)] flex-col gap-7">
             <h1 className="text-page-title font-medium text-text-heading">
@@ -512,34 +525,22 @@ export function GenerateReportShell() {
 
         <div className="flex flex-1 flex-col">
           {currentStep === 2 && step2Error && (
-            <p className="mb-6 text-body-lg text-red-400" role="alert">
-              {step2Error}
-            </p>
+            <RequestErrorState className="mb-6" title="Couldn’t configure your report" message={step2Error} />
           )}
           {currentStep >= 3 && discoveryWarnings.length > 0 && (
-            <div
-              className="mb-6 flex flex-col gap-2 text-body-lg text-amber-300"
-              role="status"
-            >
-              <p>
-                Some discovery requests failed. You can continue, but results
-                may be incomplete.
-              </p>
-              <ul className="list-disc pl-7">
-                {discoveryWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
-            </div>
+            <RequestErrorState
+              className="mb-6"
+              tone="warning"
+              title="Some discovery results are unavailable"
+              message={`${discoveryWarnings.join(", ")} couldn’t be loaded. Retry in the relevant evidence tab or Comparators step. Existing selections and uploads have been kept.`}
+            />
           )}
           {currentStep === 1 && <Step1DrugIntake />}
           {currentStep === 2 && <Step2Filters />}
           {currentStep === 3 && <Step3Evidence />}
           {currentStep === 4 && <Step4Comparators />}
           {currentStep === 5 && step5Error && (
-            <p className="mb-6 text-body-lg text-red-400" role="alert">
-              {step5Error}
-            </p>
+            <RequestErrorState className="mb-6" title="Your report couldn’t be confirmed" message={step5Error} />
           )}
           {currentStep === 5 && <Step5Sections />}
           {currentStep === 6 && <ReportResults />}
@@ -551,9 +552,11 @@ export function GenerateReportShell() {
             onBack={currentStep > 1 ? handleBack : undefined}
             showBack={currentStep > 1}
             onContinue={handleContinue}
+            continuePending={currentStep === 2 && isStep2Pending}
             continueLabel={
               currentStep === 5 ? "Generate Report" : "Continue"
             }
+            continueDisabledReason={continueDisabledReason ?? undefined}
             continueDisabled={
               !canContinueStep(
                 currentStep,

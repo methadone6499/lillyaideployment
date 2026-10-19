@@ -3,7 +3,9 @@ import {
   AuthSessionUnavailableError,
 } from "@/features/auth";
 
-import { DosageCalculatorApiError } from "../api/dosageCalculatorFetch";
+import { ZodError } from "zod";
+import { DosageCalculatorApiError, DosageCalculatorResponseError } from "../api/dosageCalculatorFetch";
+import { getCalculatorValidationMessage } from "./calculatorValidation";
 import type {
   DosageCalculatorJobPhase,
   DosageCalculatorStatusResponse,
@@ -31,7 +33,7 @@ const JOB_NOT_FOUND_MESSAGE =
 const JOB_FAILED_MESSAGE = "The calculation failed. Try again.";
 const NETWORK_MESSAGE =
   "We could not reach the calculation service. Check your connection and try again.";
-const GENERIC_MESSAGE = "Something went wrong. Please try again.";
+const GENERIC_MESSAGE = "The calculator could not complete this request. Try again. If this continues, contact support.";
 
 export class DosageCalculatorJobFailedError extends Error {
   readonly jobId: string;
@@ -73,12 +75,39 @@ export function classifyDosageCalculatorError(
   if (error instanceof DosageCalculatorJobFailedError) {
     return {
       kind: "job_failed",
-      message: error.message || JOB_FAILED_MESSAGE,
+      message: error.phase === "label" || error.phase === "extract"
+        ? "We could not retrieve dosing information. Check the drug name and indication, then try again."
+        : JOB_FAILED_MESSAGE,
       retryable: true,
     };
   }
 
+  if (error instanceof ZodError) {
+    return { kind: "generic", message: getCalculatorValidationMessage(error), retryable: false };
+  }
+
+  if (error instanceof DosageCalculatorResponseError) {
+    return { kind: "generic", message: error.message, retryable: true };
+  }
+
   if (error instanceof DosageCalculatorApiError) {
+    const messages: Record<number, string> = {
+      400: "Some calculation inputs could not be accepted. Check the required fields, numbers, and percentages, then try again.",
+      401: "Your session has expired. Sign in again to use the calculator.",
+      403: "Your account does not have access to this calculator. Check your subscription or contact your company administrator.",
+      408: "The calculation took too long to respond. Try again in a moment.",
+      422: "Some calculation inputs could not be accepted. Check the required fields, numbers, and percentages, then try again.",
+      429: "Too many calculations were requested. Wait a moment, then try again.",
+      504: "The calculation took too long to respond. Try again in a moment.",
+    };
+    if (messages[error.status]) {
+      return {
+        kind: "generic",
+        message: [400, 422].includes(error.status) && error.validationMessages.length
+          ? error.validationMessages.join(" ") : messages[error.status],
+        retryable: [408, 429, 504].includes(error.status),
+      };
+    }
     if (error.status === 503) {
       return {
         kind: "worker_unavailable",
@@ -105,7 +134,7 @@ export function classifyDosageCalculatorError(
 
     return {
       kind: "generic",
-      message: error.message.trim() || GENERIC_MESSAGE,
+      message: error.status >= 500 ? WORKER_UNAVAILABLE_MESSAGE : GENERIC_MESSAGE,
       retryable: error.status >= 500,
     };
   }
@@ -121,16 +150,8 @@ export function classifyDosageCalculatorError(
   if (error instanceof AuthSessionError) {
     return {
       kind: "generic",
-      message: GENERIC_MESSAGE,
+      message: "Your session has expired. Sign in again to use the calculator.",
       retryable: false,
-    };
-  }
-
-  if (error instanceof Error && error.message.trim()) {
-    return {
-      kind: "generic",
-      message: error.message,
-      retryable: true,
     };
   }
 

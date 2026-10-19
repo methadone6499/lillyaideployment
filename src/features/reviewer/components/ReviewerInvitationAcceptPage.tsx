@@ -1,5 +1,7 @@
 "use client";
 
+import { formatDisplayDateTime as formatExpiry } from "@/lib/formatDisplay";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
@@ -22,19 +24,6 @@ import {
   subscribeReviewerInvitationToken,
 } from "../utils/reviewerInvitationToken";
 import { ReviewerInvitationRegisterForm } from "./ReviewerInvitationRegisterForm";
-
-const expiresFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-function formatExpiry(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : expiresFormatter.format(date);
-}
 
 export function ReviewerInvitationAcceptPage() {
   const router = useRouter();
@@ -121,7 +110,7 @@ export function ReviewerInvitationAcceptPage() {
         <Button
           type="button"
           onClick={() => void previewQuery.refetch()}
-          className="!h-[var(--layout-auth-button-height)] w-full !rounded-[10.5px] border border-white/10 !bg-white/5 px-6 !text-[16px] !font-medium text-white hover:!bg-white/10"
+          size="auth" className="w-full border border-white/10 !bg-white/5 px-6 !text-[16px] !font-medium text-white hover:!bg-white/10"
         >
           Try again
         </Button>

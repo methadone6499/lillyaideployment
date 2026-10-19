@@ -48,8 +48,8 @@ export function TextField({
         aria-describedby={describedBy}
         aria-invalid={hasError ? true : ariaInvalid}
         className={cn(
-          "h-12 w-full rounded-card border border-border-default bg-input-fill px-[19px] text-input font-medium text-white placeholder:text-text-muted outline-none focus:border-brand-chip-border",
-          hasError && "border-status-running",
+          "h-12 w-full rounded-field border border-border-default bg-input-fill px-[19px] text-input font-medium text-white placeholder:text-text-placeholder outline-none transition-[border-color,box-shadow] focus-visible:border-brand-chip-border focus-visible:ring-2 focus-visible:ring-brand/35",
+          hasError && "border-status-danger",
           className,
         )}
         {...props}
@@ -63,7 +63,7 @@ export function TextField({
         <p
           id={errorId}
           role="alert"
-          className="text-helper text-status-running"
+          className="text-helper text-status-danger"
         >
           {error}
         </p>

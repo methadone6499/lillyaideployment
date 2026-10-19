@@ -240,7 +240,7 @@ export function CustomRequestForm(props: CustomRequestFormProps) {
           <Button
             type="button"
             variant="secondary"
-            className="h-11 text-label"
+            size="small" className="text-label"
             disabled={portalMutation.isPending}
             onClick={() => {
               void openPortal();
@@ -251,7 +251,7 @@ export function CustomRequestForm(props: CustomRequestFormProps) {
         ) : null}
       </CustomSubscriptionAlert>
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" className="h-12 text-label" disabled={isPending}>
+        <Button type="submit" size="table" className="text-label" disabled={isPending}>
           {props.mode === "create"
             ? createMutation.isPending
               ? "Submitting..."
@@ -264,7 +264,7 @@ export function CustomRequestForm(props: CustomRequestFormProps) {
           <Button
             type="button"
             variant="secondary"
-            className="h-12 text-label"
+            size="table" className="text-label"
             disabled={isPending}
             onClick={props.onCancel}
           >

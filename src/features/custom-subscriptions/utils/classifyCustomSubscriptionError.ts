@@ -2,11 +2,13 @@ import {
   AuthSessionError,
   AuthSessionUnavailableError,
 } from "@/features/auth";
-import { isBillingAbortError } from "@/features/billing";
+import { isBillingAbortError, SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE } from "@/features/billing";
 import { ApiRequestError, type FieldErrors } from "@/services/ApiRequestError";
 import { ZodError } from "zod";
 
 import {
+  CONTACT_PHONE_ERROR_MESSAGE,
+  CUSTOM_TEXT_MAX_LENGTH,
   seatsExceedOfferDetailsSchema,
   type SeatsExceedOfferDetails,
 } from "../schemas/customSubscriptionSchemas";
@@ -56,6 +58,11 @@ const PERMISSION_MESSAGE = "You do not have permission to do this.";
 const NOT_FOUND_MESSAGE = "This item is no longer available. Reloading.";
 
 const ERROR_RULES: Record<string, ErrorRule> = {
+  subscription_purchase_suspended: {
+    message: SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE,
+    action: "none",
+    refetch: true,
+  },
   permission_denied: {
     message: "Custom plan requests are not available for this account.",
     action: "none",
@@ -280,6 +287,20 @@ const ERROR_RULES: Record<string, ErrorRule> = {
 
 function fieldErrorsFromZod(error: ZodError): FieldErrors {
   const fieldErrors: FieldErrors = {};
+  const messages: Record<string, string> = {
+    company_name: "Enter a company name using 1–200 characters.",
+    billing_email: "Enter a valid billing email address, such as name@example.com.",
+    contact_phone: CONTACT_PHONE_ERROR_MESSAGE,
+    requested_seats: "Enter a whole number of at least 1 for the requested seats.",
+    requested_reports: "Enter a whole number of at least 1 for the monthly reports.",
+    seats: "Enter a whole number of at least 1 seat.",
+    reports: "Enter a whole number of at least 1 report per month.",
+    amount_minor: "Enter a monthly price greater than zero, with no more than two decimal places.",
+    notes: `Use ${CUSTOM_TEXT_MAX_LENGTH.toLocaleString("en-GB")} characters or fewer for notes.`,
+    message: `Enter a message using 1–${CUSTOM_TEXT_MAX_LENGTH.toLocaleString("en-GB")} characters.`,
+    currency: "Choose USD for this custom offer.",
+    billing_interval: "Choose monthly billing for this custom offer.",
+  };
 
   for (const issue of error.issues) {
     const key = issue.path
@@ -287,7 +308,7 @@ function fieldErrorsFromZod(error: ZodError): FieldErrors {
       .join(".");
 
     if (key && fieldErrors[key] === undefined) {
-      fieldErrors[key] = issue.message;
+      fieldErrors[key] = messages[key] ?? "Check this entry and try again.";
     }
   }
 
@@ -377,11 +398,20 @@ export function classifyCustomSubscriptionError(
     Object.keys(error.fieldErrors).length > 0
   ) {
     const rule = error.code ? ERROR_RULES[error.code] : undefined;
+    const fieldErrors = { ...error.fieldErrors };
+
+    if (fieldErrors.contact_phone) {
+      fieldErrors.contact_phone = CONTACT_PHONE_ERROR_MESSAGE;
+    }
 
     return buildClassified({
       kind: error.code ?? "validation_error",
-      message: rule?.message ?? (error.message || VALIDATION_MESSAGE),
-      fieldErrors: error.fieldErrors,
+      message:
+        rule?.message ??
+        (Object.keys(fieldErrors).length > 0
+          ? VALIDATION_MESSAGE
+          : error.message || VALIDATION_MESSAGE),
+      fieldErrors,
       requestId,
       retryAfterSeconds,
     });

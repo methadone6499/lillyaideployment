@@ -30,7 +30,7 @@ export function Accordion({
   return (
     <div
       className={cn(
-        "rounded-card border",
+        "rounded-surface border",
         variant === "accent"
           ? "border-brand-border bg-brand-bg"
           : "border-border-default bg-surface-default",

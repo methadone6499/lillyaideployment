@@ -85,7 +85,7 @@ export function ReportSectionAccordionFrame({
     <div
       ref={resolvedRef}
       className={cn(
-        "rounded-card border",
+        "rounded-surface border",
         expanded
           ? "border-brand-border bg-brand-bg"
           : "border-border-default bg-surface-default",

@@ -1,8 +1,10 @@
 "use client";
 
 import { hasPermission, useAuthUser } from "@/features/auth";
+import { Button } from "@/components/ui";
 import { formatAmountMinor } from "@/features/billing";
 import { cn } from "@/lib/cn";
+import { formatDisplayCount } from "@/lib/formatDisplay";
 
 import { useAdminCompany } from "../hooks/useAdminCompany";
 import { classifyAdminManagementError } from "../utils/adminManagement";
@@ -27,9 +29,11 @@ type DetailItemProps = {
 
 function DetailItem({ label, value }: DetailItemProps) {
   return (
-    <div className="rounded-card bg-surface-subtle p-4">
+    <div className="rounded-surface bg-surface-subtle p-4">
       <dt className="text-helper text-text-muted">{label}</dt>
-      <dd className="mt-1 break-words text-label font-medium text-white">{value}</dd>
+      <dd className={cn("mt-1 break-words text-label font-medium text-white", typeof value === "number" && "tabular-nums")}>
+        {typeof value === "number" ? formatDisplayCount(value) : value}
+      </dd>
     </div>
   );
 }
@@ -56,11 +60,11 @@ export function AdminCompanyDetailView({ companyId }: AdminCompanyDetailViewProp
 
   if (query.isError || !query.data) {
     return (
-      <div role="alert" className="mt-10 rounded-button border border-border-default bg-surface-default p-8 text-label text-text-muted">
+      <div role="alert" className="mt-10 rounded-surface border border-border-default bg-surface-default p-8 text-label text-text-muted">
         <p>{classifiedError?.message ?? "Unable to load this company."}</p>
         <AdminRequestId requestId={classifiedError?.requestId} />
         {classifiedError?.kind !== "not_found" ? (
-          <button type="button" onClick={() => void query.refetch()} className="mt-4 rounded-button border border-border-default px-4 py-2 text-white">Try again</button>
+          <Button variant="table" size="table" className="mt-4" onClick={() => void query.refetch()}>Try again</Button>
         ) : null}
       </div>
     );
@@ -71,7 +75,7 @@ export function AdminCompanyDetailView({ companyId }: AdminCompanyDetailViewProp
 
   return (
     <>
-      <section className="mt-10 overflow-hidden rounded-button border border-border-default bg-surface-default">
+      <section className="mt-10 overflow-hidden rounded-surface border border-border-default bg-surface-default">
         <div className="flex flex-col gap-4 border-b border-border-default px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-card-title font-medium text-white">{company.name}</h2>
@@ -90,7 +94,7 @@ export function AdminCompanyDetailView({ companyId }: AdminCompanyDetailViewProp
       </section>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-3">
-        <section className="rounded-button border border-border-default bg-surface-default p-6">
+        <section className="rounded-surface border border-border-default bg-surface-default p-6">
           <h2 className="text-card-title font-medium text-white">Subscription</h2>
           <dl className="mt-4 grid gap-3">
             <DetailItem label="Plan" value={subscription ? PLAN_TYPE_LABELS[subscription.plan_type] : "No subscription"} />
@@ -100,7 +104,7 @@ export function AdminCompanyDetailView({ companyId }: AdminCompanyDetailViewProp
           </dl>
         </section>
 
-        <section className="rounded-button border border-border-default bg-surface-default p-6">
+        <section className="rounded-surface border border-border-default bg-surface-default p-6">
           <h2 className="text-card-title font-medium text-white">Seats</h2>
           <dl className="mt-4 grid grid-cols-2 gap-3">
             <DetailItem label="Limit" value={company.seats.limit} />
@@ -112,7 +116,7 @@ export function AdminCompanyDetailView({ companyId }: AdminCompanyDetailViewProp
           </dl>
         </section>
 
-        <section className="rounded-button border border-border-default bg-surface-default p-6">
+        <section className="rounded-surface border border-border-default bg-surface-default p-6">
           <h2 className="text-card-title font-medium text-white">Report quota</h2>
           {company.quota ? (
             <dl className="mt-4 grid grid-cols-2 gap-3">

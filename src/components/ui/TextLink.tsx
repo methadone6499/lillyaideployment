@@ -16,7 +16,7 @@ export function TextLink({
     <button
       type={type}
       className={cn(
-        "text-card-title font-medium underline underline-offset-2",
+        "text-label font-medium no-underline transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:text-text-muted",
         variant === "brand" ? "text-brand" : "text-white",
         className,
       )}

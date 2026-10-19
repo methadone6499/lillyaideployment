@@ -2,7 +2,6 @@ import type {
   ReviewerAssignedReport,
   ReviewerDashboardSnapshot,
   ReviewerKpiCard,
-  ReviewerNotification,
   ReviewerReportContentBlock,
   ReviewerReportDetail,
   ReviewerReportSection,
@@ -345,33 +344,13 @@ export const reviewerAssignedReports: readonly ReviewerAssignedReport[] = [
   },
 ];
 
-export const reviewerNotifications: readonly ReviewerNotification[] = [
-  {
-    id: "reviewer-notif-assigned-panadol",
-    message: "New report Panadol - Mild Fever is assigned",
-    timestamp: "24 mins ago",
-  },
-  {
-    id: "reviewer-notif-overdue-metformin",
-    message: "Metformin - Diabetes review is overdue",
-    timestamp: "1 hour ago",
-  },
-  {
-    id: "reviewer-notif-submitted-dupilumab",
-    message: "Dupilumab - Atopic Dermatitis review submitted",
-    timestamp: "2 hour ago",
-  },
-];
-
 export const reviewerDashboardSnapshot: ReviewerDashboardSnapshot = {
   kpis: buildReviewerKpis(reviewerAssignedReports),
-  notifications: reviewerNotifications,
   reports: reviewerAssignedReports,
 };
 
 export const emptyReviewerDashboardSnapshot: ReviewerDashboardSnapshot = {
   kpis: buildReviewerKpis([]),
-  notifications: [],
   reports: [],
 };
 

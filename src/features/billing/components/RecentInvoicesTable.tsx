@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-import { Card } from "@/components/ui";
+import { Card, TextLink } from "@/components/ui";
 
 type RecentInvoicesTableProps = {
   canManage: boolean;
@@ -22,7 +22,7 @@ export function RecentInvoicesTable({
       aria-labelledby="billing-invoices-heading"
       className="mt-12 max-w-[1488px]"
     >
-      <Card className="overflow-hidden rounded-button">
+      <Card className="overflow-hidden">
         <div className="flex items-end justify-between gap-5 px-6 py-5">
           <div>
             <h2
@@ -36,11 +36,10 @@ export function RecentInvoicesTable({
             </p>
           </div>
           {canManage ? (
-            <button
-              type="button"
+            <TextLink
               disabled={disabled}
               onClick={onOpenPortal}
-              className="inline-flex shrink-0 items-center gap-2 text-label font-medium text-text-step transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex shrink-0 items-center gap-2"
             >
               {isPortalPending ? "Opening..." : "View All"}
               <Image
@@ -50,13 +49,13 @@ export function RecentInvoicesTable({
                 height={12}
                 className="h-3 w-[7px] rotate-180 object-contain"
               />
-            </button>
+            </TextLink>
           ) : null}
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] table-fixed text-left">
-            <thead className="h-10 bg-surface-subtle text-label font-medium text-text-step">
+            <thead className="h-14 bg-surface-subtle text-label font-medium text-text-step">
               <tr>
                 {["Invoice", "Date", "Amount", "Status", "Plan"].map((label) => (
                   <th key={label} scope="col" className="px-6 py-3 font-medium">

@@ -1,7 +1,3 @@
-import type { DashboardNotification } from "@/features/dashboard";
-
-export type ReviewerNotification = DashboardNotification;
-
 export const REVIEWER_REPORT_STATUSES = [
   "completed",
   "in_review",
@@ -19,7 +15,7 @@ export type ReviewerStatusFilterOption = {
 };
 
 export const REVIEWER_STATUS_FILTER_OPTIONS = [
-  { value: "all", label: "All Status" },
+  { value: "all", label: "All statuses" },
   { value: "completed", label: "Completed" },
   { value: "in_review", label: "In Review" },
   { value: "overdue", label: "Overdue" },
@@ -52,7 +48,6 @@ export type ReviewerAssignedReport = {
 
 export type ReviewerDashboardSnapshot = {
   kpis: readonly ReviewerKpiCard[];
-  notifications: readonly ReviewerNotification[];
   reports: readonly ReviewerAssignedReport[];
 };
 

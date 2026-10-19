@@ -50,6 +50,7 @@ import {
 import { BillingFlowAlert } from "./BillingFlowAlert";
 import { BillingHostedActions } from "./BillingHostedActions";
 import { BillingRequestId } from "./BillingRequestId";
+import { SubscriptionPurchaseRestrictionNotice } from "./SubscriptionPurchaseRestrictionNotice";
 
 type SubscriptionOnboardingPageProps = {
   returnTo?: string | null;
@@ -259,6 +260,27 @@ export function SubscriptionOnboardingPage({
             </Button>
           ) : null}
           <BillingRequestId requestId={overviewClassified?.requestId} />
+        </div>
+      </AuthPageShell>
+    );
+  }
+
+  if (overview.purchase_restriction || actionError?.kind === "subscription_purchase_suspended") {
+    return (
+      <AuthPageShell title="Subscription status">
+        <div className="flex flex-col gap-6">
+          <SubscriptionPurchaseRestrictionNotice restriction={overview.purchase_restriction} />
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={overviewQuery.isFetching}
+            onClick={() => {
+              setActionError(null);
+              void overviewQuery.refetch();
+            }}
+          >
+            {overviewQuery.isFetching ? "Refreshing…" : "Refresh status"}
+          </Button>
         </div>
       </AuthPageShell>
     );

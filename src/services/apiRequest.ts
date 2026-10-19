@@ -70,19 +70,22 @@ export async function apiRequest<TSchema extends z.ZodType>(
   if (!contentType.includes("application/json")) {
     throw new ApiRequestError({
       status: response.status,
-      message: "Expected a JSON response",
+      code: "invalid_response",
+      message: "We could not read the information returned by the service. Try again. If this continues, contact support.",
     });
   }
 
-  const json: unknown = await response.json();
   const schema = (options as JsonApiRequestOptions<TSchema>).schema;
 
   try {
+    const json: unknown = await response.json();
     return schema.parse(json);
   } catch (error) {
+    if (options.signal?.aborted || (error instanceof Error && error.name === "AbortError")) throw error;
     throw new ApiRequestError({
       status: response.status,
-      message: "Response did not match the expected schema",
+      code: "invalid_response",
+      message: "We could not read the information returned by the service. Try again. If this continues, contact support.",
       rawCause: error,
     });
   }

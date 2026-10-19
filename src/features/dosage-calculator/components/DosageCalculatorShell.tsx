@@ -9,7 +9,7 @@ export function DosageCalculatorShell() {
       <AppHeader actions={<DashboardHeaderActions />} />
 
       <main className="mx-auto w-full max-w-[var(--layout-max-width)] flex-1 px-4 pb-12 sm:px-6 lg:px-12 lg:pb-16">
-        <div className={styles.calculatorFrame}>
+        <div className={styles.calculatorFrame} data-visual-scope="calculator">
           <section className="mt-8 py-3 lg:mt-10 lg:py-4">
             <h1 className="text-[30px] font-medium leading-tight tracking-[-0.025em] text-text-heading lg:text-[38px]">
               Budget Impact

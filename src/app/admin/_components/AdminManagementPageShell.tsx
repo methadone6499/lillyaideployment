@@ -48,7 +48,7 @@ export function AdminManagementPageShell({
           </ol>
         </nav>
 
-        <h1 className="mt-11 text-[32px] leading-tight font-medium text-white sm:text-page-title lg:mt-12">
+        <h1 className="mt-11 text-page-title leading-tight font-medium text-white lg:mt-12">
           {title}
         </h1>
 

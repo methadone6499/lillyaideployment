@@ -4,6 +4,7 @@ import { Button, Checkbox, CloseIcon, TextField } from "@/components/ui";
 import { useRef, useState, type ChangeEvent } from "react";
 import { ReportApiError } from "../api/reportApi";
 import { useUploadReportArticleMutation } from "../hooks/useGenerateReport";
+import { getReportRequestErrorMessage } from "../utils/getReportRequestErrorMessage";
 import type {
   ArticleCandidate,
   ArticleUploadResponse,
@@ -39,12 +40,11 @@ function getErrorMessage(error: unknown): string {
     if (error.status === 413) {
       return "This PDF is larger than the 20 MB upload limit.";
     }
-    return error.message;
+    if (error.status === 400 || error.status === 422) {
+      return "We could not accept this article. Check the PDF and its PMID or PMCID, then try uploading again.";
+    }
   }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "The article could not be uploaded. Please try again.";
+  return getReportRequestErrorMessage(error, "We could not confirm the article upload. Try again. If this continues, contact support.");
 }
 
 function formatScore(score: number | null): string {
@@ -139,7 +139,7 @@ export function ArticleUploadDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="article-upload-title"
-        className="max-h-[90vh] w-full max-w-[680px] overflow-y-auto rounded-button border border-border-default bg-[#171717] text-white shadow-2xl"
+        className="max-h-[90vh] w-full max-w-[680px] overflow-y-auto rounded-surface border border-border-default bg-[#171717] text-white shadow-2xl"
       >
         <header className="flex items-center justify-between border-b border-border-default px-6 py-5">
           <div>
@@ -190,7 +190,7 @@ export function ArticleUploadDialog({
                 />
               </div>
 
-              <div className="rounded-card border border-dashed border-border-default bg-surface-subtle p-5">
+              <div className="rounded-surface border border-dashed border-border-default bg-surface-subtle p-5">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -211,7 +211,7 @@ export function ArticleUploadDialog({
                   </div>
                   <Button
                     variant="secondary"
-                    className="h-11"
+                    size="small"
                     disabled={busy}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -236,8 +236,8 @@ export function ArticleUploadDialog({
             <div
               className={
                 result.status === "match_good"
-                  ? "rounded-card border border-brand-border bg-brand-bg p-5"
-                  : "rounded-card border border-amber-400/30 bg-amber-400/10 p-5"
+                  ? "rounded-surface border border-brand-border bg-brand-bg p-5"
+                  : "rounded-surface border border-amber-400/30 bg-amber-400/10 p-5"
               }
             >
               <p
@@ -282,7 +282,7 @@ export function ArticleUploadDialog({
               type="button"
               onClick={onClose}
               disabled={busy}
-              className="h-11 px-3 text-label font-medium text-white/72 hover:text-white disabled:opacity-50"
+              className="h-[52px] rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white hover:bg-surface-elevated disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
             >
               Cancel
             </button>

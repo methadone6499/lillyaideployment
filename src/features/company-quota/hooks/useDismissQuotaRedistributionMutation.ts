@@ -19,7 +19,7 @@ export function useDismissQuotaRedistributionMutation() {
     retry: false,
     onSuccess: (summary) => {
       if (userId) {
-        queryClient.setQueryData(companyQuotaQueryKeys.company(userId), summary);
+        queryClient.setQueryData(companyQuotaQueryKeys.company(userId, summary.company_id), summary);
       }
     },
     onError: async (error) => {

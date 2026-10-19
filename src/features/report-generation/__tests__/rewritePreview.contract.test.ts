@@ -246,7 +246,7 @@ assert.equal(
     status: "stale_revision",
     message: "Document revision has changed; refresh and retry",
   }),
-  "Document revision has changed; refresh and retry",
+  REWRITE_PREVIEW_STATUS_MESSAGES.stale_revision,
 );
 assert.equal(
   getRewritePreviewStatusMessage({
@@ -325,7 +325,7 @@ const stalePreview = rewritePreviewResponseSchema.parse({
 assert.equal(applyReadyRewritePreview(blocks, stalePreview), null);
 assert.equal(
   getRewritePreviewStatusMessage(stalePreview),
-  "Document revision has changed; refresh and retry",
+  REWRITE_PREVIEW_STATUS_MESSAGES.stale_revision,
 );
 
 assert.equal(
@@ -387,7 +387,7 @@ const conflictError = createReportApiError(
 );
 assert.equal(
   getRewritePreviewFailureMessage(conflictError),
-  "Section is not in the current report generation",
+  "This section is no longer part of the current report. Refresh the report to continue.",
 );
 assert.equal(
   getRewritePreviewFailureMessage(new Error("")),

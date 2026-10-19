@@ -66,9 +66,10 @@ export function useReviewerInvitationPreview(enabled: boolean) {
 
 export function useReviewerDashboard(
   params: Omit<ReviewerDashboardFilters, "cursor"> = {},
+  enabled = true,
 ) {
   const queryClient = useQueryClient();
-  const identity = useReviewerQueryIdentity();
+  const identity = useReviewerQueryIdentity(enabled);
   const queryKey = reviewerQueryKeys.dashboard(identity.userId ?? "", params);
   const query = useInfiniteQuery({
     queryKey,
@@ -89,7 +90,7 @@ export function useReviewerDashboard(
     return result;
   };
 
-  return { ...query, fetchNextPage };
+  return { ...query, queryKey, fetchNextPage };
 }
 
 export function useReviewerAssignments(
@@ -115,7 +116,7 @@ export function useReviewerAssignments(
     }
     return result;
   };
-  return { ...query, fetchNextPage };
+  return { ...query, queryKey, fetchNextPage };
 }
 
 export function useReviewerAssignment(assignmentId: string | null | undefined) {
