@@ -1,21 +1,21 @@
 import { formatDisplayCount } from "@/lib/formatDisplay";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { additionalReportPrice } from "../data/dashboardData";
+import { TopUpBalanceDetails } from "@/features/billing";
 import type { DashboardQuotaView } from "../types";
 
 type ReportQuotaCardProps = {
   view: DashboardQuotaView;
   errorMessage?: string | null;
   onRetry?: () => void;
-  showBuyAdditional?: boolean;
+  companyWide?: boolean;
 };
 
 export function ReportQuotaCard({
   view,
   errorMessage = null,
   onRetry,
-  showBuyAdditional = true,
+  companyWide = false,
 }: ReportQuotaCardProps) {
   const isLoading = view.kind === "loading";
 
@@ -24,7 +24,7 @@ export function ReportQuotaCard({
       aria-busy={isLoading}
       className="flex min-h-[231px] min-w-0 flex-col p-6"
     >
-      <p className="text-card-title font-medium text-text-heading">Report quota</p>
+      <p className="text-dashboard-card-title font-medium leading-none tracking-[-0.02em] text-text-heading">Report quota</p>
 
       {view.kind === "unlimited" ? (
         <>
@@ -52,20 +52,20 @@ export function ReportQuotaCard({
       ) : null}
 
       {view.kind === "loading" ? (
-        <p className="mt-4 flex items-baseline tabular-nums font-medium leading-none">
-          <span className="text-quota tracking-[-0.02em] text-brand">—</span>
-          <span className="text-quota-suffix tracking-[0.1em] text-text-step">/</span>
-          <span className="text-quota-suffix text-text-step">—</span>
+        <p className="mt-2.5 flex items-baseline tabular-nums font-medium leading-none">
+          <span className="text-5xl leading-none tracking-[-0.02em] text-brand">—</span>
+          <span className="text-section-heading leading-none tracking-[0.1em] text-text-step">/</span>
+          <span className="text-section-heading leading-none text-text-step">—</span>
         </p>
       ) : null}
 
       {view.kind === "known" ? (
-        <p className="mt-4 flex items-baseline tabular-nums font-medium leading-none">
-          <span className="text-quota tracking-[-0.02em] text-brand">
+        <p className="mt-2.5 flex items-baseline tabular-nums font-medium leading-none">
+          <span className="text-5xl leading-none tracking-[-0.02em] text-brand">
             {formatDisplayCount(view.used)}
           </span>
-          <span className="text-quota-suffix tracking-[0.1em] text-text-step">/</span>
-          <span className="text-quota-suffix text-text-step">
+          <span className="text-section-heading leading-none tracking-[0.1em] text-text-step">/</span>
+          <span className="text-section-heading leading-none text-text-step">
             {formatDisplayCount(view.total)}
           </span>
         </p>
@@ -85,15 +85,7 @@ export function ReportQuotaCard({
         </div>
       ) : null}
 
-      {showBuyAdditional && view.kind === "known" ? (
-        <Button
-          type="button"
-          variant="secondary"
-          className="mt-auto w-full justify-start"
-        >
-          + Buy additional reports ({additionalReportPrice} each)
-        </Button>
-      ) : null}
+      {view.kind !== "unlimited" ? <div className="mt-auto pt-2"><TopUpBalanceDetails compact companyWide={companyWide} /></div> : null}
     </Card>
   );
 }

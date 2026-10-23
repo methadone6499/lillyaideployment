@@ -8,7 +8,7 @@ import {
   useAuthUser,
 } from "@/features/auth";
 import { usePaidFeatureAccess } from "@/features/billing";
-import { DashboardStatusPill } from "@/features/dashboard";
+import { DashboardHeaderActions, DashboardStatusPill } from "@/features/dashboard";
 import { ReportViewer } from "@/features/report-generation";
 import { usePlatformReport } from "@/features/reports";
 import {
@@ -106,7 +106,7 @@ export function PlatformReportDetail({
   if (reportQuery.isLoading && !reportQuery.data) {
     return (
       <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
-        <AppHeader />
+        <AppHeader actions={<DashboardHeaderActions />} />
         <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
           <p className="text-body-lg text-text-muted">Loading report…</p>
         </main>
@@ -119,7 +119,7 @@ export function PlatformReportDetail({
 
     return (
       <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
-        <AppHeader />
+        <AppHeader actions={<DashboardHeaderActions />} />
         <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-12">
           <div className="flex flex-col gap-4">
             <h1 className="text-page-title font-medium text-text-heading">
@@ -145,7 +145,7 @@ export function PlatformReportDetail({
   if (!reportQuery.data) {
     return (
       <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
-        <AppHeader />
+        <AppHeader actions={<DashboardHeaderActions />} />
         <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
           <p className="text-body-lg text-text-muted">Loading report…</p>
         </main>
@@ -191,7 +191,7 @@ export function PlatformReportDetail({
 
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
-      <AppHeader />
+      <AppHeader actions={<DashboardHeaderActions />} />
       <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
         {canSubmitForReview ? (
           <section className="mb-8 flex flex-col gap-4 rounded-surface border border-brand/30 bg-brand-bg px-6 py-5 sm:flex-row sm:items-center sm:justify-between">

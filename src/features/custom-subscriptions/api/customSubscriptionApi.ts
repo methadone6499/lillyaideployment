@@ -1,5 +1,6 @@
 import { authenticatedAuthRequest } from "@/features/auth";
 import { apiRequest } from "@/services/apiRequest";
+import { topUpForfeitureAcknowledgementSchema } from "@/features/billing";
 
 import {
   acceptanceResultSchema,
@@ -130,12 +131,14 @@ function postAcceptanceAction(
   offerId: string,
   action: "accept" | "payment/resume",
   signal?: AbortSignal,
+  acknowledged?: boolean,
 ): Promise<AcceptanceResult> {
   return authenticatedAuthRequest(
     (accessToken, requestSignal) =>
       apiRequest(offerPath(offerId, action), {
         method: "POST",
         headers: bearerHeaders(accessToken),
+        body: action === "accept" ? topUpForfeitureAcknowledgementSchema.parse({ acknowledge_top_up_forfeiture: acknowledged }) : undefined,
         schema: acceptanceResultSchema,
         signal: requestSignal,
       }),
@@ -146,8 +149,9 @@ function postAcceptanceAction(
 export function acceptCustomOffer(
   offerId: string,
   signal?: AbortSignal,
+  acknowledged?: boolean,
 ): Promise<AcceptanceResult> {
-  return postAcceptanceAction(offerId, "accept", signal);
+  return postAcceptanceAction(offerId, "accept", signal, acknowledged);
 }
 
 export function resumeCustomOfferPayment(

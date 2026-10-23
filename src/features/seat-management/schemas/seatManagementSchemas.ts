@@ -82,6 +82,7 @@ export const editSeatFormSchema = z
   .object({
     status: seatStatusSchema,
     quota_total: z.number().int().nonnegative(),
+    additional_report_balance: z.number().int().nonnegative().optional(),
   })
   .strict();
 

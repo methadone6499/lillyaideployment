@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+@layer base {
+  button,
+  [role="button"],
+  input:where([type="button"], [type="submit"], [type="reset"]),
+  input::file-selector-button {
+    cursor: pointer;
+  }
+
+  :is(
+    button,
+    [role="button"],
+    input:where([type="button"], [type="submit"], [type="reset"])
+  ):is(:disabled, [aria-disabled="true"]),
+  input:disabled::file-selector-button {
+    cursor: not-allowed;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -217,7 +235,7 @@
   --text-page-title: 40px;
   --text-section-heading: 24px;
   --text-card-title: 20px;
-  --text-dashboard-card-title: 32px;
+  --text-dashboard-card-title: 25px;
   --text-body-lg: 18px;
   --text-label: 16px;
   --text-input: 14px;

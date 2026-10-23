@@ -10,6 +10,8 @@ import {
 } from "./platformProxyCommon";
 
 export const PLATFORM_PROXY_PREFIXES = [
+  "billing",
+  "top-ups",
   "subscriptions",
   "companies/me",
   "company-invitations",
@@ -29,6 +31,11 @@ type PlatformProxyRule = {
 const PARAM_SEGMENT_PATTERN = /^[A-Za-z0-9._~-]+$/;
 
 const PLATFORM_PROXY_ALLOWLIST = [
+  { prefix: "billing", pattern: ["history"], methods: ["GET"] },
+  { prefix: "top-ups", pattern: ["me"], methods: ["GET"] },
+  { prefix: "top-ups", pattern: ["checkout"], methods: ["POST"] },
+  { prefix: "top-ups", pattern: ["orders", ":order_id"], methods: ["GET"] },
+  { prefix: "top-ups", pattern: ["companies", "me", "seats", ":membership_id"], methods: ["PUT"] },
   { prefix: "admin", pattern: ["subscriptions", "summary"], methods: ["GET"] },
   { prefix: "admin", pattern: ["subscriptions"], methods: ["GET"] },
   { prefix: "admin", pattern: ["subscriptions", ":subscription_id"], methods: ["GET"] },

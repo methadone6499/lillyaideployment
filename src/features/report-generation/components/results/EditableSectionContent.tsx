@@ -76,8 +76,9 @@ function getSelectionHighlightRects(range: Range): SelectionHighlightRect[] {
   return Array.from(range.getClientRects())
     .filter((rect) => rect.width > 0 && rect.height > 0)
     .map((rect) => ({
-      top: rect.top,
-      left: rect.left,
+      // The saved highlight moves with the document while the popover stays fixed.
+      top: rect.top + window.scrollY,
+      left: rect.left + window.scrollX,
       width: rect.width,
       height: rect.height,
     }));
@@ -598,7 +599,7 @@ export function EditableSectionContent({
         createPortal(
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed inset-0 z-[55]"
+            className="pointer-events-none absolute left-0 top-0 z-[55]"
           >
             {selectionHighlightRects.map((rect, index) => (
               <span

@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveContext, useAuthUser } from "@/features/auth";
+import { useAuthUser } from "@/features/auth";
 import {
   classifyBillingError,
   OperationLockBanner,
@@ -8,6 +8,7 @@ import {
   resolvePaidFeatureDestination,
   useOperationLock,
   usePaidFeatureAccess,
+  useReportQuotaAccess,
 } from "@/features/billing";
 import {
   classifyQuotaQueryError,
@@ -24,8 +25,8 @@ import { ReportQuotaCard } from "./ReportQuotaCard";
 export function DashboardShell() {
   const router = useRouter();
   const { displayName, userId, authMe } = useAuthUser();
-  const role = getActiveContext(authMe)?.role;
   const paidAccess = usePaidFeatureAccess();
+  const reportQuota = useReportQuotaAccess();
   const operationLock = useOperationLock();
   const isReportGenerationPaused = operationLock.isBlocked("report_generation");
   const canReadOwnQuota = paidAccess.quotaSource === "company_allocation";
@@ -49,7 +50,7 @@ export function DashboardShell() {
   });
 
   const handleGenerateReport = () => {
-    if (isReportGenerationPaused) {
+    if (isReportGenerationPaused || !reportQuota.canGenerate) {
       return;
     }
 
@@ -89,7 +90,6 @@ export function DashboardShell() {
                     }
                   : undefined
             }
-            showBuyAdditional={role !== "company_seat_user"}
           />
 
           <DashboardActionCard
@@ -110,8 +110,8 @@ export function DashboardShell() {
             description="Generate a complete assessment report aligned with HTA compliance requirements."
             ctaLabel="Generate Report"
             onCtaClick={handleGenerateReport}
-            disabled={isReportGenerationPaused}
-            disabledReason="Report generation is paused while a Custom plan payment is in progress."
+            disabled={!reportQuota.canGenerate}
+            disabledReason={reportQuota.reason ?? undefined}
           />
         </DashboardActionGrid>
       }

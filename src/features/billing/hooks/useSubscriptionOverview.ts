@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useConfirmedUserId, useIsAuthenticated } from "@/features/auth";
+import { getActiveContext, useAuthUser, useConfirmedUserId, useIsAuthenticated } from "@/features/auth";
 import { companyQuotaQueryKeys } from "@/features/company-quota";
 import type { SubscriptionOverview } from "../schemas/billingSchemas";
 
@@ -37,15 +37,18 @@ export function useSubscriptionOverview(
   const queryClient = useQueryClient();
   const isAuthenticated = useIsAuthenticated();
   const userId = useConfirmedUserId();
+  const { authMe } = useAuthUser();
+  const context = getActiveContext(authMe);
+  const overviewKey = [...billingQueryKeys.overview(userId ?? ""), context?.type ?? null, context?.company_id ?? null, context?.membership_id ?? null];
   const enabled =
     isAuthenticated && Boolean(userId) && (params.enabled ?? true);
 
   return useQuery({
-    queryKey: billingQueryKeys.overview(userId ?? ""),
+    queryKey: overviewKey,
     queryFn: async ({ signal }) => {
       const overview = await getSubscriptionOverview(signal);
       const previous = queryClient.getQueryData<SubscriptionOverview>(
-        billingQueryKeys.overview(userId ?? ""),
+        overviewKey,
       );
       if (previous && userId && (
         previous.subscription?.id !== overview.subscription?.id

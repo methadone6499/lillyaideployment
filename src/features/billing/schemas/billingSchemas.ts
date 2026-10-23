@@ -96,6 +96,10 @@ export const billingErrorCodeSchema = z.enum([
   "billing_reconciliation_failed",
   "subscription_required",
   "report_quota_exhausted",
+  "report_quota_unavailable",
+  "company_report_generation_disabled",
+  "top_up_purchase_pending",
+  "top_up_forfeiture_acknowledgement_required",
   "subscription_payment_pending",
   "custom_subscription_payment_in_progress",
   "enterprise_capacity_exceeded",
@@ -210,6 +214,7 @@ export const portalResponseSchema = z.object({
 export const upgradeRequestSchema = z
   .object({
     company_name: companyNameSchema,
+    acknowledge_top_up_forfeiture: z.boolean().optional(),
   })
   .strict();
 

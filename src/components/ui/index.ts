@@ -2,6 +2,7 @@ export { Accordion } from "./Accordion";
 export { Badge } from "./Badge";
 export { Button } from "./Button";
 export { Card } from "./Card";
+export { ModalDialog } from "./ModalDialog";
 export { Checkbox } from "./Checkbox";
 export { Chip } from "./Chip";
 export { RadioCircle } from "./RadioCircle";

@@ -93,3 +93,4 @@ export type {
   UserStatus,
   VerifyEmailRequest,
 } from "./schemas/authSchemas";
+export { authQueryKeys } from "./api/authQueryKeys";

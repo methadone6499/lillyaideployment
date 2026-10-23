@@ -60,11 +60,13 @@ import { PaymentInformationCard } from "./PaymentInformationCard";
 import { RecentInvoicesTable } from "./RecentInvoicesTable";
 import { ScheduledDowngradeCard } from "./ScheduledDowngradeCard";
 import { SubscriptionPurchaseRestrictionNotice } from "./SubscriptionPurchaseRestrictionNotice";
+import { PendingTopUpPaymentCard } from "./TopUpOverviewCard";
 
 const ALERT_DESTINATION_LABELS: Partial<
   Record<ClassifiedBillingError["kind"], string>
 > = {
   subscription_payment_pending: "Open Custom plan payment",
+  top_up_purchase_pending: "Review pending report top-up payment",
   enterprise_capacity_exceeded: "Manage seats and invitations",
   custom_subscription_request_active: "Open Custom plan request",
 };
@@ -411,6 +413,8 @@ export function BillingShell() {
         </section>
       ) : null}
 
+      <PendingTopUpPaymentCard />
+
       {overview.plan_change && scheduledDowngrade ? (
         <ScheduledDowngradeCard
           planChange={overview.plan_change}
@@ -555,7 +559,7 @@ export function BillingShell() {
         <BillingPlansSection plans={plans} onAction={handlePlanAction} />
       ) : null}
 
-      {settingsKind === "subscription" ? (
+      {settingsKind !== "super_admin" ? (
         <RecentInvoicesTable
           canManage={ownerCapabilities.canOpenPortal}
           disabled={isBusy}

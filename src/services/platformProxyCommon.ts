@@ -14,6 +14,7 @@ const FORWARDED_REQUEST_HEADERS = [
   "cookie",
   "x-correlation-id",
   "x-request-id",
+  "idempotency-key",
 ] as const;
 
 export const NO_CACHE_RESPONSE_HEADERS: Record<string, string> = {
@@ -68,6 +69,8 @@ export function createProxyResponse(
   if (retryAfter) {
     headers.set("Retry-After", retryAfter);
   }
+  const requestId = upstreamResponse.headers.get("x-request-id");
+  if (requestId) headers.set("X-Request-ID", requestId);
 
   extraHeaders?.(headers);
 

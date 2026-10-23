@@ -3,6 +3,7 @@
 import { formatDisplayCount } from "@/lib/formatDisplay";
 
 import { Button, TextField } from "@/components/ui";
+import { getMaximumTopUpTarget, parseTopUpInput, TopUpErrorNotice } from "@/features/billing";
 import { cn } from "@/lib/cn";
 import { useState, type FormEvent } from "react";
 import {
@@ -13,6 +14,11 @@ import {
 } from "../schemas/seatManagementSchemas";
 import { SeatFormDialog } from "./SeatFormDialog";
 
+export type SeatEditFailure = {
+  field: keyof EditSeatFormValues;
+  message: string;
+};
+
 type EditSeatDialogProps = {
   open: boolean;
   seat: Seat;
@@ -20,8 +26,16 @@ type EditSeatDialogProps = {
   quotaUnallocated?: number | null;
   seatChangesLocked?: boolean;
   quotaChangesLocked?: boolean;
+  additionalReports?: {
+    balance: number | null;
+    pool: number | null;
+    canEdit: boolean;
+    loading: boolean;
+    error: unknown;
+    onRetry: () => void;
+  };
   onClose: () => void;
-  onConfirm: (seat: Seat, values: EditSeatFormValues) => Promise<string | null>;
+  onConfirm: (seat: Seat, values: EditSeatFormValues) => Promise<SeatEditFailure | null>;
   onRequestRemove?: (seat: Seat) => void;
 };
 
@@ -34,7 +48,7 @@ function parseQuotaTotal(value: string): number | null {
 
   const parsed = Number(trimmed);
 
-  if (!Number.isInteger(parsed) || parsed < 0) {
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
     return null;
   }
 
@@ -48,6 +62,7 @@ export function EditSeatDialog({
   quotaUnallocated = null,
   seatChangesLocked = false,
   quotaChangesLocked = false,
+  additionalReports,
   onClose,
   onConfirm,
   onRequestRemove,
@@ -56,7 +71,8 @@ export function EditSeatDialog({
     seat.can_manage_status && seat.status !== "removed" && !seatChangesLocked;
   const canChangeQuota =
     seat.can_manage_quota && seat.status !== "removed" && !quotaChangesLocked;
-  const canSave = canChangeStatus || canChangeQuota;
+  const canChangeAdditional = additionalReports?.canEdit === true && seat.status !== "removed";
+  const canSave = canChangeStatus || canChangeQuota || canChangeAdditional;
   const initialStatus: SeatStatus =
     seat.status === "disabled" ? "disabled" : "active";
   const [status, setStatus] = useState<SeatStatus>(initialStatus);
@@ -64,14 +80,34 @@ export function EditSeatDialog({
     String(seat.report_quota_total),
   );
   const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [additionalBalance, setAdditionalBalance] = useState<string | null>(null);
+  const [additionalError, setAdditionalError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-
+  const currentAdditional = additionalReports?.balance ?? null;
+  const additionalPool = additionalReports?.pool ?? null;
+  const maximumAdditional = currentAdditional !== null && additionalPool !== null
+    ? getMaximumTopUpTarget(currentAdditional, additionalPool, status === "active")
+    : 0;
+  const additionalValue = additionalBalance ?? (currentAdditional === null ? "" : String(currentAdditional));
+  const parsedAdditional = parseTopUpInput(additionalValue, 0, maximumAdditional);
+  const additionalChanged = additionalBalance !== null &&
+    (parsedAdditional === null || parsedAdditional !== currentAdditional);
+  const additionalUnavailable = additionalChanged && !canChangeAdditional;
+  const additionalValidationError = additionalUnavailable
+    ? "Additional report changes are unavailable. Reload balances or cancel to discard your changes."
+    : canChangeAdditional && parsedAdditional === null
+      ? `Enter a whole number from 0 to ${formatDisplayCount(maximumAdditional)}.`
+      : null;
+  const additionalInputError = additionalError ?? additionalValidationError;
+  const additionalChange = parsedAdditional !== null && currentAdditional !== null
+    ? parsedAdditional - currentAdditional
+    : 0;
   const quotaHelper = canChangeQuota
     ? [
-        `Used: ${formatDisplayCount(seat.report_quota_used)}. Set the absolute report total for this seat.`,
+        `Used: ${formatDisplayCount(seat.report_quota_used)}. Set the total monthly allocation for this seat.`,
         quotaUnallocated == null
           ? null
-          : `${formatDisplayCount(quotaUnallocated)} unallocated in the company pool.`,
+          : `${formatDisplayCount(quotaUnallocated)} unallocated monthly reports in the company pool.`,
       ]
         .filter(Boolean)
         .join(" ")
@@ -80,7 +116,7 @@ export function EditSeatDialog({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (isPending || !canSave) {
+    if (isPending || !canSave || additionalValidationError) {
       return;
     }
 
@@ -92,14 +128,22 @@ export function EditSeatDialog({
       return;
     }
 
+    if (canChangeQuota && parsedQuota !== seat.report_quota_total && parsedQuota < seat.report_quota_used) {
+      setQuotaError(`The monthly quota cannot be below ${formatDisplayCount(seat.report_quota_used)} already used.`);
+      return;
+    }
+
     const result = editSeatFormSchema.safeParse({
       status,
       quota_total: parsedQuota,
+      ...(canChangeAdditional && parsedAdditional !== null
+        ? { additional_report_balance: parsedAdditional } : {}),
     });
 
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
       setQuotaError(fieldErrors.quota_total?.[0] ?? null);
+      setAdditionalError(fieldErrors.additional_report_balance?.[0] ?? null);
       setFormError(
         fieldErrors.status?.[0] ??
           (!fieldErrors.quota_total ? "Select a valid seat status." : null),
@@ -107,14 +151,18 @@ export function EditSeatDialog({
       return;
     }
 
+    setQuotaError(null);
+    setAdditionalError(null);
+    setFormError(null);
     const confirmationError = await onConfirm(seat, result.data);
 
     if (confirmationError) {
-      if (canChangeQuota && parsedQuota !== seat.report_quota_total) {
-        setQuotaError(confirmationError);
-        setFormError(null);
+      if (confirmationError.field === "quota_total") {
+        setQuotaError(confirmationError.message);
+      } else if (confirmationError.field === "additional_report_balance") {
+        setAdditionalError(confirmationError.message);
       } else {
-        setFormError(confirmationError);
+        setFormError(confirmationError.message);
       }
     }
   };
@@ -131,10 +179,16 @@ export function EditSeatDialog({
     <SeatFormDialog
       open={open}
       title="Company Seat"
-      confirmLabel="Save"
-      confirmDisabled={isPending || !canSave}
+      confirmLabel={isPending ? "Saving…" : "Save"}
+      confirmDisabled={isPending || !canSave || Boolean(additionalValidationError)}
       hideConfirm={!canSave}
       cancelLabel={canSave ? "Cancel" : "Close"}
+      cancelInHeader
+      footerAction={onRequestRemove && seat.can_manage && seat.status !== "removed" && !seatChangesLocked ? (
+        <Button variant="destructive" disabled={isPending} onClick={() => onRequestRemove(seat)}>
+          Remove seat
+        </Button>
+      ) : undefined}
       closeDisabled={isPending}
       onClose={handleClose}
       onSubmit={(event) => {
@@ -180,14 +234,14 @@ export function EditSeatDialog({
             htmlFor="edit-seat-quota"
             className="text-label font-medium text-white"
           >
-            Reports Quota
+            Monthly report quota
           </label>
           <TextField
             id="edit-seat-quota"
             data-autofocus
             type="number"
             inputMode="numeric"
-            min={0}
+            min={seat.report_quota_used}
             step={1}
             value={quotaTotal}
             readOnly={!canChangeQuota}
@@ -202,6 +256,64 @@ export function EditSeatDialog({
             className="h-14 bg-surface-default text-label font-normal"
           />
         </div>
+
+        {additionalReports ? (
+          <div className="flex flex-col gap-6">
+            <label htmlFor="edit-seat-additional" className="text-label font-medium text-white">
+              Additional reports
+            </label>
+            <div className="flex flex-col gap-2">
+              <TextField
+                id="edit-seat-additional"
+                data-autofocus={!canChangeQuota && canChangeAdditional ? true : undefined}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={maximumAdditional}
+                step={1}
+                value={additionalValue}
+                placeholder={additionalReports.loading ? "Loading…" : "Unavailable"}
+                readOnly={!canChangeAdditional}
+                disabled={!canChangeAdditional || isPending}
+                error={additionalInputError}
+                onChange={(event) => {
+                  setAdditionalBalance(event.target.value);
+                  setAdditionalError(null);
+                  setFormError(null);
+                }}
+                className="h-14 bg-surface-default text-label font-normal"
+              />
+              <p className="text-helper text-text-muted">
+                Currently assigned: {formatDisplayCount(currentAdditional)} · Available company pool: {formatDisplayCount(additionalPool)}
+              </p>
+              <p className="text-helper text-text-muted">
+                {status === "disabled"
+                  ? "Disabled seats can only return unused additional reports."
+                  : "Used automatically after monthly quota is exhausted. Set the remaining balance."}
+              </p>
+            </div>
+            {additionalReports.loading ? <p role="status" className="text-helper text-text-muted">Loading report balances…</p> : null}
+            <TopUpErrorNotice error={additionalReports.error} />
+            {additionalReports.error || additionalUnavailable ? (
+              <Button variant="secondary" size="compact" className="self-start" disabled={isPending || additionalReports.loading} onClick={() => {
+                setAdditionalError(null);
+                additionalReports.onRetry();
+              }}>
+                Reload balances
+              </Button>
+            ) : null}
+            {!canChangeAdditional && !additionalReports.loading && !additionalReports.error ? (
+              <p className="text-helper text-status-running">Allocation changes require current paid access and must not be paused.</p>
+            ) : null}
+            {!additionalInputError && canChangeAdditional && additionalChange !== 0 ? (
+              <p role="status" aria-live="polite" className="text-helper text-brand">
+                {additionalChange > 0
+                  ? `Assign ${formatDisplayCount(additionalChange)} reports from the company pool.`
+                  : `Return ${formatDisplayCount(-additionalChange)} unused reports to the company pool.`}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {canChangeStatus ? (
           <fieldset className="flex flex-col gap-6">
@@ -235,6 +347,7 @@ export function EditSeatDialog({
                       disabled={isPending}
                       onChange={() => {
                         setStatus(value);
+                        setAdditionalError(null);
                         setFormError(null);
                       }}
                       className="sr-only"
@@ -261,21 +374,6 @@ export function EditSeatDialog({
             Seat and quota changes are paused while a Custom plan payment is in
             progress.
           </p>
-        ) : null}
-
-        {onRequestRemove &&
-        seat.can_manage &&
-        seat.status !== "removed" &&
-        !seatChangesLocked ? (
-          <Button
-            variant="destructive"
-            size="table"
-            disabled={isPending}
-            onClick={() => onRequestRemove(seat)}
-            className="self-start"
-          >
-            Remove seat
-          </Button>
         ) : null}
 
         {formError ? (

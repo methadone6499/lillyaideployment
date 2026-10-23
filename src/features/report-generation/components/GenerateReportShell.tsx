@@ -2,13 +2,16 @@
 
 import { AppHeader } from "@/components/shared/AppHeader";
 import { RequestErrorState } from "@/components/ui";
-import { useIsAuthenticated } from "@/features/auth";
+import { refetchAuthMe, useIsAuthenticated } from "@/features/auth";
 import {
   OperationLockBanner,
   resolvePaidActionErrorPath,
   resolvePaidActionFailurePath,
   useOperationLock,
   usePaidFeatureAccess,
+  useReportQuotaAccess,
+  ReportQuotaNotice,
+  invalidateBillingOverview,
 } from "@/features/billing";
 import {
   buildCreateReportInput,
@@ -26,7 +29,7 @@ import {
 import { ApiRequestError } from "@/services/ApiRequestError";
 import { useIsMutating, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ZodError } from "zod";
 import {
   createReport,
@@ -111,11 +114,16 @@ function isStillCurrentPlatformSave(
   );
 }
 
-export function GenerateReportShell() {
+type GenerateReportShellProps = {
+  headerActions: ReactNode;
+};
+
+export function GenerateReportShell({ headerActions }: GenerateReportShellProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const isAuthenticated = useIsAuthenticated();
   const { overview, canUseFeature } = usePaidFeatureAccess();
+  const reportQuota = useReportQuotaAccess();
   const operationLock = useOperationLock();
   const isReportGenerationPaused = operationLock.isBlocked("report_generation");
   const currentStep = useReportWizardStore((s) => s.currentStep);
@@ -228,6 +236,12 @@ export function GenerateReportShell() {
         router.replace(
           resolvePaidActionFailurePath("subscription_required", overview),
         );
+        return;
+      }
+
+      if (!reportQuota.canGenerate) {
+        setStep5Error(reportQuota.reason ?? "Report quota is unavailable.");
+        void reportQuota.refetch();
         return;
       }
 
@@ -431,6 +445,8 @@ export function GenerateReportShell() {
               await savePlatformReportWithRetry(createInput);
 
             removePendingPlatformSave(originatingReportServiceId);
+            await invalidateBillingOverview(queryClient, originatingUserId);
+            await queryClient.invalidateQueries({ queryKey: ["company-seats"] });
             await queryClient.invalidateQueries({
               queryKey: platformReportQueryKeys.lists(),
             });
@@ -450,6 +466,11 @@ export function GenerateReportShell() {
               router.replace(`/reports/${savedReport.id}`);
             }
           } catch (error) {
+            if (error instanceof ApiRequestError && ["report_quota_exhausted", "report_quota_unavailable", "custom_subscription_payment_in_progress", "company_report_generation_disabled"].includes(error.code ?? "")) {
+              void invalidateBillingOverview(queryClient, originatingUserId);
+              void reportQuota.refetch();
+              if (error.code === "report_quota_unavailable") void refetchAuthMe().catch(() => undefined);
+            }
             markPendingPlatformSaveFailed(
               originatingReportServiceId,
               error instanceof ApiRequestError ? error.requestId : null,
@@ -493,22 +514,17 @@ export function GenerateReportShell() {
 
   const isResultsStep = currentStep === 6;
   const continueDisabledReason =
-    currentStep === 1 && !drugName.trim() && !indications.trim()
-      ? "Enter a drug name and indication to continue."
-      : currentStep === 1 && !drugName.trim()
-        ? "Enter a drug name to continue."
-        : currentStep === 1 && !indications.trim()
-          ? "Enter at least one indication to continue."
-          : currentStep === 5 && selectedSectionIds.length === 0
-            ? "Select at least one report section to continue."
-            : currentStep === 5 && isReportGenerationPaused
-              ? "Report generation is temporarily unavailable."
-              : null;
+    currentStep === 5 && selectedSectionIds.length === 0
+      ? "Select at least one report section to continue."
+      : currentStep === 5 && isReportGenerationPaused
+        ? "Report generation is temporarily unavailable."
+        : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-base-black font-[family-name:var(--font-inter)] text-white">
-      <AppHeader />
+      <AppHeader actions={headerActions} />
       <main className="mx-auto flex w-full max-w-[var(--layout-max-width)] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-12">
+        {isResultsStep ? <ReportQuotaNotice /> : null}
         {!isResultsStep && (
           <div className="mb-12 flex max-w-[var(--layout-inner-width)] flex-col gap-7">
             <h1 className="text-page-title font-medium text-text-heading">
@@ -520,6 +536,7 @@ export function GenerateReportShell() {
             </p>
             <Stepper currentStep={currentStep} />
             <OperationLockBanner />
+            <ReportQuotaNotice />
           </div>
         )}
 
@@ -565,6 +582,7 @@ export function GenerateReportShell() {
                 selectedSectionIds,
               ) ||
               (currentStep === 5 && isReportGenerationPaused) ||
+              (currentStep === 5 && !reportQuota.canGenerate) ||
               saveSelectionsMutation.isPending ||
               generateMutation.isPending ||
               customSectionMutating > 0 ||

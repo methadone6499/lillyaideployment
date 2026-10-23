@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 
 import { refetchAuthMe, useConfirmedUserId } from "@/features/auth";
+import { invalidateTopUps } from "@/features/billing";
 import { companyInvitationQueryKeys } from "@/features/company-invitations";
 import { companyQuotaQueryKeys } from "@/features/company-quota";
 
@@ -28,6 +29,7 @@ async function afterSeatMutation(
   targetUserId: string,
 ): Promise<void> {
   if (userId) {
+    await invalidateTopUps(queryClient, userId);
     await queryClient.invalidateQueries({
       queryKey: companySeatQueryKeys.lists(userId),
     });

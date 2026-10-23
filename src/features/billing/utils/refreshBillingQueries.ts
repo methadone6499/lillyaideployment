@@ -4,6 +4,7 @@ import { refetchAuthMe } from "@/features/auth";
 import { companyQuotaQueryKeys } from "@/features/company-quota";
 
 import { billingQueryKeys } from "../api/billingQueryKeys";
+import { topUpQueryKeys } from "../api/topUpQueryKeys";
 import {
   classifyBillingError,
   type ClassifiedBillingError,
@@ -18,6 +19,7 @@ export async function invalidateBillingOverview(
   }
 
   void queryClient.invalidateQueries({ queryKey: companyQuotaQueryKeys.company(userId) });
+  void queryClient.invalidateQueries({ queryKey: topUpQueryKeys.user(userId) });
   void queryClient.invalidateQueries({ queryKey: companyQuotaQueryKeys.own(userId) });
   await queryClient.invalidateQueries({ queryKey: billingQueryKeys.overview(userId) });
 }

@@ -58,6 +58,10 @@ const PERMISSION_MESSAGE = "You do not have permission to do this.";
 const NOT_FOUND_MESSAGE = "This item is no longer available. Reloading.";
 
 const ERROR_RULES: Record<string, ErrorRule> = {
+  top_up_purchase_pending: {
+    message: "A report top-up payment is still active. Resolve it in Billing or the original payment tab before accepting this company plan.",
+    action: "open_billing", refetch: true,
+  },
   subscription_purchase_suspended: {
     message: SUBSCRIPTION_PURCHASE_SUSPENDED_MESSAGE,
     action: "none",

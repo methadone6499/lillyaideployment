@@ -51,7 +51,7 @@ export function LandingFooter() {
         </div>
 
         <div className="flex flex-col gap-2 text-center text-input leading-5 text-text-muted">
-          <p>© 2026 {BRAND.name}, Riyadh, Saudi Arabia - All rights reserved.</p>
+          <p>© 2026 {BRAND.name} - All rights reserved.</p>
           <p>Powered by {BRAND.partner}.</p>
         </div>
       </div>

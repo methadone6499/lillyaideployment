@@ -1,3 +1,5 @@
+import { clearTopUpReturnMarker } from "../store/useTopUpPurchaseStore";
+
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 
 export function resolveHostedBillingUrl(
@@ -27,6 +29,7 @@ export function assignHostedBillingUrl(
     return false;
   }
 
+  try { clearTopUpReturnMarker(); } catch { /* A storage restriction must not prevent subscription payment. */ }
   window.location.assign(href);
   return true;
 }

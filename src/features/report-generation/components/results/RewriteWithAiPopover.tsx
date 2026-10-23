@@ -3,7 +3,7 @@
 import { CloseIcon } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { RewritePreset } from "../../types";
 import type { EditableTextSelection } from "../../utils/reportBlockEditing";
@@ -31,7 +31,6 @@ export function RewriteWithAiPopover({
 }: RewriteWithAiPopoverProps) {
   const [instruction, setInstruction] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
-  const panelRef = useRef<HTMLElement>(null);
   const selectedPreset =
     selectedPresetId &&
     presets.some((preset) => preset.preset_id === selectedPresetId)
@@ -65,14 +64,16 @@ export function RewriteWithAiPopover({
       availableBelow >= preferredPanelHeight || availableBelow >= availableAbove;
     const maxHeight = Math.min(
       preferredPanelHeight,
-      placeBelow ? availableBelow : availableAbove,
+      Math.max(0, window.innerHeight - viewportPadding * 2),
     );
-    const top = placeBelow
+    const preferredTop = placeBelow
       ? selection.anchorRect.bottom + selectionGap
-      : Math.max(
-          viewportPadding,
-          selection.anchorRect.top - selectionGap - maxHeight,
-        );
+      : selection.anchorRect.top - selectionGap - maxHeight;
+    // Keep the panel usable even when it must overlap the selected text.
+    const top = Math.max(
+      viewportPadding,
+      Math.min(preferredTop, window.innerHeight - viewportPadding - maxHeight),
+    );
 
     return { left, top, width: panelWidth, maxHeight };
   }, [selection]);
@@ -85,34 +86,23 @@ export function RewriteWithAiPopover({
       }
     };
 
-    const closeOnViewportChange = (event: Event) => {
-      if (
-        event.type === "scroll" &&
-        event.target instanceof Node &&
-        panelRef.current?.contains(event.target)
-      ) {
-        return;
-      }
-
+    const closeOnResize = () => {
       if (!isRewriting) {
         onClose();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("resize", closeOnViewportChange);
-    window.addEventListener("scroll", closeOnViewportChange, true);
+    window.addEventListener("resize", closeOnResize);
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("resize", closeOnViewportChange);
-      window.removeEventListener("scroll", closeOnViewportChange, true);
+      window.removeEventListener("resize", closeOnResize);
     };
   }, [isRewriting, onClose]);
 
   return createPortal(
     <aside
-      ref={panelRef}
       role="dialog"
       aria-modal="false"
       aria-labelledby="rewrite-with-ai-title"
@@ -144,7 +134,7 @@ export function RewriteWithAiPopover({
         </button>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-6 pt-6">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-6 pt-6">
         <textarea
           value={instruction}
           onChange={(event) => {
@@ -171,7 +161,7 @@ export function RewriteWithAiPopover({
           </p>
         ) : (
           <div
-            className="mt-4 flex min-h-0 max-h-32 flex-1 flex-wrap content-start gap-2 overflow-y-auto overscroll-contain"
+            className="mt-4 flex min-h-28 max-h-32 flex-1 flex-wrap content-start gap-2 overflow-y-auto overscroll-contain"
             aria-label="Rewrite presets"
           >
             {presets.map((preset) => {
@@ -206,33 +196,33 @@ export function RewriteWithAiPopover({
             {errorMessage}
           </p>
         )}
-
-        <footer className="mt-9 flex shrink-0 items-center justify-end gap-7">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isRewriting}
-            className="inline-flex h-[52px] items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => void onRewrite(instruction, selectedPreset)}
-            disabled={isRewriting || !canSubmit}
-            className="inline-flex h-[52px] items-center gap-2 rounded-button pr-5 pl-4 bg-brand text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted"
-          >
-            <Image
-              src="/report-generation/editing/rewrite-sparkle-white.svg"
-              alt=""
-              width={20}
-              height={20}
-              className="size-5 brightness-0"
-            />
-            {isRewriting ? "Rewriting…" : "Rewrite"}
-          </button>
-        </footer>
       </div>
+
+      <footer className="flex shrink-0 items-center justify-end gap-7 px-6 pb-6 pt-9">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isRewriting}
+          className="inline-flex h-[52px] items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => void onRewrite(instruction, selectedPreset)}
+          disabled={isRewriting || !canSubmit}
+          className="inline-flex h-[52px] items-center gap-2 rounded-button pr-5 pl-4 bg-brand text-label font-medium text-brand-foreground transition-colors hover:bg-[#059669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-surface-default disabled:text-text-muted"
+        >
+          <Image
+            src="/report-generation/editing/rewrite-sparkle-white.svg"
+            alt=""
+            width={20}
+            height={20}
+            className="size-5 brightness-0"
+          />
+          {isRewriting ? "Rewriting…" : "Rewrite"}
+        </button>
+      </footer>
     </aside>,
     document.body,
   );

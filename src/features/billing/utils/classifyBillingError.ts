@@ -100,6 +100,10 @@ const ERROR_MESSAGES: Record<BillingErrorCode, string> = {
   billing_reconciliation_failed: RECONCILIATION_MESSAGE,
   subscription_required: SUBSCRIPTION_REQUIRED_MESSAGE,
   report_quota_exhausted: QUOTA_EXHAUSTED_MESSAGE,
+  report_quota_unavailable: "Report quota is unavailable. Refresh your subscription and workspace context.",
+  company_report_generation_disabled: "Report generation is disabled for this company subscription.",
+  top_up_purchase_pending: "A report top-up payment is still active. Resolve it in Billing or the original payment tab before changing plans.",
+  top_up_forfeiture_acknowledgement_required: "Confirm the permanent loss of unused personal top-ups before changing to a company plan.",
   subscription_payment_pending: SUBSCRIPTION_PAYMENT_PENDING_MESSAGE,
   custom_subscription_payment_in_progress: OPERATION_LOCKED_MESSAGE,
   enterprise_capacity_exceeded: ENTERPRISE_CAPACITY_MESSAGE,
@@ -226,6 +230,10 @@ export function classifyBillingError(error: unknown): ClassifiedBillingError {
   }
   if (code === "subscription_resume_not_available") {
     return buildClassifiedError({ kind: code, message: ERROR_MESSAGES[code], requestId, reloadOverview: true });
+  }
+  if (code === "top_up_purchase_pending" || code === "top_up_forfeiture_acknowledgement_required" || code === "report_quota_unavailable" || code === "company_report_generation_disabled") {
+    return buildClassifiedError({ kind: code, message: ERROR_MESSAGES[code], requestId, reloadOverview: true,
+      refetchAuth: code === "report_quota_unavailable", destination: BILLING_PATHS.settings });
   }
 
   if (error.status === 401 || code === "invalid_session") {

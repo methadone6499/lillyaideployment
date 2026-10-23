@@ -22,6 +22,8 @@ type SeatFormDialogProps = {
   confirmTone?: "brand" | "danger";
   hideConfirm?: boolean;
   cancelLabel?: string;
+  cancelInHeader?: boolean;
+  footerAction?: ReactNode;
   closeDisabled?: boolean;
   children: ReactNode;
   onClose: () => void;
@@ -36,6 +38,8 @@ export function SeatFormDialog({
   confirmTone = "brand",
   hideConfirm = false,
   cancelLabel = "Cancel",
+  cancelInHeader = false,
+  footerAction,
   closeDisabled = false,
   children,
   onClose,
@@ -66,7 +70,8 @@ export function SeatFormDialog({
     const previousBodyOverflow = document.body.style.overflow;
     const focusFrame = window.requestAnimationFrame(() => {
       const initialField =
-        dialogRef.current?.querySelector<HTMLElement>("[data-autofocus]");
+        dialogRef.current?.querySelector<HTMLElement>("[data-autofocus]:not([disabled])") ??
+        dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? dialogRef.current;
       initialField?.focus();
     });
 
@@ -141,39 +146,45 @@ export function SeatFormDialog({
         onSubmit={onSubmit}
         className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[640px] flex-col overflow-hidden rounded-surface border border-border-default bg-[#171717] font-[family-name:var(--font-inter)] text-white shadow-2xl"
       >
-        <header className="flex min-h-[58px] shrink-0 items-center border-b border-border-default px-6 py-4">
+        <header className="flex min-h-[58px] shrink-0 items-center justify-between gap-4 border-b border-border-default px-6 py-4">
           <h2 id={titleId} className="text-card-title font-medium text-white">
             {title}
           </h2>
+          {cancelInHeader ? (
+            <Button variant="secondary" onClick={onClose} disabled={closeDisabled}>
+              {cancelLabel}
+            </Button>
+          ) : null}
         </header>
 
         <div className="min-h-0 overflow-y-auto px-6 py-6 sm:px-7">
           {children}
         </div>
 
-        <footer
-          className={cn(
-            "flex shrink-0 items-center gap-4 border-t border-border-default px-6 py-5 sm:px-7",
-            hideConfirm ? "justify-end" : "justify-between",
-          )}
-        >
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={closeDisabled}
+        {!hideConfirm || !cancelInHeader || footerAction ? (
+          <footer
+            className={cn(
+              "flex shrink-0 items-center gap-4 border-t border-border-default px-6 py-5 sm:px-7",
+              (cancelInHeader && footerAction) || (!cancelInHeader && !hideConfirm)
+                ? "justify-between" : "justify-end",
+            )}
           >
-            {cancelLabel}
-          </Button>
-          {hideConfirm ? null : (
-            <Button
-              type="submit"
-              variant={confirmTone === "danger" ? "destructiveSolid" : "primary"}
-              disabled={confirmDisabled}
-            >
-              {confirmLabel}
-            </Button>
-          )}
-        </footer>
+            {cancelInHeader ? footerAction : (
+              <Button variant="secondary" onClick={onClose} disabled={closeDisabled}>
+                {cancelLabel}
+              </Button>
+            )}
+            {hideConfirm ? null : (
+              <Button
+                type="submit"
+                variant={confirmTone === "danger" ? "destructiveSolid" : "primary"}
+                disabled={confirmDisabled}
+              >
+                {confirmLabel}
+              </Button>
+            )}
+          </footer>
+        ) : null}
       </form>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useConfirmedUserId } from "@/features/auth";
+import { withTopUpForfeitureConfirmation } from "@/features/billing";
 
 import {
   acceptCustomOffer,
@@ -146,7 +147,8 @@ export function useAcceptCustomOfferMutation() {
 
   return useMutation({
     mutationKey: customSubscriptionQueryKeys.acceptOffer(),
-    mutationFn: ({ offerId }: OfferActionVariables) => acceptCustomOffer(offerId),
+    mutationFn: ({ offerId }: OfferActionVariables) => withTopUpForfeitureConfirmation(queryClient, userId,
+      (acknowledged) => acceptCustomOffer(offerId, undefined, acknowledged)),
     retry: shouldRetryCustomSubscriptionMutation,
     retryDelay: getCustomSubscriptionRetryDelay,
     onSuccess: async (result) => {

@@ -2,6 +2,8 @@ export const billingQueryKeys = {
   root: ["billing"] as const,
   overview: (userId: string) =>
     [...billingQueryKeys.root, "overview", userId] as const,
+  history: (userId: string) =>
+    [...billingQueryKeys.root, "history", userId] as const,
   authReconciliation: (userId: string, generation: number) =>
     [
       ...billingQueryKeys.root,

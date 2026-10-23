@@ -9,6 +9,7 @@ type ButtonVariant =
   | "destructive"
   | "destructiveSolid"
   | "table"
+  | "dashed"
   | "ghost";
 
 type ButtonSize =
@@ -39,6 +40,8 @@ const variantClasses: Record<ButtonVariant, string> = {
     "border border-transparent bg-[#d92244] text-white hover:bg-[#bd1d3a] disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted",
   table:
     "border border-border-default bg-surface-subtle text-white hover:border-white/20 hover:bg-surface-elevated disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted",
+  dashed:
+    "border border-dashed border-brand/56 bg-brand-bg text-brand hover:border-brand hover:bg-brand-badge disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted",
   ghost:
     "border border-transparent bg-transparent text-brand hover:underline disabled:text-text-muted",
 };

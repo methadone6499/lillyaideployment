@@ -1,4 +1,5 @@
 "use client";
+import { CompanyTopUpAllocator } from "./CompanyTopUpAllocator";
 
 import { Button } from "@/components/ui";
 import { PlusIcon } from "@/components/ui/icons";
@@ -7,11 +8,18 @@ import {
   useAuthUser,
 } from "@/features/auth";
 import {
+  canAllocateTopUps,
+  emitTopUpEvent,
   formatLocalDate,
+  getMaximumTopUpTarget,
+  getTopUpError,
   hasScheduledEnterpriseDowngrade,
   isOperationLockError,
   OperationLockBanner,
   useOperationLock,
+  useSetMemberTopUpMutation,
+  useSubscriptionOverview,
+  useTopUpOverview,
 } from "@/features/billing";
 import {
   classifyInvitationError,
@@ -31,7 +39,7 @@ import {
 } from "@/features/company-quota";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ApiRequestError } from "@/services/ApiRequestError";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCompanySeats } from "../hooks/useCompanySeats";
 import {
   useDisableSeatMutation,
@@ -47,7 +55,7 @@ import type {
 import { classifySeatMutationError } from "../utils/classifySeatMutationError";
 import { AddSeatDialog } from "./AddSeatDialog";
 import { CompanyQuotaPoolCards } from "./CompanyQuotaPoolCards";
-import { EditSeatDialog } from "./EditSeatDialog";
+import { EditSeatDialog, type SeatEditFailure } from "./EditSeatDialog";
 import { PendingInvitationsTable } from "./PendingInvitationsTable";
 import { RemoveSeatDialog } from "./RemoveSeatDialog";
 import { RevokeInvitationDialog } from "./RevokeInvitationDialog";
@@ -97,6 +105,8 @@ function isInvalidCursorError(error: unknown): boolean {
 
 export function SeatManagementContent() {
   const { authMe } = useAuthUser();
+  const isCompanyAdmin = authMe?.active_context.type === "company" &&
+    authMe.active_context.role === "company_admin";
   const canManageMembers = hasPermission(authMe, "company:members_manage");
   const canReadCompanyQuota = hasPermission(authMe, "company:quota_read");
   const operationLock = useOperationLock();
@@ -116,6 +126,8 @@ export function SeatManagementContent() {
   const [invitationPage, setInvitationPage] = useState(1);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingSeat, setEditingSeat] = useState<Seat | null>(null);
+  const [isSavingSeat, setIsSavingSeat] = useState(false);
+  const editSaveInFlight = useRef(false);
   const [removingSeat, setRemovingSeat] = useState<Seat | null>(null);
   const [revokingInvitation, setRevokingInvitation] =
     useState<Invitation | null>(null);
@@ -146,6 +158,12 @@ export function SeatManagementContent() {
   const enableMutation = useEnableSeatMutation();
   const removeMutation = useRemoveSeatMutation();
   const setMemberQuotaMutation = useSetMemberQuotaMutation();
+  const topUpOverview = useTopUpOverview(isCompanyAdmin);
+  const subscriptionQuery = useSubscriptionOverview({ enabled: isCompanyAdmin });
+  const setMemberTopUpMutation = useSetMemberTopUpMutation();
+  const canEditAdditionalReports = isCompanyAdmin && !topUpOverview.isError &&
+    !subscriptionQuery.isError && topUpOverview.data !== undefined &&
+    canAllocateTopUps(topUpOverview.data, subscriptionQuery.data);
   const createInvitationMutation = useCreateInvitationMutation();
   const resendInvitationMutation = useResendInvitationMutation();
   const revokeInvitationMutation = useRevokeInvitationMutation();
@@ -218,6 +236,9 @@ export function SeatManagementContent() {
     (setMemberQuotaMutation.isPending
       ? setMemberQuotaMutation.variables?.membershipId
       : undefined) ??
+    (setMemberTopUpMutation.isPending
+      ? setMemberTopUpMutation.variables?.membershipId
+      : undefined) ??
     null;
   const pendingInvitationId =
     (resendInvitationMutation.isPending
@@ -268,7 +289,7 @@ export function SeatManagementContent() {
     invitationsQuery.isFetching &&
     !invitationsQuery.isFetchingNextPage;
   const isEditPending =
-    Boolean(editingSeat) && pendingMembershipId === editingSeat?.membership_id;
+    Boolean(editingSeat) && (isSavingSeat || pendingMembershipId === editingSeat?.membership_id);
   const isRemovePending =
     Boolean(removingSeat) &&
     pendingMembershipId === removingSeat?.membership_id;
@@ -362,17 +383,17 @@ export function SeatManagementContent() {
     setActionError(null);
 
     try {
-      if (nextStatus === "disabled") {
-        await disableMutation.mutateAsync({
+      const updatedSeat = nextStatus === "disabled"
+        ? await disableMutation.mutateAsync({
+          membershipId: seat.membership_id,
+          targetUserId: seat.user_id,
+        })
+        : await enableMutation.mutateAsync({
           membershipId: seat.membership_id,
           targetUserId: seat.user_id,
         });
-      } else {
-        await enableMutation.mutateAsync({
-          membershipId: seat.membership_id,
-          targetUserId: seat.user_id,
-        });
-      }
+      setEditingSeat((current) => current?.membership_id === seat.membership_id
+        ? { ...current, ...updatedSeat } : current);
 
       return null;
     } catch (error) {
@@ -386,52 +407,107 @@ export function SeatManagementContent() {
   const handleEditConfirm = async (
     seat: Seat,
     values: EditSeatFormValues,
-  ): Promise<string | null> => {
+  ): Promise<SeatEditFailure | null> => {
+    const savedChanges: string[] = [];
+    const fail = (field: SeatEditFailure["field"], reason: string): SeatEditFailure => {
+      const message = savedChanges.length ? `Saved ${savedChanges.join(" and ")}. ${reason}` : reason;
+      setActionError(message);
+      return { field, message };
+    };
+    if (editSaveInFlight.current) return { field: "status", message: "Seat changes are still being saved." };
     const quotaChanged = values.quota_total !== seat.report_quota_total;
     const statusChanged = values.status !== seat.status;
+    const currentAdditional = topUpOverview.data?.allocations.find(
+      (allocation) => allocation.membership_id === seat.membership_id,
+    )?.remaining_balance ?? 0;
+    const additionalTarget = values.additional_report_balance;
+    const additionalChanged = additionalTarget !== undefined && additionalTarget !== currentAdditional;
 
-    if (!quotaChanged && !statusChanged) {
+    if (quotaChanged && (!seat.can_manage_quota || quotaChangesLocked || seat.status === "removed")) {
+      return fail("quota_total", "Monthly quota changes are currently unavailable for this seat.");
+    }
+    if (statusChanged && (!seat.can_manage_status || seatChangesLocked || seat.status === "removed")) {
+      return fail("status", "Status changes are currently unavailable for this seat.");
+    }
+    if (additionalChanged) {
+      if (!canEditAdditionalReports || !topUpOverview.data || seat.status === "removed") {
+        return fail("additional_report_balance", "Additional report changes are currently unavailable. Reload balances before trying again.");
+      }
+      const maximum = getMaximumTopUpTarget(currentAdditional, topUpOverview.data.pool_balance, values.status === "active");
+      if (!Number.isSafeInteger(additionalTarget) || additionalTarget < 0 || additionalTarget > maximum) {
+        return fail("additional_report_balance", `Enter a remaining balance from 0 to ${maximum}.`);
+      }
+    }
+
+    if (!quotaChanged && !statusChanged && !additionalChanged) {
       setEditingSeat(null);
       return null;
     }
 
-    if (quotaChanged && seat.can_manage_quota) {
-      setActionError(null);
-
-      try {
-        const allocation = await setMemberQuotaMutation.mutateAsync({
-          membershipId: seat.membership_id,
-          quotaTotal: values.quota_total,
-        });
-
-        setEditingSeat((current) =>
-          current?.membership_id === seat.membership_id
-            ? {
-                ...current,
-                report_quota_total: allocation.quota_total,
-                report_quota_used: allocation.quota_used,
-                report_quota_remaining: allocation.quota_remaining,
-              }
-            : current,
-        );
-      } catch (error) {
-        refreshLockAfterError(error);
-        const message = classifyQuotaMutationError(error);
-        setActionError(message);
-        return message;
+    editSaveInFlight.current = true;
+    setIsSavingSeat(true);
+    setActionError(null);
+    try {
+      // Re-enable before assigning more reports. Additional balances are saved
+      // last, so a later status failure cannot repeat a successful allocation.
+      if (statusChanged && values.status === "active") {
+        const message = await handleStatusChange(seat, values.status);
+        if (message) return fail("status", message);
+        savedChanges.push("seat status");
       }
-    }
 
-    if (statusChanged && seat.can_manage_status) {
-      const message = await handleStatusChange(seat, values.status);
+      if (quotaChanged) {
+        try {
+          const allocation = await setMemberQuotaMutation.mutateAsync({
+            membershipId: seat.membership_id,
+            quotaTotal: values.quota_total,
+          });
 
-      if (message) {
-        return message;
+          setEditingSeat((current) =>
+            current?.membership_id === seat.membership_id
+              ? {
+                  ...current,
+                  report_quota_total: allocation.quota_total,
+                  report_quota_used: allocation.quota_used,
+                  report_quota_remaining: allocation.quota_remaining,
+                }
+              : current,
+          );
+          savedChanges.push("monthly quota");
+        } catch (error) {
+          refreshLockAfterError(error);
+          return fail("quota_total", classifyQuotaMutationError(error));
+        }
       }
-    }
 
-    setEditingSeat(null);
-    return null;
+      if (statusChanged && values.status === "disabled") {
+        const message = await handleStatusChange(seat, values.status);
+        if (message) return fail("status", message);
+        savedChanges.push("seat status");
+      }
+
+      if (additionalChanged && additionalTarget !== undefined) {
+        try {
+          await setMemberTopUpMutation.mutateAsync({
+            membershipId: seat.membership_id,
+            balance: additionalTarget,
+          });
+          emitTopUpEvent({ name: "top_up_allocation_updated", membershipId: seat.membership_id,
+            direction: additionalTarget > currentAdditional ? "assign" : "reclaim" });
+        } catch (error) {
+          refreshLockAfterError(error);
+          const info = getTopUpError(error);
+          return fail("additional_report_balance", info.requestId
+            ? `${info.message} Reference: ${info.requestId}.` : info.message);
+        }
+      }
+
+      setEditingSeat(null);
+      return null;
+    } finally {
+      editSaveInFlight.current = false;
+      setIsSavingSeat(false);
+    }
   };
 
   const handleRemoveConfirm = async (seat: Seat) => {
@@ -649,6 +725,8 @@ export function SeatManagementContent() {
         }}
       />
 
+      <CompanyTopUpAllocator />
+
       <PendingInvitationsTable
         invitations={invitations}
         currentPage={safeInvitationPage}
@@ -700,7 +778,7 @@ export function SeatManagementContent() {
       {editingSeat ? (
         <EditSeatDialog
           key={editingSeat.membership_id}
-          open
+          open={!removingSeat}
           seat={editingSeat}
           isPending={isEditPending}
           quotaUnallocated={
@@ -708,9 +786,20 @@ export function SeatManagementContent() {
           }
           seatChangesLocked={seatChangesLocked}
           quotaChangesLocked={quotaChangesLocked}
+          additionalReports={isCompanyAdmin && topUpOverview.data?.can_manage_allocations !== false ? {
+            balance: topUpOverview.data ? topUpOverview.data.allocations.find(
+              (allocation) => allocation.membership_id === editingSeat.membership_id,
+            )?.remaining_balance ?? 0 : null,
+            pool: topUpOverview.data?.pool_balance ?? null,
+            canEdit: canEditAdditionalReports,
+            loading: topUpOverview.isPending || subscriptionQuery.isPending,
+            error: topUpOverview.error ?? subscriptionQuery.error,
+            onRetry: () => { void topUpOverview.refetch(); void subscriptionQuery.refetch(); },
+          } : undefined}
           onClose={() => setEditingSeat(null)}
           onConfirm={handleEditConfirm}
           onRequestRemove={(seat) => {
+            setActionError(null);
             setRemovingSeat(seat);
           }}
         />

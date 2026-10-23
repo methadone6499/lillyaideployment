@@ -186,6 +186,7 @@ export {
   shouldRefetchAuthAfterBilling,
   shouldStopBillingReconciliation,
 } from "./utils/selectBillingCapabilities";
+export { canReadCompanyBillingQuota, selectBillingPageQuotaView } from "./utils/selectBillingPageQuota";
 export type {
   BillingOwnerCapabilities,
   BillingQuotaView,
@@ -233,3 +234,16 @@ export {
   shouldRetryBillingMutation,
   shouldRetryBillingQuery,
 } from "./utils/shouldRetryBillingQuery";
+export { TopUpBalanceDetails, PendingTopUpPaymentCard } from "./components/TopUpOverviewCard";
+export { TopUpErrorNotice } from "./components/TopUpErrorNotice";
+export { TopUpCheckoutReturnBoundary } from "./components/TopUpCheckoutReturnBoundary";
+export { useTopUpOverview, useTopUpContext, useSetMemberTopUpMutation, invalidateTopUps } from "./hooks/useTopUps";
+export { canAllocateTopUps, getMaximumTopUpTarget, parseTopUpInput } from "./utils/topUpPolicy";
+export { getTopUpError } from "./utils/topUpErrors";
+export { TopUpForfeitureConfirmation } from "./components/TopUpForfeitureConfirmation";
+export { withTopUpForfeitureConfirmation } from "./utils/withTopUpForfeitureConfirmation";
+export { topUpForfeitureAcknowledgementSchema } from "./schemas/topUpSchemas";
+export { useReportQuotaAccess } from "./hooks/useReportQuotaAccess";
+export { ReportQuotaNotice } from "./components/ReportQuotaNotice";
+export { TopUpSessionIsolation } from "./components/TopUpSessionIsolation";
+export { emitTopUpEvent } from "./utils/topUpTelemetry";

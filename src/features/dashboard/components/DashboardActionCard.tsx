@@ -16,6 +16,7 @@ type DashboardActionCardProps = {
   onCtaClick?: () => void;
   disabled?: boolean;
   disabledReason?: string;
+  children?: ReactNode;
 };
 
 function ActionCardCta({
@@ -34,7 +35,7 @@ function ActionCardCta({
   disabledReason?: string;
 }) {
   const className = cn(
-    "mt-auto flex h-[52px] w-full items-center justify-between gap-2.5 rounded-button px-5 text-label font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border disabled:border-border-subtle disabled:bg-surface-default disabled:text-text-muted",
+    "flex h-[52px] w-full shrink-0 items-center justify-between gap-2.5 rounded-button px-5 text-label font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border disabled:border-border-subtle disabled:bg-surface-default disabled:text-text-muted",
     variant === "highlight" && "bg-brand text-brand-foreground hover:bg-[#059669]",
     variant === "admin" &&
       "border border-border-default bg-surface-default text-white hover:border-white/20 hover:bg-surface-elevated",
@@ -80,6 +81,7 @@ export function DashboardActionCard({
   onCtaClick,
   disabled = false,
   disabledReason,
+  children,
 }: DashboardActionCardProps) {
   const titleNode: ReactNode = (
     <p
@@ -109,14 +111,17 @@ export function DashboardActionCard({
         ) : null}
       </div>
 
-      <ActionCardCta
-        ctaLabel={ctaLabel}
-        href={href}
-        onCtaClick={onCtaClick}
-        variant={variant}
-        disabled={disabled}
-        disabledReason={disabledReason}
-      />
+      <div className="mt-auto flex flex-col gap-4 pt-4">
+        {children}
+        <ActionCardCta
+          ctaLabel={ctaLabel}
+          href={href}
+          onCtaClick={onCtaClick}
+          variant={variant}
+          disabled={disabled}
+          disabledReason={disabledReason}
+        />
+      </div>
     </Card>
   );
 }

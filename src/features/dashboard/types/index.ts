@@ -17,7 +17,6 @@ export type DashboardUser = {
 export type DashboardQuota = {
   used: number | null;
   total: number | null;
-  additionalReportPrice: string;
 };
 
 export type DashboardQuotaView =

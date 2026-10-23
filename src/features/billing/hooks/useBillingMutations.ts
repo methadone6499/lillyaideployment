@@ -1,4 +1,5 @@
 "use client";
+import { withTopUpForfeitureConfirmation } from "../utils/withTopUpForfeitureConfirmation";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -83,7 +84,8 @@ export function useUpgradeSubscriptionMutation() {
 
   return useMutation({
     mutationKey: billingQueryKeys.upgrade(),
-    mutationFn: (input: UpgradeRequest) => upgradeSubscription(input),
+    mutationFn: (input: UpgradeRequest) => withTopUpForfeitureConfirmation(queryClient, userId,
+      (acknowledged) => upgradeSubscription({ ...input, acknowledge_top_up_forfeiture: acknowledged })),
     retry: shouldRetryBillingMutation,
     retryDelay: getBillingRetryDelay,
     onSuccess: async () => {
