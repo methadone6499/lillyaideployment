@@ -472,6 +472,12 @@ function normalizeReportSelectionsResponse(value: unknown): unknown {
   const selections = { ...normalized };
   delete selections.custom_sections;
 
+  // The service returns null for calculations that were not selected.
+  // Normalize responses without relaxing validation of outgoing selections.
+  for (const field of ["dosing", "cost_analysis", "budget_impact"] as const) {
+    if (selections[field] === null) delete selections[field];
+  }
+
   if (isUnknownRecord(selections.cost_analysis)) {
     const costAnalysis = { ...selections.cost_analysis };
     delete costAnalysis.dosage_form;
