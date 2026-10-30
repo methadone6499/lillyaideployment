@@ -31,7 +31,11 @@ import type { EditableDocumentResponse } from "../../types";
 import { buildReportSectionItems } from "../../utils/buildReportSectionItems";
 import { formatPptxExportProgress } from "../../utils/pptxExportProgress";
 import { getReportRequestErrorMessage } from "../../utils/getReportRequestErrorMessage";
-import { ReportSectionAccordion } from "./ReportSectionAccordion";
+import {
+  ReportSectionAccordion,
+  type ReportSectionHistoryActions,
+  type ReportSectionReviewHistory,
+} from "./ReportSectionAccordion";
 import { ReportSectionPresentation } from "./ReportSectionPresentation";
 import {
   ExportReportModal,
@@ -56,7 +60,13 @@ export type ReportViewerProps = {
   onEditingDirtyChange?: (dirty: boolean) => void;
   onBack: () => void;
   onRegenerate?: () => Promise<void>;
-  renderAfterSectionContent?: (section: ReportViewerSectionIdentity) => ReactNode;
+  renderAfterSectionContent?: (
+    section: ReportViewerSectionIdentity,
+    actions: ReportSectionHistoryActions,
+  ) => ReactNode;
+  renderSectionReviewHistory?: (
+    section: ReportViewerSectionIdentity,
+  ) => ReportSectionReviewHistory | undefined;
   renderAfterSections?: (sections: readonly ReportViewerSectionIdentity[]) => ReactNode;
 };
 
@@ -102,6 +112,7 @@ export function ReportViewer({
   onBack,
   onRegenerate,
   renderAfterSectionContent,
+  renderSectionReviewHistory,
   renderAfterSections,
 }: ReportViewerProps) {
   const router = useRouter();
@@ -550,7 +561,14 @@ export function ReportViewer({
             }
             onDirtyChange={handleDirtyChange}
             onDocumentSaved={handleDocumentSaved}
-            afterContent={renderAfterSectionContent?.({
+            afterContent={renderAfterSectionContent
+              ? (actions) => renderAfterSectionContent({
+                  sectionId: item.section.section_id ?? null,
+                  title: item.title,
+                  headingOccurrence: item.headingOccurrence,
+                }, actions)
+              : undefined}
+            reviewHistory={renderSectionReviewHistory?.({
               sectionId: item.section.section_id ?? null,
               title: item.title,
               headingOccurrence: item.headingOccurrence,

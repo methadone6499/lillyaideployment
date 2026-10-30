@@ -1,6 +1,12 @@
 export { ReviewerDashboardShell } from "./components/ReviewerDashboardShell";
 export { ReviewerAssignmentWorkspace } from "./components/ReviewerAssignmentWorkspace";
 export { CompletedReviewNotes } from "./components/CompletedReviewNotes";
+export { SectionReviewNoteHistory } from "./components/SectionReviewNoteHistory";
+export {
+  getReportReviewNotes,
+  getSectionReviewNotes,
+  type ReviewNoteCycle,
+} from "./utils/reportReviewNotes";
 export { ReviewHistoryTimeline } from "./components/ReviewHistoryTimeline";
 export { AdminReportCommentsDialog } from "./components/AdminReportCommentsDialog";
 export { AdminReviewerManagement } from "./components/AdminReviewerManagement";

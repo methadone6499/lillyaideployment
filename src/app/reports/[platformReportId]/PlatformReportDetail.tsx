@@ -15,8 +15,9 @@ import {
   AdminReportCommentsDialog,
   classifyReviewerError,
   CompletedReviewNotes,
-  getNotesForSection,
-  ReviewHistoryTimeline,
+  getReportReviewNotes,
+  getSectionReviewNotes,
+  SectionReviewNoteHistory,
   useCompletedReportReviewNotes,
   useReportReviewHistory,
   useSubmitReportForReviewMutation,
@@ -161,24 +162,15 @@ export function PlatformReportDetail({
     report.archived_at === null &&
     report.is_editable &&
     (report.review_status === "unassigned" || report.review_status === "reviewed");
-  const adminHistoryNotes = historyQuery.data
-    ? [...historyQuery.data.items]
-        .sort((a, b) => b.cycle_number - a.cycle_number)
-        .flatMap((cycle) =>
-          cycle.assignments.flatMap((assignment) =>
-            assignment.notes.map((note) => ({
-              ...note,
-              review_cycle: cycle.cycle_number,
-            })),
-          ),
-        )
-    : [];
-  const notes = isSuperAdmin
-    ? adminHistoryNotes
-    : (notesQuery.data?.items ?? []);
-  const canRenderInlineReviewNotes = isSuperAdmin
-    ? historyQuery.data !== undefined
-    : hasCompletedCycle && notesQuery.data !== undefined;
+  const { notes, latestCompletedCycle } = getReportReviewNotes({
+    history: historyQuery.data,
+    completedNotes: notesQuery.data?.items ?? [],
+    reviewCycle: report.review_cycle,
+    reviewStatus: report.review_status,
+    admin: isSuperAdmin,
+  });
+  const canRenderInlineReviewNotes = historyQuery.data !== undefined
+    || (!isSuperAdmin && hasCompletedCycle && notesQuery.data !== undefined);
 
   const handleSubmitForReview = async () => {
     setSubmissionError(null);
@@ -252,7 +244,6 @@ export function PlatformReportDetail({
                 <button type="button" className="text-brand hover:underline" onClick={() => void historyQuery.refetch()}>Try again</button>
               </div>
             ) : null}
-            {historyQuery.data ? <ReviewHistoryTimeline history={historyQuery.data} /> : null}
             {!isSuperAdmin && hasCompletedCycle && notesQuery.isError ? (
               <p className="mb-8 text-label text-red-400" role="alert">{classifyReviewerError(notesQuery.error).message}</p>
             ) : null}
@@ -272,11 +263,31 @@ export function PlatformReportDetail({
           onBack={() => router.push(homePath)}
           renderAfterSectionContent={
             canRenderInlineReviewNotes
-              ? (section) => (
-                  <CompletedReviewNotes
-                    notes={getNotesForSection(notes, section)}
-                  />
-                )
+              ? (section, { onOpenReviewHistory }) => {
+                  const { currentNotes, olderCycles } = getSectionReviewNotes(
+                    notes, section, latestCompletedCycle, historyQuery.data,
+                  );
+                  return (
+                    <CompletedReviewNotes
+                      notes={currentNotes}
+                      olderCycleCount={olderCycles.length}
+                      onOpenHistory={onOpenReviewHistory}
+                    />
+                  );
+                }
+              : undefined
+          }
+          renderSectionReviewHistory={
+            canRenderInlineReviewNotes
+              ? (section) => {
+                  const { olderCycles } = getSectionReviewNotes(
+                    notes, section, latestCompletedCycle, historyQuery.data,
+                  );
+                  return {
+                    count: olderCycles.length,
+                    content: <SectionReviewNoteHistory cycles={olderCycles} />,
+                  };
+                }
               : undefined
           }
         />

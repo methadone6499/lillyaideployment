@@ -214,7 +214,7 @@ export function Step2Filters() {
             }
           />
           <Select
-            label="Region"
+            label="Currency"
             options={REGION_PRICING_MARKET_OPTIONS}
             value={filters.costRegion}
             clearable

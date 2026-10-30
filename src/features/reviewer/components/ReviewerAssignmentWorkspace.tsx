@@ -35,9 +35,11 @@ import {
 } from "../hooks/useReviewerQueries";
 import type { ReviewSectionNote } from "../schemas/reviewerSchemas";
 import { classifyReviewerError, getReviewerRequestErrorMessage } from "../utils/classifyReviewerError";
+import { groupAssignmentNoteHistory } from "../utils/reportReviewNotes";
 import { ReviewerCompletionDialog } from "./ReviewerCompletionDialog";
 import { ReviewerStatusPill } from "./ReviewerStatusPill";
 import { ReviewerUnsavedNotesDialog } from "./ReviewerUnsavedNotesDialog";
+import { SectionReviewNoteHistory } from "./SectionReviewNoteHistory";
 
 type WorkspaceSectionItem = ReportSectionAccordionItem & {
   headingOccurrence: number;
@@ -304,12 +306,20 @@ export function ReviewerAssignmentWorkspace({
                   onStopEditing={() => setEditingKey((key) => key === item.accordionKey ? null : key)}
                   onDirtyChange={handleReportDirtyChange}
                   onDocumentSaved={(key, document) => setSessionDocumentByKey((current) => ({ ...current, [key]: document }))}
+                  reviewHistory={sectionNotes.history.length > 0 ? {
+                    count: sectionNotes.history.length,
+                    content: (
+                      <SectionReviewNoteHistory
+                        cycles={groupAssignmentNoteHistory(sectionNotes.history)}
+                        variant="assignments"
+                      />
+                    ),
+                  } : undefined}
                   afterContent={
                     <ReviewerSectionWorkspace
                       item={item}
                       value={value}
                       currentNote={sectionNotes.current}
-                      history={sectionNotes.history}
                       canEdit={assignmentIsEditable && !notesUnavailable}
                       notesPending={notesQuery.isPending}
                       notesError={notesQuery.isError ? getReviewerRequestErrorMessage(notesQuery.error, "We couldn’t load your notes. Any draft you have entered is still here. Try again before continuing.") : null}
@@ -426,7 +436,6 @@ function ReviewerSectionWorkspace({
   item,
   value,
   currentNote,
-  history,
   canEdit,
   notesPending,
   notesError,
@@ -441,7 +450,6 @@ function ReviewerSectionWorkspace({
   item: WorkspaceSectionItem;
   value: string;
   currentNote?: ReviewSectionNote;
-  history: readonly ReviewSectionNote[];
   canEdit: boolean;
   notesPending: boolean;
   notesError: string | null;
@@ -575,17 +583,6 @@ function ReviewerSectionWorkspace({
           )
         )}
 
-        {history.length > 0 ? (
-          <div className="mt-8 flex flex-col gap-3">
-            <h3 className="text-label font-medium text-white">Previous assignment notes</h3>
-            {history.map((note) => (
-              <div key={note.id} className="rounded-surface border border-border-default bg-surface-subtle p-4">
-                <p className="whitespace-pre-wrap text-label leading-6 text-text-body">{note.content}</p>
-                <p className="mt-2 text-helper text-text-muted">Updated {formatDate(note.updated_at)}</p>
-              </div>
-            ))}
-          </div>
-        ) : null}
       </div>
     </div>
   );

@@ -84,7 +84,7 @@ function buildCostAnalysisLabels(filters: FilterState): string[] {
     filters.costRegion,
   );
   if (regionLabel) {
-    labels.push(`Region: ${regionLabel}`);
+    labels.push(`Currency: ${regionLabel}`);
   }
 
   return labels;

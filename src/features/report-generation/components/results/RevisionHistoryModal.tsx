@@ -1,10 +1,10 @@
 "use client";
 
-import { formatDisplayDateTime } from "@/lib/formatDisplay";
+import { formatDisplayCount, formatDisplayDateTime } from "@/lib/formatDisplay";
 
 import { CloseIcon } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { getReportRequestErrorMessage } from "../../utils/getReportRequestErrorMessage";
 import {
   useRestoreRevisionMutation,
@@ -29,13 +29,21 @@ const FOCUSABLE_SELECTOR = [
 ].join(",");
 
 type RevisionView = "changes" | "preview";
+export type RevisionHistoryTab = "versions" | "reviewer-notes";
+export type RevisionHistoryReviewNotes = {
+  count: number;
+  content: ReactNode;
+};
 
 type RevisionHistoryModalProps = {
   reportServiceId: string;
-  sectionId: string;
+  sectionId: string | null;
   sectionTitle: string;
-  currentRevision: number;
+  currentRevision?: number;
   actor: EditingActor | null;
+  allowRestore?: boolean;
+  initialTab?: RevisionHistoryTab;
+  reviewNotes?: RevisionHistoryReviewNotes;
   skipFirstHeading?: boolean;
   onClose: () => void;
   onRestored: (document: EditableDocumentResponse) => void;
@@ -89,12 +97,18 @@ export function RevisionHistoryModal({
   sectionTitle,
   currentRevision: initialCurrentRevision,
   actor,
+  allowRestore = true,
+  initialTab = "versions",
+  reviewNotes,
   skipFirstHeading = false,
   onClose,
   onRestored,
 }: RevisionHistoryModalProps) {
-  const [selectedRevision, setSelectedRevision] = useState(
-    initialCurrentRevision,
+  const [revisionSelection, setSelectedRevision] = useState<number | null>(
+    initialCurrentRevision ?? null,
+  );
+  const [activeTab, setActiveTab] = useState<RevisionHistoryTab>(
+    reviewNotes ? initialTab : "versions",
   );
   const [view, setView] = useState<RevisionView>("changes");
   const [isConfirmingRestore, setIsConfirmingRestore] = useState(false);
@@ -107,17 +121,27 @@ export function RevisionHistoryModal({
   const isConfirmingRestoreRef = useRef(false);
   const titleId = useId();
   const descriptionId = useId();
+  const versionsTabId = useId();
+  const reviewNotesTabId = useId();
+  const panelId = useId();
 
-  const revisionsQuery = useSectionRevisions(reportServiceId, sectionId);
+  const revisionsQuery = useSectionRevisions(
+    reportServiceId,
+    sectionId,
+    activeTab === "versions",
+  );
   const currentRevision =
-    revisionsQuery.data?.current_revision ?? initialCurrentRevision;
+    revisionsQuery.data?.current_revision ?? initialCurrentRevision ?? 0;
+  const selectedRevision = revisionSelection ?? currentRevision;
+  const hasVersionMetadata = revisionsQuery.data !== undefined
+    || initialCurrentRevision !== undefined;
   const revisionItems = useMemo(
     () =>
-      buildRevisionHistoryItems(
+      hasVersionMetadata ? buildRevisionHistoryItems(
         currentRevision,
         revisionsQuery.data?.items ?? [],
-      ),
-    [currentRevision, revisionsQuery.data?.items],
+      ) : [],
+    [currentRevision, hasVersionMetadata, revisionsQuery.data?.items],
   );
   const comparisonRevision = getRevisionComparisonRevision(
     selectedRevision,
@@ -127,12 +151,14 @@ export function RevisionHistoryModal({
     reportServiceId,
     sectionId,
     selectedRevision,
+    activeTab === "versions" && hasVersionMetadata,
   );
   const comparisonDocumentQuery = useSectionRevision(
     reportServiceId,
     sectionId,
     comparisonRevision,
-    view === "changes" && comparisonRevision !== null,
+    activeTab === "versions" && hasVersionMetadata
+      && view === "changes" && comparisonRevision !== null,
   );
   const restoreMutation = useRestoreRevisionMutation();
   const selectedDocument = selectedDocumentQuery.data;
@@ -148,15 +174,19 @@ export function RevisionHistoryModal({
     [comparisonDocument, selectedDocument],
   );
   const isContentLoading =
+    (!hasVersionMetadata && revisionsQuery.isPending) ||
     selectedDocumentQuery.isLoading ||
     (view === "changes" &&
       comparisonRevision !== null &&
       comparisonDocumentQuery.isLoading);
   const contentError =
     selectedDocumentQuery.error ??
-    (view === "changes" ? comparisonDocumentQuery.error : null);
+    (view === "changes" ? comparisonDocumentQuery.error : null) ??
+    (!hasVersionMetadata ? revisionsQuery.error : null);
   const isRestoring = restoreMutation.isPending;
-  const canRestore = selectedRevision !== currentRevision;
+  const canRestore = allowRestore && activeTab === "versions"
+    && selectedRevision !== currentRevision && Boolean(selectedDocument)
+    && !isContentLoading && contentError == null;
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -241,6 +271,13 @@ export function RevisionHistoryModal({
     restoreMutation.reset();
   };
 
+  const selectTab = (tab: RevisionHistoryTab) => {
+    if (isRestoring) return;
+    setActiveTab(tab);
+    setIsConfirmingRestore(false);
+    setRestoreError(null);
+  };
+
   const requestClose = () => {
     if (isRestoring) {
       return;
@@ -253,7 +290,7 @@ export function RevisionHistoryModal({
   };
 
   const restoreSelectedRevision = async () => {
-    if (!canRestore || !actor || isRestoring) {
+    if (!canRestore || !actor || !sectionId || isRestoring) {
       if (!actor) {
         setRestoreError("Your account details are required to restore a version.");
       }
@@ -329,6 +366,64 @@ export function RevisionHistoryModal({
           </button>
         </header>
 
+        {reviewNotes ? (
+          <div
+            role="tablist"
+            aria-label="Section history"
+            className="flex shrink-0 gap-6 border-b border-border-default px-5 sm:px-6"
+            onKeyDown={(event) => {
+              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+              event.preventDefault();
+              const nextTab = event.key === "Home" ? "versions"
+                : event.key === "End" ? "reviewer-notes"
+                  : activeTab === "versions" ? "reviewer-notes" : "versions";
+              selectTab(nextTab);
+              document.getElementById(
+                nextTab === "versions" ? versionsTabId : reviewNotesTabId,
+              )?.focus();
+            }}
+          >
+            {(["versions", "reviewer-notes"] as const).map((tab) => (
+              <button
+                key={tab}
+                id={tab === "versions" ? versionsTabId : reviewNotesTabId}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                aria-controls={panelId}
+                tabIndex={activeTab === tab ? 0 : -1}
+                disabled={isRestoring}
+                onClick={() => selectTab(tab)}
+                className={cn(
+                  "inline-flex min-h-12 items-center gap-2 border-b-2 py-3 text-input font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:text-text-muted",
+                  activeTab === tab
+                    ? "border-brand text-white"
+                    : "border-transparent text-text-muted hover:text-white",
+                )}
+              >
+                {tab === "versions" ? "Versions" : "Older reviewer notes"}
+                {tab === "reviewer-notes" ? (
+                  <span className="rounded-field bg-surface-elevated px-1.5 text-helper text-text-muted">
+                    {formatDisplayCount(reviewNotes.count)}
+                  </span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <div
+          id={panelId}
+          role={reviewNotes ? "tabpanel" : undefined}
+          aria-labelledby={reviewNotes
+            ? activeTab === "versions" ? versionsTabId : reviewNotesTabId
+            : undefined}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+        {activeTab === "reviewer-notes" && reviewNotes ? reviewNotes.content : !sectionId ? (
+          <p className="min-h-0 flex-1 overflow-y-auto px-5 py-5 text-body-lg text-text-muted sm:px-6">
+            Version history is unavailable for this section.
+          </p>
+        ) : (
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           <nav
             className="max-h-44 shrink-0 overflow-y-auto border-b border-border-default bg-black/15 p-3 md:max-h-none md:w-64 md:border-b-0 md:border-r"
@@ -406,10 +501,10 @@ export function RevisionHistoryModal({
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-4 sm:px-6">
               <div>
                 <h3 className="text-label font-medium text-white">
-                  {selectedVersionLabel}
+                  {hasVersionMetadata ? selectedVersionLabel : "Version history"}
                 </h3>
                 <p className="mt-1 text-helper text-text-muted">
-                  {selectedRevision === currentRevision
+                  {!hasVersionMetadata ? "Loading versions…" : selectedRevision === currentRevision
                     ? "Current version"
                     : selectedRevision === 0
                       ? "Original generated version"
@@ -532,8 +627,15 @@ export function RevisionHistoryModal({
             )}
           </section>
         </div>
+        )}
+        </div>
 
         <footer className="flex min-h-[70px] shrink-0 flex-wrap items-center justify-end gap-3 border-t border-border-default px-5 py-3 sm:px-6">
+          {activeTab === "reviewer-notes" ? (
+            <p className="mr-auto text-helper text-text-muted">
+              Older reviewer notes are read-only.
+            </p>
+          ) : null}
           {isConfirmingRestore && (
             <p className="mr-auto min-w-0 text-helper text-text-body">
               Restore {selectedVersionLabel} as a new current version? Existing

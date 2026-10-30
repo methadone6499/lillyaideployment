@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { HistoryIcon, RequestErrorState, StatusPill } from "@/components/ui";
+import {
+  HistoryIcon,
+  ModalDialog,
+  RequestErrorState,
+  StatusPill,
+} from "@/components/ui";
 import { useAuthUser } from "@/features/auth";
+import { formatDisplayCount } from "@/lib/formatDisplay";
 import { useEditableSectionDraft } from "../../hooks/useEditableSectionDraft";
 import { useReportSection } from "../../hooks/useGenerateReport";
-import { useSaveEditableDocumentMutation } from "../../hooks/useReportEditing";
+import { useSaveEditableDocumentMutation, useSectionRevisions } from "../../hooks/useReportEditing";
 import type { EditableBlock, EditableDocumentResponse } from "../../types";
 import {
   canExpandReportSection,
@@ -26,11 +32,19 @@ import {
 import { EditableSectionContent } from "./EditableSectionContent";
 import { ReportEditorConfirmationDialog } from "./ReportEditorConfirmationDialog";
 import { ReportSectionAccordionFrame } from "./ReportSectionPresentation";
-import { RevisionHistoryModal } from "./RevisionHistoryModal";
+import {
+  RevisionHistoryModal,
+  type RevisionHistoryReviewNotes,
+  type RevisionHistoryTab,
+} from "./RevisionHistoryModal";
 import { SectionContentRenderer } from "./SectionContentRenderer";
 import { SectionVerificationPanel } from "./SectionVerificationPanel";
 
 export type { ReportSectionAccordionItem };
+export type ReportSectionReviewHistory = RevisionHistoryReviewNotes;
+export type ReportSectionHistoryActions = {
+  onOpenReviewHistory?: () => void;
+};
 
 type ReportSectionAccordionProps = {
   reportServiceId: string;
@@ -50,7 +64,8 @@ type ReportSectionAccordionProps = {
     accordionKey: string,
     document: EditableDocumentResponse,
   ) => void;
-  afterContent?: ReactNode;
+  afterContent?: ReactNode | ((actions: ReportSectionHistoryActions) => ReactNode);
+  reviewHistory?: ReportSectionReviewHistory;
 };
 
 export function ReportSectionAccordion({
@@ -69,6 +84,7 @@ export function ReportSectionAccordion({
   onDirtyChange,
   onDocumentSaved,
   afterContent,
+  reviewHistory,
 }: ReportSectionAccordionProps) {
   const { section, order, title, description, localContent, accordionKey } = item;
   const isLocalSection = localContent !== undefined;
@@ -101,6 +117,8 @@ export function ReportSectionAccordion({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [initialHistoryTab, setInitialHistoryTab] = useState<RevisionHistoryTab>("versions");
+  const [isEvidenceAnalysisOpen, setIsEvidenceAnalysisOpen] = useState(false);
   const [saveConflictAction, setSaveConflictAction] =
     useState<SaveEditableDocumentConflictAction>("none");
   const { user } = useAuthUser();
@@ -130,6 +148,13 @@ export function ReportSectionAccordion({
     shouldLoadDocument: canEdit && (expanded || isEditing),
     sessionDocument,
   });
+  const readOnlyRevisionsQuery = useSectionRevisions(
+    reportServiceId,
+    sectionId,
+    reviewHistory !== undefined && !canEdit && expanded,
+  );
+  const knownRevision = persistedDocument?.revision
+    ?? readOnlyRevisionsQuery.data?.current_revision;
   const isSaving = saveMutation.isPending;
 
   const apiContent = isLocalSection ? localContent : sectionContent?.content;
@@ -171,6 +196,7 @@ export function ReportSectionAccordion({
 
   const startEditing = () => {
     if (rootRef.current && canEdit) {
+      setIsEvidenceAnalysisOpen(false);
       setSaved(false);
       onRequestEdit(rootRef.current);
     }
@@ -289,18 +315,49 @@ export function ReportSectionAccordion({
                 Saved
               </span>
             ) : null}
-            {hasSavedChanges && !isEditing && persistedDocument && (
+            {(hasSavedChanges || (knownRevision ?? 0) > 0) && !isEditing && (
               <button
                 type="button"
-                onClick={() => setIsHistoryOpen(true)}
+                onClick={() => {
+                  setInitialHistoryTab("versions");
+                  setIsHistoryOpen(true);
+                }}
                 className="inline-flex h-12 items-center gap-2 rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:border-brand-border hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                aria-label={`View revision history, current version ${toDisplayVersion(persistedDocument.revision)}`}
+                aria-label={knownRevision === undefined
+                  ? "View section history"
+                  : `View revision history, current version ${toDisplayVersion(knownRevision)}`}
                 title="View revision history"
               >
                 <HistoryIcon className="size-4" />
-                v{toDisplayVersion(persistedDocument.revision)}
+                {knownRevision === undefined ? "History" : `v${toDisplayVersion(knownRevision)}`}
               </button>
             )}
+            {reviewHistory && reviewHistory.count > 0 && !isEditing ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setInitialHistoryTab("reviewer-notes");
+                  setIsHistoryOpen(true);
+                }}
+                aria-haspopup="dialog"
+                aria-label={`View older reviewer notes for ${title}`}
+                className="inline-flex h-12 items-center gap-2 rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <HistoryIcon className="size-4" />
+                Older reviewer notes ({formatDisplayCount(reviewHistory.count)})
+              </button>
+            ) : null}
+            {expanded && !isEditing && renderedContent && verificationGroups.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setIsEvidenceAnalysisOpen(true)}
+                aria-haspopup="dialog"
+                aria-label={`View evidence analysis for ${title}`}
+                className="inline-flex h-12 items-center rounded-button border border-border-default bg-surface-default px-5 text-label font-medium text-white transition-colors hover:bg-surface-elevated focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                Evidence analysis
+              </button>
+            ) : null}
             {isEditing ? (
               <div className="flex items-center gap-4">
                 <button
@@ -420,18 +477,33 @@ export function ReportSectionAccordion({
                     skipFirstHeading={!isLocalSection}
                     hideTrailingSources={shouldHideTrailingSources}
                   />
-                  <SectionVerificationPanel
-                    groups={verificationGroups}
-                    isStale={hasSavedChanges}
-                    onEdit={canEdit ? startEditing : undefined}
-                  />
                 </div>
               )}
             </>
           )
         )}
-        {afterContent}
+        {typeof afterContent === "function"
+          ? afterContent({
+              onOpenReviewHistory: isEditing ? undefined : () => {
+                setInitialHistoryTab("reviewer-notes");
+                setIsHistoryOpen(true);
+              },
+            })
+          : afterContent}
       </ReportSectionAccordionFrame>
+
+      {isEvidenceAnalysisOpen && expanded && !isEditing && verificationGroups.length > 0 ? (
+        <ModalDialog
+          title={`Evidence analysis: ${title}`}
+          onClose={() => setIsEvidenceAnalysisOpen(false)}
+        >
+          <SectionVerificationPanel
+            groups={verificationGroups}
+            isStale={hasSavedChanges}
+            onEdit={canEdit ? startEditing : undefined}
+          />
+        </ModalDialog>
+      ) : null}
 
       <ReportEditorConfirmationDialog
         open={confirmation === "save"}
@@ -456,13 +528,16 @@ export function ReportSectionAccordion({
         onConfirm={discardUnsavedDraft}
         onCancel={() => setConfirmation(null)}
       />
-      {isHistoryOpen && sectionId && persistedDocument && (
+      {isHistoryOpen && (persistedDocument || reviewHistory) && (
         <RevisionHistoryModal
           reportServiceId={reportServiceId}
           sectionId={sectionId}
           sectionTitle={title}
-          currentRevision={persistedDocument.revision}
+          currentRevision={knownRevision}
           actor={actor}
+          allowRestore={canEdit && !isEditing}
+          initialTab={initialHistoryTab}
+          reviewNotes={reviewHistory}
           skipFirstHeading={!isLocalSection}
           onClose={() => setIsHistoryOpen(false)}
           onRestored={handleRevisionRestored}

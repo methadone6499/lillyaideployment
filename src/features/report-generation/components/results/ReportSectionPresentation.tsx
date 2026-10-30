@@ -91,7 +91,7 @@ export function ReportSectionAccordionFrame({
           : "border-border-default bg-surface-default",
       )}
     >
-      <div className="flex items-center gap-3 px-4 py-6 sm:gap-5 sm:px-8">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-6 sm:gap-5 sm:px-8">
         <button
           type="button"
           onClick={toggle}
@@ -99,7 +99,7 @@ export function ReportSectionAccordionFrame({
           aria-expanded={canExpand ? expanded : undefined}
           aria-controls={canExpand ? panelId : undefined}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand",
+            "flex min-w-0 flex-[1_1_16rem] items-center gap-3 text-left sm:gap-5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand",
             !canExpand && "cursor-default",
           )}
         >
@@ -123,7 +123,7 @@ export function ReportSectionAccordionFrame({
           </span>
         </button>
 
-        <div className="flex shrink-0 items-center gap-3 sm:gap-5">
+        <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-5">
           {headerTrailing}
           {canExpand ? (
             <button

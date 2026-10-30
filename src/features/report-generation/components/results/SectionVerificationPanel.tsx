@@ -80,7 +80,7 @@ export function SectionVerificationPanel({
   if (groups.length === 0) return null;
 
   return (
-    <section className="mt-10 rounded-surface border border-border-default bg-surface-default p-5 sm:p-6">
+    <section className="min-w-0 [overflow-wrap:anywhere]">
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -117,6 +117,7 @@ export function SectionVerificationPanel({
         <button
           type="button"
           onClick={() => setFilter("all")}
+          aria-pressed={filter === "all"}
           className={cn(
             "rounded-card border px-3 py-2 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
             filter === "all"
@@ -131,6 +132,7 @@ export function SectionVerificationPanel({
             key={status}
             type="button"
             onClick={() => setFilter(status)}
+            aria-pressed={filter === status}
             disabled={counts[status] === 0}
             className={cn(
               "rounded-field border px-3 py-2 text-helper font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:border-border-subtle disabled:bg-surface-subtle disabled:text-text-muted",

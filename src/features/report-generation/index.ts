@@ -11,6 +11,10 @@ export {
 } from "./components/results/ReportSectionPresentation";
 export { SectionContentRenderer } from "./components/results/SectionContentRenderer";
 export { ReportSectionAccordion } from "./components/results/ReportSectionAccordion";
+export type {
+  ReportSectionHistoryActions,
+  ReportSectionReviewHistory,
+} from "./components/results/ReportSectionAccordion";
 export {
   useReportSection,
   useReportStatus,
