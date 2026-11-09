@@ -4,6 +4,16 @@ import { Button, CloseIcon, Select, Switch, TextField } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  DOSING_FREQUENCY_MENU_IDS,
+  DOSING_FREQUENCY_PRESETS,
+  DOSING_FREQUENCY_UNIT_OPTIONS,
+  formatDosingAdministrationSummary,
+  formatDosingIntervalUnit,
+  selectDosingFrequencyPreset,
+  type DosingFrequencyPresetId,
+  type DosingFrequencyUnit,
+} from "../utils/dosingFrequency";
+import {
   cloneReportCalculatorDraft,
   formatReportCalculatorValidationError,
   getReportCalculatorModuleLabels,
@@ -11,6 +21,11 @@ import {
   type ReportCalculatorDraft,
   type ReportCalculatorTab,
 } from "../utils/reportCalculator";
+import {
+  getReportCurrencySelectValue,
+  REPORT_CURRENCY_OPTIONS,
+  REPORT_OTHER_CURRENCY_VALUE,
+} from "../utils/reportCurrency";
 
 type ReportCalculatorModalProps = {
   draft: ReportCalculatorDraft;
@@ -73,6 +88,49 @@ function SectionHeading({
 
 function FieldGrid({ children }: { children: ReactNode }) {
   return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>;
+}
+
+function ReportCurrencyFields({
+  currency,
+  onChange,
+}: {
+  currency: string;
+  onChange: (currency: string) => void;
+}) {
+  const selectValue = getReportCurrencySelectValue(currency);
+
+  return (
+    <>
+      <Select
+        label="Currency"
+        value={selectValue}
+        options={REPORT_CURRENCY_OPTIONS}
+        helper="Enter amounts already in this currency. They are not converted."
+        onChange={(event) => {
+          const nextCurrency = event.target.value;
+          if (nextCurrency === REPORT_OTHER_CURRENCY_VALUE) {
+            onChange(
+              selectValue === REPORT_OTHER_CURRENCY_VALUE ? currency : "",
+            );
+            return;
+          }
+
+          onChange(nextCurrency);
+        }}
+      />
+      {selectValue === REPORT_OTHER_CURRENCY_VALUE ? (
+        <TextField
+          label="Custom currency code"
+          value={currency}
+          maxLength={3}
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+        />
+      ) : null}
+    </>
+  );
 }
 
 function NumberField({
@@ -224,10 +282,21 @@ export function ReportCalculatorModal({
     field: K,
     value: ReportCalculatorDraft["costAnalysis"][K],
   ) => {
-    setLocalDraft((current) => ({
-      ...current,
-      costAnalysis: { ...current.costAnalysis, [field]: value },
-    }));
+    setLocalDraft((current) => {
+      const costAnalysis = { ...current.costAnalysis, [field]: value };
+      if (field !== "currency") {
+        return { ...current, costAnalysis };
+      }
+
+      return {
+        ...current,
+        costAnalysis,
+        budgetImpact: {
+          ...current.budgetImpact,
+          currency: costAnalysis.currency,
+        },
+      };
+    });
     setError(null);
   };
 
@@ -402,41 +471,108 @@ export function ReportCalculatorModal({
                       <div className="space-y-6 border-l-2 border-brand/60 pl-4 sm:pl-5">
                         <SectionHeading
                           title="Dosing inputs"
-                          description="Drug and indication are inherited from Drug Intake. Enter the package cost and regimen used by the deterministic calculator."
+                          description="These fields calculate the drug cost for one year. The interval says how often a dose repeats. It does not set how many years treatment lasts."
                         />
                         <FieldGrid>
                           <NumberField
                             label="Unit cost"
                             value={localDraft.dosing.unitCost}
                             min={0}
+                            helper="Price of one pack, vial, or tablet."
                             onChange={(value) => updateDosing("unitCost", value)}
                           />
                           <NumberField
                             label="Unit size"
                             value={localDraft.dosing.unitSize}
                             min={0}
+                            helper="Amount in one pack. Use the same unit as the dose."
                             onChange={(value) => updateDosing("unitSize", value)}
                           />
                           <NumberField
                             label="Dose per administration"
                             value={localDraft.dosing.dose}
                             min={0}
+                            helper="Amount given each time, in the same unit as unit size."
                             onChange={(value) => updateDosing("dose", value)}
                           />
-                          <NumberField
-                            label="Times per day"
-                            value={localDraft.dosing.timesPerDay}
-                            min={0}
-                            helper="Fractions are supported for non-daily regimens."
-                            onChange={(value) =>
-                              updateDosing("timesPerDay", value)
+                          <Select
+                            label="Frequency"
+                            required
+                            value={localDraft.dosing.frequency.preset}
+                            options={DOSING_FREQUENCY_PRESETS.filter(
+                              (preset) =>
+                                (DOSING_FREQUENCY_MENU_IDS as readonly string[]).includes(
+                                  preset.id,
+                                ) ||
+                                preset.id === localDraft.dosing.frequency.preset,
+                            ).map((preset) => ({
+                              value: preset.id,
+                              label: preset.label,
+                            }))}
+                            helper={formatDosingAdministrationSummary(
+                              localDraft.dosing.frequency,
+                              localDraft.dosing.daysPerYear,
+                            )}
+                            onChange={(event) =>
+                              updateDosing(
+                                "frequency",
+                                selectDosingFrequencyPreset(
+                                  localDraft.dosing.frequency,
+                                  event.target.value as DosingFrequencyPresetId,
+                                ),
+                              )
                             }
                           />
+                          {localDraft.dosing.frequency.preset === "custom" ? (
+                            <>
+                              <NumberField
+                                label="Doses"
+                                value={localDraft.dosing.frequency.count}
+                                min={0}
+                                helper="Number of doses in each interval."
+                                onChange={(value) =>
+                                  updateDosing("frequency", {
+                                    ...localDraft.dosing.frequency,
+                                    preset: "custom",
+                                    count: value,
+                                  })
+                                }
+                              />
+                              <NumberField
+                                label="Interval"
+                                value={localDraft.dosing.frequency.interval}
+                                min={0}
+                                helper={`Length of one interval, in ${formatDosingIntervalUnit(localDraft.dosing.frequency.unit)}.`}
+                                onChange={(value) =>
+                                  updateDosing("frequency", {
+                                    ...localDraft.dosing.frequency,
+                                    preset: "custom",
+                                    interval: value,
+                                  })
+                                }
+                              />
+                              <Select
+                                label="Interval unit"
+                                required
+                                value={localDraft.dosing.frequency.unit}
+                                options={DOSING_FREQUENCY_UNIT_OPTIONS}
+                                helper="How often the dose repeats. This is not the length of treatment."
+                                onChange={(event) =>
+                                  updateDosing("frequency", {
+                                    ...localDraft.dosing.frequency,
+                                    preset: "custom",
+                                    unit: event.target.value as DosingFrequencyUnit,
+                                  })
+                                }
+                              />
+                            </>
+                          ) : null}
                           <NumberField
                             label="Treatment days per year"
                             value={localDraft.dosing.daysPerYear}
                             min={0}
                             max={366}
+                            helper="Days treated in a single year. Maximum 366."
                             onChange={(value) =>
                               updateDosing("daysPerYear", value)
                             }
@@ -466,11 +602,11 @@ export function ReportCalculatorModal({
                             />
                           ) : null}
                           <NumberField
-                            label="Wastage"
+                            label="Wastage (%)"
                             value={localDraft.dosing.wastagePercent}
                             min={0}
                             max={100}
-                            helper="Percentage"
+                            helper="Share of each pack that is unused."
                             onChange={(value) =>
                               updateDosing("wastagePercent", value)
                             }
@@ -504,17 +640,9 @@ export function ReportCalculatorModal({
                   <div className="space-y-4 border-t border-border-subtle pt-6">
                     <SectionHeading title="Programme" />
                     <FieldGrid>
-                      <TextField
-                        label="Currency"
-                        value={localDraft.costAnalysis.currency}
-                        maxLength={3}
-                        onChange={(event) =>
-                          updateCost(
-                            "currency",
-                            event.target.value.toUpperCase(),
-                          )
-                        }
-                        helper="Three-letter code; no conversion is applied."
+                      <ReportCurrencyFields
+                        currency={localDraft.costAnalysis.currency}
+                        onChange={(currency) => updateCost("currency", currency)}
                       />
                       <NumberField
                         label="New-treatment patients"
@@ -681,15 +809,10 @@ export function ReportCalculatorModal({
                           )
                         }
                       />
-                      <TextField
-                        label="Currency"
-                        value={localDraft.budgetImpact.currency}
-                        maxLength={3}
-                        onChange={(event) =>
-                          updateBudget(
-                            "currency",
-                            event.target.value.toUpperCase(),
-                          )
+                      <ReportCurrencyFields
+                        currency={localDraft.budgetImpact.currency}
+                        onChange={(currency) =>
+                          updateBudget("currency", currency)
                         }
                       />
                     </FieldGrid>

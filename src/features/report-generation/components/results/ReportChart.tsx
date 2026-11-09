@@ -25,6 +25,17 @@ function getChartColor(index: number): string {
   return CHART_COLORS[index % CHART_COLORS.length];
 }
 
+const supportedCurrencyCodes = (() => {
+  try {
+    if (typeof Intl.supportedValuesOf !== "function") return null;
+    return new Set(
+      Intl.supportedValuesOf("currency").map((code) => code.toUpperCase()),
+    );
+  } catch {
+    return null;
+  }
+})();
+
 function getCurrencyOptions(
   currency: string | undefined,
 ): Intl.NumberFormatOptions | null {
@@ -32,11 +43,24 @@ function getCurrencyOptions(
     return null;
   }
 
-  return {
+  const code = currency.toUpperCase();
+  if (supportedCurrencyCodes && !supportedCurrencyCodes.has(code)) {
+    return null;
+  }
+
+  const options: Intl.NumberFormatOptions = {
     style: "currency",
-    currency: currency.toUpperCase(),
+    currency: code,
     currencyDisplay: "narrowSymbol",
   };
+
+  try {
+    new Intl.NumberFormat("en-US", options).format(0);
+  } catch {
+    return null;
+  }
+
+  return options;
 }
 
 function formatChartValue(

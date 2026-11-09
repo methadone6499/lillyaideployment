@@ -35,6 +35,7 @@ export const ECONOMIC_STUDY_TYPES = [
 ];
 
 export const EVIDENCE_SYNTHESIS_OPTIONS = [
+  { value: "all", label: "All" },
   { value: "meta-analyses", label: "Meta-Analyses" },
   { value: "network-meta-analyses", label: "Network Meta-Analyses" },
   { value: "systematic-reviews", label: "Systematic Reviews" },

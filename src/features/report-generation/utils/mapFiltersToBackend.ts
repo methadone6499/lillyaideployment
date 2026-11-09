@@ -228,12 +228,16 @@ function buildClinicalTypes(filters: FilterState): string[] {
     CLINICAL_STUDY_TYPE_MAP,
   );
 
-  const evidenceSynthesis = mapSelectValue(
-    filters.evidenceSynthesis,
-    EVIDENCE_SYNTHESIS_MAP,
-  );
-  if (evidenceSynthesis) {
-    clinicalTypes.push(evidenceSynthesis);
+  if (filters.evidenceSynthesis === "all") {
+    clinicalTypes.push(...Object.values(EVIDENCE_SYNTHESIS_MAP));
+  } else {
+    const evidenceSynthesis = mapSelectValue(
+      filters.evidenceSynthesis,
+      EVIDENCE_SYNTHESIS_MAP,
+    );
+    if (evidenceSynthesis) {
+      clinicalTypes.push(evidenceSynthesis);
+    }
   }
 
   const specializedStructure = mapSelectValue(

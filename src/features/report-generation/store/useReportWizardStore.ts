@@ -25,12 +25,13 @@ import {
   cloneReportCalculatorDraft,
   EMPTY_REPORT_CALCULATOR_DRAFT,
   hasReportCalculatorModules,
+  migrateReportCalculatorDraft,
   type ReportCalculatorDraft,
 } from "../utils/reportCalculator";
 
 export { DEFAULT_SECTION_IDS };
 
-export const REPORT_WIZARD_PERSIST_VERSION = 15;
+export const REPORT_WIZARD_PERSIST_VERSION = 16;
 
 export const DEFAULT_FILTERS: FilterState = {
   timeRange: "last-1-year",
@@ -580,6 +581,15 @@ function migratePersistedState(
     delete migrated.structuredCalculationSaved;
     delete migrated.structuredCalculationDraft;
     state = migrated;
+  }
+
+  if (version < 16) {
+    state = {
+      ...state,
+      reportCalculatorDraft: migrateReportCalculatorDraft(
+        state.reportCalculatorDraft,
+      ),
+    };
   }
 
   return state;

@@ -4,11 +4,17 @@ import {
   updateReportSelectionsInputSchema,
   updateReportSelectionsResponseSchema,
 } from "../schemas/reportSchemas";
+import { frequencyFromPreset } from "../utils/dosingFrequency";
 import {
   cloneReportCalculatorDraft,
   EMPTY_REPORT_CALCULATOR_DRAFT,
+  formatReportCalculatorValidationError,
   mapReportCalculatorDraft,
 } from "../utils/reportCalculator";
+import {
+  getReportCurrencySelectValue,
+  REPORT_OTHER_CURRENCY_VALUE,
+} from "../utils/reportCurrency";
 import {
   isSectionAvailable,
   reconcileSelectedSectionIdsWithInputs,
@@ -23,7 +29,7 @@ completeDraft.budgetImpactEnabled = true;
 completeDraft.dosing.unitCost = "75000";
 completeDraft.dosing.unitSize = "12";
 completeDraft.dosing.dose = "12";
-completeDraft.dosing.timesPerDay = "0.0082";
+completeDraft.dosing.frequency = frequencyFromPreset("every-3-months");
 completeDraft.costAnalysis.newDrugPatientCount = "30";
 completeDraft.costAnalysis.comparatorName = "Standard of care";
 completeDraft.costAnalysis.comparatorAnnualDrugCost = "5000";
@@ -34,6 +40,7 @@ completeDraft.budgetImpact.currentTreatmentDrugPrice = "5000";
 const mapped = mapReportCalculatorDraft(completeDraft);
 
 assert.equal(mapped.dosing?.dose_type, "fixed");
+assert.equal(mapped.dosing?.times_per_day, 4 / 365);
 assert.equal(mapped.cost_analysis?.annual_costs.drug_acquisition, null);
 assert.equal(mapped.budget_impact?.annual_drug_cost_per_patient, null);
 assert.deepEqual(mapped.budget_impact?.uptake_percent, [10, 25, 40]);
@@ -140,6 +147,34 @@ assert.equal(
   mapReportCalculatorDraft(independentBudget).budget_impact?.time_horizon,
   3,
 );
+
+const customCurrencies = cloneReportCalculatorDraft(completeDraft);
+customCurrencies.costAnalysis.currency = "SAR";
+customCurrencies.budgetImpact.currency = "JPY";
+const customCurrencyMapped = mapReportCalculatorDraft(customCurrencies);
+assert.equal(customCurrencyMapped.cost_analysis?.currency, "SAR");
+assert.equal(customCurrencyMapped.budget_impact?.currency, "JPY");
+assert.equal(getReportCurrencySelectValue("SAR"), "SAR");
+assert.equal(getReportCurrencySelectValue("JPY"), REPORT_OTHER_CURRENCY_VALUE);
+assert.equal(getReportCurrencySelectValue(""), REPORT_OTHER_CURRENCY_VALUE);
+assert.notEqual(customCurrencyMapped.cost_analysis?.currency, REPORT_OTHER_CURRENCY_VALUE);
+assert.notEqual(customCurrencyMapped.budget_impact?.currency, REPORT_OTHER_CURRENCY_VALUE);
+
+for (const code of ["S", "SA"]) {
+  const shortCurrency = cloneReportCalculatorDraft(completeDraft);
+  shortCurrency.costAnalysis.currency = code;
+  let thrown: unknown;
+  try {
+    mapReportCalculatorDraft(shortCurrency);
+  } catch (error) {
+    thrown = error;
+  }
+  assert.ok(thrown, `expected ${code} to fail validation`);
+  assert.equal(
+    formatReportCalculatorValidationError(thrown),
+    "Enter a three-letter currency code, such as USD.",
+  );
+}
 
 assert.equal(
   isSectionAvailable("economic", {

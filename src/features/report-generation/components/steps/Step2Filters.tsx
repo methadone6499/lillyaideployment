@@ -1,18 +1,16 @@
 "use client";
 
-import { Chip, Select, TextField } from "@/components/ui";
+import { Chip, Select } from "@/components/ui";
 import { FilterGroupCard } from "../FilterGroupCard";
 import { useReportWizardStore } from "../../store/useReportWizardStore";
 import {
   CLINICAL_STUDY_TYPES,
   COMPARATOR_TYPE_OPTIONS,
-  DOSAGE_FREQUENCY_OPTIONS,
   ECONOMIC_STUDY_TYPES,
   EVIDENCE_QUALITY_OPTIONS,
   EVIDENCE_SYNTHESIS_OPTIONS,
   OUTCOME_EVIDENCE_FOCUS_OPTIONS,
   POPULATION_TYPE_OPTIONS,
-  REGION_PRICING_MARKET_OPTIONS,
   SPECIALIZED_TRIAL_STRUCTURES_OPTIONS,
   STUDY_DURATION_OPTIONS,
   TIME_RANGE_OPTIONS,
@@ -164,62 +162,6 @@ export function Step2Filters() {
               {type.label}
             </Chip>
           ))}
-        </div>
-      </FilterGroupCard>
-
-      <FilterGroupCard
-        title="Cost Analysis"
-        description="Configure cost analysis parameters for economic evidence"
-      >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <TextField
-            label="Patient Volume"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={filters.costPatientVolume}
-            onChange={(e) =>
-              setFilters({ costPatientVolume: e.target.value })
-            }
-            placeholder="e.g. 100"
-          />
-          <TextField
-            label="Treatment Duration (days)"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={filters.costTreatmentDurationDays}
-            onChange={(e) =>
-              setFilters({ costTreatmentDurationDays: e.target.value })
-            }
-            placeholder="e.g. 365"
-          />
-          <TextField
-            label="Unit Price"
-            type="number"
-            min={0}
-            step="0.01"
-            inputMode="decimal"
-            value={filters.costUnitPrice}
-            onChange={(e) => setFilters({ costUnitPrice: e.target.value })}
-            placeholder="e.g. 250.00"
-          />
-          <Select
-            label="Dosage Frequency"
-            options={DOSAGE_FREQUENCY_OPTIONS}
-            value={filters.costDosageFrequency}
-            clearable
-            onChange={(e) =>
-              setFilters({ costDosageFrequency: e.target.value })
-            }
-          />
-          <Select
-            label="Currency"
-            options={REGION_PRICING_MARKET_OPTIONS}
-            value={filters.costRegion}
-            clearable
-            onChange={(e) => setFilters({ costRegion: e.target.value })}
-          />
         </div>
       </FilterGroupCard>
 

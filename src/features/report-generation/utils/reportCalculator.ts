@@ -1,11 +1,20 @@
 import { z } from "zod";
-import { getCalculatorValidationMessage } from "@/features/dosage-calculator";
+// The dosage-calculator barrel also loads its UI shell. Import the helper
+// directly so mapping a draft does not initialize that shell.
+import { getCalculatorValidationMessage } from "@/features/dosage-calculator/utils/calculatorValidation";
 import {
   reportBudgetImpactSelectionSchema,
   reportCostAnalysisSelectionSchema,
   reportDosingSelectionSchema,
 } from "../schemas/reportSchemas";
 import type { UpdateReportSelectionsInput } from "../types";
+import {
+  DEFAULT_DOSING_FREQUENCY,
+  dosingFrequencyToTimesPerDay,
+  frequencyFromPersisted,
+  frequencyFromTimesPerDay,
+  type DosingFrequency,
+} from "./dosingFrequency";
 
 export type ReportCalculatorTab = "cost" | "budget";
 
@@ -17,7 +26,7 @@ export type ReportCalculatorDraft = {
     unitCost: string;
     unitSize: string;
     dose: string;
-    timesPerDay: string;
+    frequency: DosingFrequency;
     daysPerYear: string;
     doseType: "fixed" | "weight_based";
     patientWeight: string;
@@ -86,7 +95,7 @@ export const EMPTY_REPORT_CALCULATOR_DRAFT: ReportCalculatorDraft = {
     unitCost: "",
     unitSize: "",
     dose: "",
-    timesPerDay: "1",
+    frequency: { ...DEFAULT_DOSING_FREQUENCY },
     daysPerYear: "365",
     doseType: "fixed",
     patientWeight: "70",
@@ -142,12 +151,93 @@ export const EMPTY_REPORT_CALCULATOR_DRAFT: ReportCalculatorDraft = {
   },
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringField(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function dosingFromPersisted(value: unknown): ReportCalculatorDraft["dosing"] {
+  const source = isRecord(value) ? value : {};
+  const defaults = EMPTY_REPORT_CALCULATOR_DRAFT.dosing;
+  const storedFrequency = frequencyFromPersisted(source.frequency);
+  const legacyRate =
+    typeof source.timesPerDay === "number" || typeof source.timesPerDay === "string"
+      ? Number(source.timesPerDay)
+      : Number.NaN;
+
+  return {
+    unitCost: stringField(source.unitCost, defaults.unitCost),
+    unitSize: stringField(source.unitSize, defaults.unitSize),
+    dose: stringField(source.dose, defaults.dose),
+    frequency: storedFrequency ?? frequencyFromTimesPerDay(legacyRate),
+    daysPerYear: stringField(source.daysPerYear, defaults.daysPerYear),
+    doseType: source.doseType === "weight_based" ? "weight_based" : "fixed",
+    patientWeight: stringField(source.patientWeight, defaults.patientWeight),
+    wastagePercent: stringField(source.wastagePercent, defaults.wastagePercent),
+  };
+}
+
+function uptakeFromPersisted(
+  value: unknown,
+): ReportCalculatorDraft["budgetImpact"]["uptakePercent"] {
+  if (!Array.isArray(value)) {
+    return [...EMPTY_REPORT_CALCULATOR_DRAFT.budgetImpact.uptakePercent];
+  }
+
+  const uptake = value.slice(0, 5).map((entry) => String(entry));
+  while (uptake.length < 5) {
+    uptake.push(
+      EMPTY_REPORT_CALCULATOR_DRAFT.budgetImpact.uptakePercent[uptake.length] ??
+        "0",
+    );
+  }
+
+  return uptake as ReportCalculatorDraft["budgetImpact"]["uptakePercent"];
+}
+
+export function migrateReportCalculatorDraft(
+  value: unknown,
+): ReportCalculatorDraft {
+  const source = isRecord(value) ? value : {};
+  const base = EMPTY_REPORT_CALCULATOR_DRAFT;
+
+  return cloneReportCalculatorDraft({
+    dosingEnabled: source.dosingEnabled === true,
+    costAnalysisEnabled: source.costAnalysisEnabled === true,
+    budgetImpactEnabled: source.budgetImpactEnabled === true,
+    dosing: dosingFromPersisted(source.dosing),
+    costAnalysis: {
+      ...base.costAnalysis,
+      ...(isRecord(source.costAnalysis)
+        ? (source.costAnalysis as Partial<ReportCalculatorDraft["costAnalysis"]>)
+        : {}),
+    },
+    budgetImpact: {
+      ...base.budgetImpact,
+      ...(isRecord(source.budgetImpact)
+        ? (source.budgetImpact as Partial<ReportCalculatorDraft["budgetImpact"]>)
+        : {}),
+      timeHorizon: source.budgetImpact &&
+        isRecord(source.budgetImpact) &&
+        source.budgetImpact.timeHorizon === 5
+        ? 5
+        : base.budgetImpact.timeHorizon,
+      uptakePercent: uptakeFromPersisted(
+        isRecord(source.budgetImpact) ? source.budgetImpact.uptakePercent : undefined,
+      ),
+    },
+  });
+}
+
 export function cloneReportCalculatorDraft(
   draft: ReportCalculatorDraft,
 ): ReportCalculatorDraft {
   return {
     ...draft,
-    dosing: { ...draft.dosing },
+    dosing: dosingFromPersisted(draft.dosing),
     costAnalysis: { ...draft.costAnalysis },
     budgetImpact: {
       ...draft.budgetImpact,
@@ -208,11 +298,19 @@ export function mapReportCalculatorDraft(
   const selections: ReportCalculatorSelections = {};
 
   if (draft.dosingEnabled) {
+    const timesPerDay = dosingFrequencyToTimesPerDay(draft.dosing.frequency);
+    if (!Number.isFinite(timesPerDay) || timesPerDay <= 0) {
+      throw createDependencyError(
+        ["dosing", "frequency"],
+        "Enter how often the dose is given",
+      );
+    }
+
     selections.dosing = reportDosingSelectionSchema.parse({
       unit_cost: numberFromText(draft.dosing.unitCost),
       unit_size: numberFromText(draft.dosing.unitSize),
       dose: numberFromText(draft.dosing.dose),
-      times_per_day: numberFromText(draft.dosing.timesPerDay),
+      times_per_day: timesPerDay,
       days_per_year: numberFromText(draft.dosing.daysPerYear),
       dose_type: draft.dosing.doseType,
       patient_weight:
@@ -362,6 +460,9 @@ export function mapReportCalculatorDraft(
 
 export function formatReportCalculatorValidationError(error: unknown): string {
   if (error instanceof z.ZodError) {
+    if (error.issues.some((issue) => issue.code === "custom" && issue.path[0] === "dosing" && issue.path[1] === "frequency")) {
+      return "Enter how often the dose is given.";
+    }
     if (error.issues.some((issue) => issue.code === "custom" && issue.path[0] === "costAnalysis" && issue.path[1] === "drugAcquisition")) {
       return "Enter the annual drug acquisition cost, or enable Dosing to calculate it.";
     }
